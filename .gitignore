@@ -38,8 +38,8 @@ package-lock.json
 yarn.lock
 
 # Public folder files that are generated or temporary
-public/*.csv
-public/*.json
+# public/*.csv
+# public/*.json
 
 # Build cache (optional)
 .cache/
