@@ -1,0 +1,135 @@
+/* Reset default body margin and padding */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Style for the navbar */
+nav {
+    background-color: #333;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* Styling the navbar links */
+nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap; /* Wraps the links on smaller screens */
+    gap: 15px; /* Space between each link */
+}
+
+nav ul li {
+    margin: 0;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.8em; /* Smaller font size */
+    padding: 6px 10px; /* Slightly less padding to save space */
+    border-radius: 4px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+nav ul li a:hover {
+    background-color: #444;
+    color: #fff;
+}
+
+/* Active link styling */
+nav ul li a.active {
+    background-color: #4CAF50;
+    color: #fff;
+}
+
+/* Section and container styling */
+.section {
+    display: none; /* Hidden by default */
+    height: 90vh;
+    width: 100vw;
+}
+
+/* Ensure each section takes full viewport height and width when visible */
+#map-container,
+#senses-pie,
+#senses-tree,
+#language-treemap,
+#synonyms-network,
+#cluster-synonyms,
+#example-heatmap,
+#evolution-timeline,
+#slang-wordcloud,
+#phonetic-map,
+#phonetic-dendrogram {
+    display: none;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+    nav ul {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    nav ul li {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Slightly larger font on smaller screens to improve readability */
+    nav ul li a {
+        font-size: 1em;
+        padding: 8px 12px;
+    }
+}
+
+/* Tree diagram styles */
+.node circle {
+    fill: steelblue;
+}
+
+.node text {
+    font: 12px sans-serif;
+}
+
+.link {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 2px;
+}
+
+/* style.css */
+#containerId {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Disabled navbar links styling */
+nav ul li a.disabled {
+    color: #888; /* Dimmed color for disabled links */
+    cursor: not-allowed; /* 'Not allowed' cursor */
+    pointer-events: none; /* Prevents clicks */
+    background-color: #333; /* Match the navbar background to blend in */
+}
+
+nav ul li a.disabled:hover {
+    color: #888; /* Keep the color consistent on hover */
+}
