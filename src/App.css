@@ -1,38 +1,151 @@
+/* Reset default body margin and padding */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* App Component Styling */
 .App {
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
+/* Header Styling */
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   font-size: calc(10px + 2vmin);
   color: white;
+  width: 100%;
 }
 
-.App-link {
-  color: #61dafb;
+/* Navbar Styling */
+.navbar {
+  background-color: #333;
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.navbar-list {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  /* Wraps the links on smaller screens */
+  gap: 15px;
+}
+
+.navbar-item {
+  margin: 0;
+}
+
+.navbar-item button {
+  background: none;
+  color: white;
+  border: none;
+  font-weight: bold;
+  font-size: 0.8em;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.navbar-item button:hover {
+  background-color: #444;
+  color: #fff;
+}
+
+.navbar-item button.active {
+  background-color: #4CAF50;
+  color: #fff;
+}
+
+.navbar-item button.disabled {
+  color: #888;
+  cursor: not-allowed;
+  pointer-events: none;
+  background-color: #333;
+}
+
+.navbar-item button.disabled:hover {
+  color: #888;
+}
+
+/* Section Styling */
+.section {
+  display: none;
+  /* Hidden by default */
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Ensure each section takes full viewport height and width when visible */
+#map-container,
+#senses-pie,
+#senses-tree,
+#language-treemap,
+#synonyms-network,
+#cluster-synonyms,
+#example-heatmap,
+#evolution-timeline,
+#slang-wordcloud,
+#phonetic-map,
+#phonetic-dendrogram {
+  display: none;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Default styling for visible section */
+.section.visible {
+  display: block;
+}
+
+/* Tree diagram styles */
+.node circle {
+  fill: steelblue;
+}
+
+.node text {
+  font: 12px sans-serif;
+}
+
+.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 2px;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .navbar-list {
+      flex-direction: column;
+      align-items: center;
   }
-  to {
-    transform: rotate(360deg);
+
+  .navbar-item {
+      width: 100%;
+      text-align: center;
+  }
+
+  /* Slightly larger font on smaller screens to improve readability */
+  .navbar-item button {
+      font-size: 1em;
+      padding: 8px 12px;
   }
 }
