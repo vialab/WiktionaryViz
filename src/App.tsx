@@ -1,14 +1,16 @@
 import React, { useEffect } from 'react';
+import { MapContainer, TileLayer } from 'react-leaflet';
 import * as d3 from 'd3';
-import L from 'leaflet';
+import L, { Map as LeafletMap } from 'leaflet';
 import countries from 'i18n-iso-countries';
 import mbxGeocoding from '@mapbox/mapbox-sdk/services/geocoding';
+import 'leaflet/dist/leaflet.css';
 import './App.css';
 
 // Extend the Window interface to include mapInstance
 declare global {
   interface Window {
-    mapInstance?: L.Map;
+    mapInstance?: LeafletMap;
   }
 }
 
@@ -71,22 +73,12 @@ countries.registerLocale(require('i18n-iso-countries/langs/en.json')); // Regist
 function App() {
   useEffect(() => {
     const initializeApp = async () => {
-      console.log("Document loaded. Initializing...");
-
       const translations = await loadTranslations();
       if (translations.length > 0) {
         console.log(`Loaded ${translations.length} translations.`);
+        await loadMapMarkers(translations);
       } else {
         console.error("Failed to load translations.");
-      }
-
-      // Initialize map and place markers
-      const map = initializeMap('map-container');
-      if (map) {
-        console.log("Map initialized successfully.");
-        await loadMapMarkers(map, translations);
-      } else {
-        console.error("Map failed to initialize or invalidateSize is not available.");
       }
     };
 
@@ -105,33 +97,18 @@ function App() {
         </nav>
       </header>
 
-      <section id="map-container" className="section"></section>
+      <section id="map-container" className="section visible">
+        <MapContainer center={[20, 0]} zoom={2} style={{ height: '100vh', width: '100%' }} whenReady={(map: LeafletMap) => { window.mapInstance = map; }}>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+        </MapContainer>
+      </section>
       <section id="senses-network" className="section"></section>
       <section id="radial-chart" className="section"></section>
     </div>
   );
-}
-
-// Initialize the map using Leaflet
-function initializeMap(mapContainerId: string) {
-  console.log("Attempting to initialize the map...");
-  const mapContainer = document.getElementById(mapContainerId);
-  if (!mapContainer) {
-    console.error(`Map container with ID '${mapContainerId}' not found.`);
-    return null;
-  }
-  try {
-    const map = L.map(mapContainerId).setView([20, 0], 2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
-    console.log("Leaflet map instance created successfully.");
-
-    // Store the map instance globally for later use
-    window.mapInstance = map;
-    return map;
-  } catch (error) {
-    console.error("Error during map initialization:", error);
-    return null;
-  }
 }
 
 // Load translations from tea.json
@@ -148,13 +125,14 @@ async function loadTranslations() {
 }
 
 // Load map markers based on translations
-async function loadMapMarkers(map: L.Map, translations: any[]) {
+async function loadMapMarkers(translations: any[]) {
   console.log("Placing map markers...");
-  if (!map) {
+  if (!window.mapInstance) {
     console.error("Invalid map instance. Make sure the map is initialized properly.");
     return;
   }
 
+  const map = window.mapInstance;
   const markerCounts = new Map();
   for (const entry of translations) {
     const coordinatesList = await getCountryCoordinatesForLanguage(entry.code, entry.word, entry.roman || "");
@@ -197,13 +175,10 @@ function showSection(sectionId: string) {
     // If the map section is selected, ensure the map is properly resized
     if (sectionId === 'map-container' && window.mapInstance) {
       setTimeout(() => {
-        window.mapInstance?.invalidateSize(); // Invalidate size to trigger Leaflet to load all tiles
-      }, 200); // Adding a slight delay helps ensure the container is fully visible before resizing
+        window.mapInstance?.invalidateSize({ animate: true });
+      }, 300); // Adding a slight delay helps ensure the container is fully visible before resizing
     }
   }
 }
 
 export default App;
-
-// Required installs:
-// npm install d3 leaflet country-language i18n-iso-countries @mapbox/mapbox-sdk @types/d3 @types/leaflet @types/mapbox__mapbox-sdk

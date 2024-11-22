@@ -14,29 +14,23 @@ body {
 
 /* Header Styling */
 .App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+  height: 55px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  font-size: calc(10px + 2vmin);
-  color: white;
-  width: 100%;
+  align-items: center;
+  background-color: #282c34;
 }
 
 /* Navbar Styling */
 .navbar {
-  background-color: #333;
+  background-color: #282c34;
   padding: 10px 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
   width: 100%;
+  color: white;
+  font-size: calc(10px + 2vmin);
 }
 
 .navbar-list {
@@ -47,6 +41,7 @@ body {
   flex-wrap: wrap;
   /* Wraps the links on smaller screens */
   gap: 15px;
+  align-items: center;
 }
 
 .navbar-item {
@@ -90,7 +85,8 @@ body {
 .section {
   display: none;
   /* Hidden by default */
-  height: 100vh;
+  min-height: calc(100vh - 55px);
+  /* Adjusted height to avoid full overlap with the header */
   width: 100vw;
 }
 
@@ -107,8 +103,10 @@ body {
 #phonetic-map,
 #phonetic-dendrogram {
   display: none;
-  height: 100vh;
+  min-height: calc(100vh - 55px);
+  /* Adjusted height to avoid full overlap with the header */
   width: 100vw;
+  position: relative;
 }
 
 /* Default styling for visible section */
