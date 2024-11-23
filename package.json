@@ -1,6 +1,7 @@
 {
   "name": "wiktionary-viz",
   "homepage": "https://vialab.github.io/WiktionaryViz",
+  "proxy": "http://localhost:3000/WiktionaryViz",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -16,9 +17,12 @@
     "d3": "^7.9.0",
     "i18n-iso-countries": "^7.13.0",
     "leaflet": "^1.9.4",
+    "leaflet-defaulticon-compatibility": "^0.1.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-geocode": "^1.0.0-alpha.1",
     "react-leaflet": "^4.2.1",
+    "react-papaparse": "^4.4.0",
     "react-scripts": "5.0.1",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"

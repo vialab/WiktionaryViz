@@ -1,184 +1,177 @@
-import React, { useEffect } from 'react';
-import { MapContainer, TileLayer } from 'react-leaflet';
-import * as d3 from 'd3';
-import L, { Map as LeafletMap } from 'leaflet';
-import countries from 'i18n-iso-countries';
-import mbxGeocoding from '@mapbox/mapbox-sdk/services/geocoding';
-import 'leaflet/dist/leaflet.css';
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { usePapaParse } from 'react-papaparse';
 import './App.css';
+import 'leaflet-defaulticon-compatibility';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+// @ts-ignore
+import * as countryLanguage from 'country-language';
 
-// Extend the Window interface to include mapInstance
-declare global {
-  interface Window {
-    mapInstance?: LeafletMap;
-  }
-}
+// Set up the default icon for markers
+const DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 
-// Helpers
-export function getOffsetCoordinates(lat: number, lng: number, index: number): [number, number] {
-  const offsetFactor = 1.0;
-  const angle = (index * 45) % 360;
-  const radian = angle * (Math.PI / 180);
-  return [lat + Math.sin(radian) * offsetFactor, lng + Math.cos(radian) * offsetFactor];
-}
+function App() {
+  const [teaData, setTeaData] = useState<any>(null);
+  const [markers, setMarkers] = useState<{ position: [number, number], popupText: string }[]>([]);
+  const [languoidData, setLanguoidData] = useState<any[]>([]);
+  const { readString } = usePapaParse();
 
-// TranslationLoader
-export async function getCountryCoordinatesForLanguage(langCode: string, word: string, roman: string) {
-  console.log(`Getting coordinates for language code: ${langCode}`);
-  try {
-    const countriesList = await new Promise<any[]>((resolve, reject) => {
-      const countryLanguage = require('country-language');
-      countryLanguage.getLanguageCountries(langCode, (err: any, data: any[]) => {
+  useEffect(() => {
+    console.debug('Fetching tea data...');
+    fetch('/tea.json')
+      .then(response => {
+        if (!response.ok) {
+          console.warn('Tea data fetch response not OK:', response);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Fetched tea data:', data);
+        setTeaData(data);
+        processTranslations(data.translations);
+      })
+      .catch(error => console.error('Error fetching tea data:', error));
+  }, []);
+
+  useEffect(() => {
+    console.debug('Fetching languoid data...');
+    readString('/languoid.csv', {
+      header: true,
+      delimiter: ',',
+      worker: true,
+      complete: (results) => {
+        console.log(results);
+        setLanguoidData(results.data);
+      },
+      error: (error) => console.error('Error fetching languoid data:', error),
+    });
+    
+    
+  }, []);
+
+  const processTranslations = async (translations: any[]) => {
+    console.debug('Processing translations:', translations);
+    try {
+      const newMarkers = await Promise.all(translations.map(async (translation) => {
+        console.debug('Processing translation:', translation);
+        try {
+          const country = await getCountryFromLanguageCode(translation.code);
+          console.log('Country found for translation:', country);
+          if (country) {
+            const { lat, lng } = await getCountryCoordinates(country.code_2);
+            console.log(`Coordinates for country ${country.code_2}:`, { lat, lng });
+            return {
+              position: [lat, lng] as [number, number],
+              popupText: `${translation.lang}: ${translation.word} (${translation.sense})`
+            };
+          }
+        } catch (err) {
+          console.error('Error processing translation:', translation, err);
+        }
+        return null;
+      }));
+      setMarkers(newMarkers.filter(marker => marker !== null) as { position: [number, number], popupText: string }[]);
+    } catch (err) {
+      console.error('Error processing translations:', err);
+    }
+  };
+
+  const getCountryFromLanguageCode = (code: string): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      countryLanguage.getLanguage(code, (err: any, language: any) => {
         if (err) {
-          console.error(`Error fetching countries for language ${langCode}:`, err);
           reject(err);
         } else {
-          resolve(data);
+          resolve(language.countries[0]);
         }
       });
     });
+  };
 
-    const mapboxClient = mbxGeocoding({ accessToken: process.env.REACT_APP_MAPBOX_ACCESS_TOKEN ?? '' });
-    const coordinatesList = await Promise.all(countriesList.map(async (country: any) => {
-      const countryName = countries.getName(country.code_3, 'en');
-      if (!countryName) {
-        console.warn(`Country name not found for code: ${country.code_3}`);
-        return null;
-      }
-      try {
-        const response = await mapboxClient.forwardGeocode({ query: countryName, limit: 1 }).send();
-        if (response && response.body.features.length) {
-          const [lng, lat] = response.body.features[0].center;
-          console.log(`Coordinates found for ${countryName}: [${lat}, ${lng}]`);
-          return { countryName, baseCoordinates: [lat, lng] as [number, number], word, roman };
-        } else {
-          console.warn(`No coordinates found for ${countryName}`);
-        }
-      } catch (innerError) {
-        console.error(`Error finding coordinates for ${countryName}:`, innerError);
-      }
-      return null;
-    }));
+  const getCountryCoordinates = async (country_a2_code: string): Promise<{ lat: number, lng: number }> => {
+    if (!languoidData || languoidData.length === 0) {
+      console.warn('Languoid data is empty');
+      return { lat: 0, lng: 0 };
+    }
+  
+    const countryData = languoidData.find(row => row.country_ids.includes(country_a2_code));
+    if (countryData) {
+      return { lat: parseFloat(countryData.latitude), lng: parseFloat(countryData.longitude) };
+    }
+    return { lat: 0, lng: 0 };
+  };
+  
 
-    return coordinatesList.filter(item => item !== null);
-  } catch (error) {
-    console.error(`Error in getCountryCoordinatesForLanguage for ${langCode}:`, error);
-    return [];
-  }
-}
+  const showSection = (sectionId: string) => {
+    console.debug('Showing section:', sectionId);
+    // Hide all sections
+    const sections = document.querySelectorAll('.section');
+    sections.forEach((section) => section.classList.remove('visible'));
 
-// Register countries locale
-countries.registerLocale(require('i18n-iso-countries/langs/en.json')); // Register English locale for country names
-
-function App() {
-  useEffect(() => {
-    const initializeApp = async () => {
-      const translations = await loadTranslations();
-      if (translations.length > 0) {
-        console.log(`Loaded ${translations.length} translations.`);
-        await loadMapMarkers(translations);
-      } else {
-        console.error("Failed to load translations.");
-      }
-    };
-
-    initializeApp();
-  }, []);
+    // Show the selected section
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+      console.log(`Section ${sectionId} is now visible`);
+      targetSection.classList.add('visible');
+    } else {
+      console.warn(`Section ${sectionId} not found`);
+    }
+  };
 
   return (
     <div className="App">
       <header className="App-header">
         <nav className="navbar">
           <ul className="navbar-list">
-            <li className="navbar-item"><button id="map-link" onClick={() => showSection('map-container')}>Map</button></li>
-            <li className="navbar-item"><button id="senses-network-link" onClick={() => showSection('senses-network')}>Senses Network</button></li>
-            <li className="navbar-item"><button id="radial-chart-link" onClick={() => showSection('radial-chart')}>Radial Chart</button></li>
+            <li className="navbar-item">
+              <button id="map-link" onClick={() => showSection('map-container')}>Map</button>
+            </li>
+            <li className="navbar-item">
+              <button id="senses-network-link" onClick={() => showSection('senses-network')}>Senses Network</button>
+            </li>
+            <li className="navbar-item">
+              <button id="radial-chart-link" onClick={() => showSection('radial-chart')}>Radial Chart</button>
+            </li>
           </ul>
         </nav>
       </header>
 
       <section id="map-container" className="section visible">
-        <MapContainer center={[20, 0]} zoom={2} style={{ height: '100vh', width: '100%' }} whenReady={(map: LeafletMap) => { window.mapInstance = map; }}>
+        <MapContainer center={[0, 0]} zoom={2} scrollWheelZoom={false} style={{
+          height: "100vh",
+          width: "100%",
+        }}>
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+
+          {markers.map((marker, index) => (
+            <Marker key={index} position={marker.position}>
+              <Popup>{marker.popupText}</Popup>
+            </Marker>
+          ))}
         </MapContainer>
       </section>
-      <section id="senses-network" className="section"></section>
-      <section id="radial-chart" className="section"></section>
+
+      <section id="senses-network" className="section">
+        <h2>Senses Network</h2>
+        <p>Content for the senses network goes here.</p>
+      </section>
+
+      <section id="radial-chart" className="section">
+        <h2>Radial Chart</h2>
+        <p>Content for the radial chart goes here.</p>
+      </section>
     </div>
   );
-}
-
-// Load translations from tea.json
-async function loadTranslations() {
-  console.log("Loading translations from tea.json...");
-  try {
-    const data: any = await d3.json('/WiktionaryViz/tea.json');
-    console.log("Translations loaded successfully.");
-    return data.translations;
-  } catch (error) {
-    console.error("Error loading translations:", error);
-    return [];
-  }
-}
-
-// Load map markers based on translations
-async function loadMapMarkers(translations: any[]) {
-  console.log("Placing map markers...");
-  if (!window.mapInstance) {
-    console.error("Invalid map instance. Make sure the map is initialized properly.");
-    return;
-  }
-
-  const map = window.mapInstance;
-  const markerCounts = new Map();
-  for (const entry of translations) {
-    const coordinatesList = await getCountryCoordinatesForLanguage(entry.code, entry.word, entry.roman || "");
-    if (coordinatesList.length === 0) {
-      console.warn(`No coordinates found for translation entry: ${entry.word}`);
-      continue;
-    }
-    coordinatesList.forEach((item) => {
-      if (item === null) return;
-      const { countryName, baseCoordinates, word, roman } = item;
-      const coordKey = `${baseCoordinates[0]},${baseCoordinates[1]}`;
-      const count = markerCounts.get(coordKey) || 0;
-      markerCounts.set(coordKey, count + 1);
-
-      const offsetCoordinates = getOffsetCoordinates(baseCoordinates[0], baseCoordinates[1], count);
-      const popupContent = `<b>${countryName}:</b> ${word}${roman ? ` (${roman})` : ""}`;
-
-      const marker = L.marker(offsetCoordinates);
-      marker.addTo(map).bindPopup(popupContent);
-      console.log(`Marker added at ${offsetCoordinates} for ${countryName} (${word}).`);
-    });
-  }
-  console.log("All markers placed.");
-}
-
-// Function to show sections based on button clicks
-function showSection(sectionId: string) {
-  // Hide all sections
-  document.querySelectorAll('.section').forEach(section => {
-    if (section instanceof HTMLElement) {
-      section.style.display = 'none';
-    }
-  });
-
-  // Show selected section
-  const selectedSection = document.getElementById(sectionId);
-  if (selectedSection instanceof HTMLElement) {
-    selectedSection.style.display = 'block';
-
-    // If the map section is selected, ensure the map is properly resized
-    if (sectionId === 'map-container' && window.mapInstance) {
-      setTimeout(() => {
-        window.mapInstance?.invalidateSize({ animate: true });
-      }, 300); // Adding a slight delay helps ensure the container is fully visible before resizing
-    }
-  }
 }
 
 export default App;
