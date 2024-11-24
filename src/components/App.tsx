@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import '../App.css'
+import '../styles/App.css'
 import Navbar from './Navbar';
 import MapSection from './MapSection';
 import SensesNetworkSection from './SensesNetworkSection';
