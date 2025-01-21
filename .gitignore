@@ -68,3 +68,4 @@ yarn-debug.log*
 yarn-error.log*
 
 old/
+src/sandbox/raw-wiktextract-data.jsonl
