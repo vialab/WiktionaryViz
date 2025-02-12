@@ -69,3 +69,7 @@ yarn-error.log*
 
 old/
 src/sandbox/raw-wiktextract-data.jsonl
+
+src/sandbox/
+src/sandbox/sandbox.py
+public/raw-wiktextract-data.jsonl

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import useTeaData from '../hooks/useTeaData';
 import useLanguoidData from '../hooks/useLanguoidData';
-import { processTranslations } from '../utils/mapUtils';
+import { processTranslationsByCountry } from '../utils/mapUtils';
 import 'leaflet-defaulticon-compatibility';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -23,7 +23,7 @@ const MapSection: React.FC = () => {
 
     useEffect(() => {
         if (teaData && languoidData.length > 0) {
-            processTranslations(teaData.translations, languoidData, setMarkers);
+            processTranslationsByCountry(teaData.translations, languoidData, setMarkers);
         }
     }, [teaData, languoidData]);
 
@@ -36,7 +36,9 @@ const MapSection: React.FC = () => {
                 />
                 {markers.map((marker, index) => (
                     <Marker key={index} position={marker.position}>
-                        <Popup>{marker.popupText}</Popup>
+                        <Popup>
+                            <div dangerouslySetInnerHTML={{ __html: marker.popupText }} />
+                        </Popup>
                     </Marker>
                 ))}
             </MapContainer>
