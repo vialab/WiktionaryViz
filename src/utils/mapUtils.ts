@@ -63,28 +63,6 @@ export const processTranslations = async (
                 }
 
                 if (lat !== 0 && lng !== 0) {
-                    let coordKey = `${lat},${lng}`;
-                    let retries = 0;
-                    const maxRetries = 20;
-                    const offsetStep = 0.5;
-                    const staggeredCoordinates = () => {
-                        const angle = Math.random() * 2 * Math.PI;
-                        const radius = retries * offsetStep;
-                        return {
-                            lat: lat + Math.cos(angle) * radius,
-                            lng: lng + Math.sin(angle) * radius,
-                        };
-                    };
-
-                    while (seenCoordinates.has(coordKey) && retries < maxRetries) {
-                        const newCoords = staggeredCoordinates();
-                        coordKey = `${newCoords.lat},${newCoords.lng}`;
-                        lat = newCoords.lat;
-                        lng = newCoords.lng;
-                        retries++;
-                    }
-
-                    seenCoordinates.add(coordKey);
                     newMarkers.push({
                         position: [lat, lng],
                         popupText: `${translation.lang}: ${translation.word}${translation.roman ? ` (${translation.roman})` : ""}`,
