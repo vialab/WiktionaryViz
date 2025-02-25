@@ -22,8 +22,15 @@ const SensesNetworkSection: React.FC = () => {
         if (nodes.length === 0) return;
 
         initializeD3Graph(nodes, links);
-    }, [teaData, expandedNodes]);
+    }, [teaData]);
 
+    useEffect(() => {
+        updateVisibility();
+    }, [expandedNodes]);
+
+    /**
+     * Initializes the D3 graph.
+     */
     const initializeD3Graph = (nodes: SenseNode[], links: SenseLink[]) => {
         const width = containerRef.current?.clientWidth || 800;
         const height = containerRef.current?.clientHeight || 600;
@@ -31,17 +38,18 @@ const SensesNetworkSection: React.FC = () => {
         const svg = d3.select(svgRef.current)
             .attr("viewBox", `0 0 ${width} ${height}`)
             .attr("width", "100%")
-            .attr("height", "100%")
-            .call(
-                d3.zoom<SVGSVGElement, unknown>()
-                    .scaleExtent([0.5, 3])
-                    .on("zoom", (event) => {
-                        svgGroup.attr("transform", event.transform);
-                    }) as any
-            );
+            .attr("height", "100%");
 
         svg.selectAll("*").remove();
         const svgGroup = svg.append("g");
+
+        svg.call(
+            d3.zoom<SVGSVGElement, unknown>()
+                .scaleExtent([0.5, 3])
+                .on("zoom", (event) => {
+                    svgGroup.attr("transform", event.transform);
+                }) as any
+        );
 
         const colorScale = generateColorScale(nodes);
 
@@ -49,6 +57,9 @@ const SensesNetworkSection: React.FC = () => {
         renderNodes(svgGroup, nodes, colorScale);
     };
 
+    /**
+     * Renders the links (edges) between nodes.
+     */
     const renderLinks = (
         svgGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
         links: SenseLink[],
@@ -63,15 +74,15 @@ const SensesNetworkSection: React.FC = () => {
             .append("line")
             .attr("stroke-width", 2)
             .attr("opacity", 0)
-            .transition()
-            .duration(500)
-            .attr("opacity", (d) => (expandedNodes.has(d.source) ? 1 : 0))
-            .attr("x1", (d) => nodes.find(n => n.id === d.source)?.x || 0)
-            .attr("y1", (d) => nodes.find(n => n.id === d.source)?.y || 0)
-            .attr("x2", (d) => nodes.find(n => n.id === d.target)?.x || 0)
-            .attr("y2", (d) => nodes.find(n => n.id === d.target)?.y || 0);
+            .attr("x1", (d) => getNodeX(d.source, nodes))
+            .attr("y1", (d) => getNodeY(d.source, nodes))
+            .attr("x2", (d) => getNodeX(d.target, nodes))
+            .attr("y2", (d) => getNodeY(d.target, nodes));
     };
 
+    /**
+     * Renders the nodes (senses) in the graph.
+     */
     const renderNodes = (
         svgGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
         nodes: SenseNode[],
@@ -82,6 +93,7 @@ const SensesNetworkSection: React.FC = () => {
             .data(nodes)
             .enter()
             .append("g")
+            .attr("stroke", "#fff")
             .attr("transform", (d) => `translate(${d.x},${d.y})`)
             .attr("opacity", (d) => (d.isCentral ? 1 : 0))
             .on("click", (_, d) => toggleNodeExpansion(d));
@@ -104,6 +116,9 @@ const SensesNetworkSection: React.FC = () => {
         });
     };
 
+    /**
+     * Toggles the expansion or collapse of a node's children.
+     */
     const toggleNodeExpansion = (node: SenseNode) => {
         setExpandedNodes((prev) => {
             const updatedNodes = new Set(prev);
@@ -112,13 +127,49 @@ const SensesNetworkSection: React.FC = () => {
         });
     };
 
+    /**
+     * Updates the visibility and position of nodes and links based on expansion state.
+     */
+    const updateVisibility = () => {
+        const svg = d3.select(svgRef.current);
+
+        // Update node visibility
+        svg.selectAll("g")
+            .data(graphData.nodes, (d: any) => d?.id || "unknown")
+            .transition()
+            .duration(500)
+            .attr("opacity", (d: any) => (d?.isCentral || expandedNodes.has(d?.parentId || "")) ? 1 : 0);
+
+        // Update link visibility and dynamically update positions
+        svg.selectAll("line")
+            .data(graphData.links)
+            .transition()
+            .duration(500)
+            .attr("opacity", (d: any) => expandedNodes.has(d.source) || expandedNodes.has(d.target) ? 1 : 0)
+            .attr("x1", (d) => getNodeX(d.source, graphData.nodes))
+            .attr("y1", (d) => getNodeY(d.source, graphData.nodes))
+            .attr("x2", (d) => getNodeX(d.target, graphData.nodes))
+            .attr("y2", (d) => getNodeY(d.target, graphData.nodes));
+    };
+
+    /**
+     * Helper function to get the X coordinate of a node by its ID.
+     */
+    const getNodeX = (nodeId: string, nodes: SenseNode[]): number => {
+        const node = nodes.find(n => n.id === nodeId);
+        return node?.x ?? 0;
+    };
+
+    /**
+     * Helper function to get the Y coordinate of a node by its ID.
+     */
+    const getNodeY = (nodeId: string, nodes: SenseNode[]): number => {
+        const node = nodes.find(n => n.id === nodeId);
+        return node?.y ?? 0;
+    };
+
     return (
         <section ref={containerRef} style={{ width: "100%", height: "100vh", position: "relative" }}>
-            {graphData.nodes.length === 0 && (
-                <p style={{ position: "absolute", top: "10px", left: "10px", color: "#ddd" }}>
-                    No sense data available
-                </p>
-            )}
             <svg ref={svgRef} />
         </section>
     );
