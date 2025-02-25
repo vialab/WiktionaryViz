@@ -42,10 +42,11 @@ export const buildSenseNetwork = (senses: any[], word: string, lang: string): { 
     const nodes: SenseNode[] = [];
     const links: SenseLink[] = [];
     const nodeMap = new Map<string, SenseNode>();
+    const subSenseTracker = new Map<string, number>(); // Tracks sub-sense count for correct positioning
 
     const centerX = 400;
     const centerY = 300;
-    const subSpacingFactor = 100; // Distance between sub-nodes
+    const subSpacingFactor = 100;
 
     // Create the central node representing the main word.
     const centralNode: SenseNode = createNode(`central_${word}`, `${word} (${lang})`, [], true, null, { x: centerX, y: centerY });
@@ -74,7 +75,7 @@ export const buildSenseNetwork = (senses: any[], word: string, lang: string): { 
             links.push({ source: centralNode.id, target: parentNode.id });
         }
 
-        processSubSenses(sense, parentNode, nodes, nodeMap, links, centerX, centerY, subSpacingFactor);
+        processSubSenses(sense, parentNode, nodes, nodeMap, links, subSenseTracker, subSpacingFactor);
     });
 
     return { nodes, links };
@@ -82,13 +83,6 @@ export const buildSenseNetwork = (senses: any[], word: string, lang: string): { 
 
 /**
  * Creates a SenseNode object.
- * @param id - Unique identifier for the node.
- * @param label - The label to display.
- * @param tags - Associated tags for the node.
- * @param isCentral - Whether the node is the central root.
- * @param parentId - Parent node ID.
- * @param position - { x, y } coordinates.
- * @returns A SenseNode object.
  */
 const createNode = (
     id: string,
@@ -109,14 +103,14 @@ const createNode = (
 
 /**
  * Computes the position of a node in a radial layout.
- * @param index - Index of the node.
- * @param totalNodes - Total number of nodes at this level.
- * @param centerX - Center X position.
- * @param centerY - Center Y position.
- * @param radius - Distance from the center.
- * @returns { x, y } coordinates.
  */
-const calculatePosition = (index: number, totalNodes: number, centerX: number, centerY: number, radius: number): { x: number; y: number } => {
+const calculatePosition = (
+    index: number,
+    totalNodes: number,
+    centerX: number,
+    centerY: number,
+    radius: number
+): { x: number; y: number } => {
     const angle = (index / totalNodes) * Math.PI * 2;
     return {
         x: centerX + radius * Math.cos(angle),
@@ -126,14 +120,6 @@ const calculatePosition = (index: number, totalNodes: number, centerX: number, c
 
 /**
  * Processes sub-senses and attaches them to their parent nodes.
- * @param sense - The sense object from the dataset.
- * @param parentNode - The parent node to attach sub-senses to.
- * @param nodes - Array of nodes in the network.
- * @param nodeMap - Map to track existing nodes.
- * @param links - Array of links connecting nodes.
- * @param centerX - Center X coordinate for reference.
- * @param centerY - Center Y coordinate for reference.
- * @param subSpacingFactor - Distance between sub-nodes.
  */
 const processSubSenses = (
     sense: any,
@@ -141,19 +127,28 @@ const processSubSenses = (
     nodes: SenseNode[],
     nodeMap: Map<string, SenseNode>,
     links: SenseLink[],
-    centerX: number,
-    centerY: number,
+    subSenseTracker: Map<string, number>,
     subSpacingFactor: number
 ) => {
     if (!sense.senseid || sense.senseid.length <= 1) return;
 
-    sense.senseid.slice(1).forEach((subId: string, subIndex: number) => {
+    sense.senseid.slice(1).forEach((subId: string) => {
         if (nodeMap.has(subId)) return;
 
-        const position = calculatePosition(subIndex, sense.senseid.length - 1, parentNode.x ?? centerX, parentNode.y ?? centerY, subSpacingFactor);
+        // Track how many sub-senses this parent has to distribute them evenly
+        const siblingCount = subSenseTracker.get(parentNode.id) || 0;
+        subSenseTracker.set(parentNode.id, siblingCount + 1);
+
+        // Find correct gloss associated with this subId
+        const subGlossIndex = sense.senseid.indexOf(subId);
+        const subGloss = subGlossIndex !== -1 ? sense.raw_glosses[subGlossIndex] : "Unknown";
+
+        // Calculate position based on sibling index
+        const position = calculatePosition(siblingCount, subSenseTracker.get(parentNode.id)!, parentNode.x!, parentNode.y!, subSpacingFactor);
+        
         const subNode = createNode(
             subId,
-            sense.raw_glosses[subIndex + 1] || "Unknown",
+            subGloss,
             sense.tags || [],
             false,
             parentNode.id,
