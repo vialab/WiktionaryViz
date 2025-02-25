@@ -155,7 +155,7 @@ export const getCountryCoordinates = async (
         .filter((coord): coord is Coordinate => coord !== null);
 
     if (validCoordinates.length > 0) {
-        return validCoordinates[0]; // Just return the first one
+        return validCoordinates[0];
     }
 
     console.log(`No coordinates found for ${countryA2Code}, returning default (0,0)`);
@@ -177,7 +177,7 @@ export const processTranslations = async (
         console.log("Starting to process translations...");
 
         const cleanedTranslations = translations.filter(t => t.lang && t.code && t.word);
-        const seenMarkers = new Set<string>();
+        const seenMarkers = new Map<string, string[]>();
         const newMarkers: Marker[] = [];
 
         for (const translation of cleanedTranslations) {
@@ -203,16 +203,16 @@ export const processTranslations = async (
                     }
                 }
 
-                // Add markers for each valid coordinate
+                // Group multiple meanings under the same marker
                 for (const { lat, lng } of coordinates) {
                     if (lat !== 0 && lng !== 0) {
-                        const markerKey = `${lat}|${lng}|${translation.lang}|${translation.word}|${translation.sense}`;
-                        if (!seenMarkers.has(markerKey)) {
-                            newMarkers.push({
-                                position: [lat, lng],
-                                popupText: `${translation.lang} (${translation.code}): ${translation.word}${translation.roman ? ` (${translation.roman})` : ""}<br>Meaning: ${translation.sense}`,
-                            });
-                            seenMarkers.add(markerKey);
+                        const markerKey = `${lat}|${lng}|${translation.lang}|${translation.word}|${translation.roman}|${translation.code}`;
+
+                        const meaning = translation.sense ? `${translation.sense}` : "No meaning provided";
+                        if (seenMarkers.has(markerKey)) {
+                            seenMarkers.get(markerKey)!.push(`<br> - ${meaning}`);
+                        } else {
+                            seenMarkers.set(markerKey, [`<br> - ${meaning}`]);
                         }
                     }
                 }
@@ -221,6 +221,15 @@ export const processTranslations = async (
                 continue;
             }
         }
+
+        // Create final markers with grouped meanings
+        seenMarkers.forEach((meanings, key) => {
+            const [lat, lng, lang, word, roman, code] = key.split("|");
+            newMarkers.push({
+                position: [parseFloat(lat), parseFloat(lng)],
+                popupText: `${lang} (${code}): ${word} ${roman ? `(${roman})` : ""}<br>Meaning(s):${meanings.join("")}`,
+            });
+        });
 
         setMarkers(prevMarkers => [...prevMarkers, ...newMarkers]);
         console.log("Finished processing translations. New markers:", newMarkers);
