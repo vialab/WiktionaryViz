@@ -12,13 +12,13 @@ function App() {
     <div className="App">
       <header className="App-header">
         <Navbar
-          sections={['map-container', 'senses-network', 'radial-chart']}
+          sections={['map-container', 'senses-network']}
           onSectionChange={setVisibleSection}
         />
       </header>
       {visibleSection === 'map-container' && <MapSection />}
       {visibleSection === 'senses-network' && <SensesNetworkSection />}
-      {visibleSection === 'radial-chart' && <RadialChartSection />}
+      {/* {visibleSection === 'radial-chart' && <RadialChartSection />} */}
     </div>
   );
 }

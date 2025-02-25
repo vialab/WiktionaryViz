@@ -34,77 +34,52 @@ const SensesNetworkSection: React.FC = () => {
             .attr("width", "100%")
             .attr("height", "100%");
 
-        // Append a group inside SVG for zooming
-        const svgGroup = svg.append("g");
-
-        // Enable zoom and pan
-        const zoom = d3.zoom<SVGSVGElement, unknown>()
-            .scaleExtent([0.5, 3])
-            .on("zoom", (event) => {
-                svgGroup.attr("transform", event.transform);
-            });
-
-        svg.call(zoom as any);
-
-        // Tooltip element
-        const tooltip = d3.select(containerRef.current)
-            .append("div")
-            .style("position", "absolute")
-            .style("background", "rgba(0, 0, 0, 0.8)")
-            .style("color", "#fff")
-            .style("padding", "6px")
-            .style("border-radius", "4px")
-            .style("font-size", "12px")
-            .style("visibility", "hidden")
-            .style("pointer-events", "none");
-
-        // Generate color scale
         const colorScale = generateColorScale(nodes);
 
         // Add links (edges)
-        svgGroup
-            .append("g")
+        svg.append("g")
             .attr("stroke", "#999")
             .attr("stroke-opacity", 0.6)
             .selectAll("line")
             .data(links)
             .enter()
             .append("line")
-            .attr("x1", (d) => nodes.find((n) => n.id === d.source)?.x || 0)
-            .attr("y1", (d) => nodes.find((n) => n.id === d.source)?.y || 0)
-            .attr("x2", (d) => nodes.find((n) => n.id === d.target)?.x || 0)
-            .attr("y2", (d) => nodes.find((n) => n.id === d.target)?.y || 0)
+            .attr("x1", d => nodes.find(n => n.id === d.source)?.x || 0)
+            .attr("y1", d => nodes.find(n => n.id === d.source)?.y || 0)
+            .attr("x2", d => nodes.find(n => n.id === d.target)?.x || 0)
+            .attr("y2", d => nodes.find(n => n.id === d.target)?.y || 0)
             .attr("stroke-width", 2);
 
         // Add nodes (senses)
-        const nodeSelection = svgGroup
-            .append("g")
+        const nodeGroup = svg.append("g")
             .attr("stroke", "#fff")
             .attr("stroke-width", 2)
-            .selectAll("circle")
+            .selectAll("g")
             .data(nodes)
             .enter()
-            .append("circle")
-            .attr("cx", (d) => d.x!)
-            .attr("cy", (d) => d.y!)
-            .attr("r", (d) => (d.isCentral ? 15 : 10))
-            .attr("fill", (d) => (d.isCentral ? "gold" : colorScale(d))) // Apply dynamic color
-            .call(drag) // 🛠️ Reintroduced the missing drag function
-            .on("mouseover", (event, d) => {
-                tooltip
-                    .style("visibility", "visible")
-                    .text(d.label);
-            })
-            .on("mousemove", (event) => {
-                tooltip
-                    .style("top", `${event.pageY - 30}px`)
-                    .style("left", `${event.pageX + 10}px`);
-            })
-            .on("mouseout", () => {
-                tooltip.style("visibility", "hidden");
-            });
+            .append("g")
+            .attr("transform", d => `translate(${d.x},${d.y})`);
 
-        return () => {};
+        nodeGroup.append("circle")
+            .attr("r", d => (d.isCentral ? 15 : 10))
+            .attr("fill", d => colorScale.get(d.id) || "gray");
+
+        // Add default text labels with ellipsis
+        const label = nodeGroup.append("text")
+            .attr("dy", 20) // Position label below the node
+            .attr("text-anchor", "middle")
+            .text(d => (d.label.length > 15 ? `${d.label.substring(0, 12)}...` : d.label));
+
+        // Expand label on hover
+        nodeGroup.on("mouseover", function (event, d) {
+            d3.select(this).select("text")
+                .text(d.label);
+        })
+        .on("mouseout", function (event, d) {
+            d3.select(this).select("text")
+                .text(d.label.length > 15 ? `${d.label.substring(0, 12)}...` : d.label);
+        });
+
     }, [teaData]);
 
     return (
@@ -114,32 +89,5 @@ const SensesNetworkSection: React.FC = () => {
         </section>
     );
 };
-
-/**
- * D3 drag behavior function.
- */
-const drag = d3
-    .drag<SVGCircleElement, SenseNode>()
-    .on("start", (event, d) => {
-        if (!d.isCentral) {
-            d.fx = d.x;
-            d.fy = d.y;
-        }
-    })
-    .on("drag", (event, d) => {
-        if (!d.isCentral) {
-            d.fx = event.x;
-            d.fy = event.y;
-            d3.select(event.sourceEvent.target)
-                .attr("cx", event.x)
-                .attr("cy", event.y);
-        }
-    })
-    .on("end", (event, d) => {
-        if (!d.isCentral) {
-            d.fx = null;
-            d.fy = null;
-        }
-    });
 
 export default SensesNetworkSection;

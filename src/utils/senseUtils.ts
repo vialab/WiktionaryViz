@@ -8,10 +8,9 @@ export interface SenseNode {
     label: string;
     tags: string[];
     isCentral?: boolean;
+    parentId?: string | null; // Tracks parent sense for hierarchy
     x?: number;
     y?: number;
-    fx?: number | null;
-    fy?: number | null;
 }
 
 /** 
@@ -21,25 +20,6 @@ export interface SenseLink {
     source: string;
     target: string;
 }
-
-/**
- * Generates a color scale based on unique sense categories/tags.
- * @param {SenseNode[]} nodes - List of sense nodes.
- * @returns {Function} A function that maps a node to a color.
- */
-export const generateColorScale = (nodes: SenseNode[]) => {
-    const uniqueTags = new Set<string>();
-
-    // Collect all unique tags/categories
-    nodes.forEach((node) => {
-        node.tags.forEach((tag) => uniqueTags.add(tag));
-    });
-
-    const tagArray = Array.from(uniqueTags);
-    const colorScale = d3.scaleOrdinal(d3.schemeTableau10).domain(tagArray);
-
-    return (node: SenseNode) => (node.tags.length > 0 ? colorScale(node.tags[0]) : "gray");
-};
 
 /**
  * Builds a radial network of senses for a word.
@@ -64,32 +44,64 @@ export const buildSenseNetwork = (senses: any[], word: string, lang: string) => 
         isCentral: true,
         x: centerX,
         y: centerY,
-        fx: centerX, 
-        fy: centerY
     };
 
     nodes.push(centralNode);
 
     // Arrange senses radially around the central node
-    const radius = 200; 
+    const radius = 200;
     const totalSenses = senses.length;
 
-    senses.forEach((sense, index) => {
+    senses.forEach((sense: any, index: number) => {
         const angle = (index / totalSenses) * 2 * Math.PI;
-
         const senseNode: SenseNode = {
             id: `sense_${index}`,
             label: sense.glosses?.[0] || "Unknown",
             tags: sense.tags || [],
+            parentId: centralNode.id,
             x: centerX + radius * Math.cos(angle),
             y: centerY + radius * Math.sin(angle),
-            fx: null, 
-            fy: null
         };
 
         nodes.push(senseNode);
         links.push({ source: centralNode.id, target: senseNode.id });
+
+        // Handle sub-senses
+        if (sense.glosses.length > 1) {
+            const subRadius = 100;
+            sense.glosses.slice(1).forEach((gloss: string, subIndex: number) => {
+                const subAngle = ((subIndex + 1) / sense.glosses.length) * 2 * Math.PI;
+                const subNode: SenseNode = {
+                    id: `subSense_${index}_${subIndex}`,
+                    label: gloss,
+                    tags: sense.tags || [],
+                    parentId: senseNode.id,
+                    x: senseNode.x! + subRadius * Math.cos(subAngle),
+                    y: senseNode.y! + subRadius * Math.sin(subAngle),
+                };
+
+                nodes.push(subNode);
+                links.push({ source: senseNode.id, target: subNode.id });
+            });
+        }
     });
 
     return { nodes, links };
+};
+
+/**
+ * Generates a color scale based on sense depth.
+ * @param {SenseNode[]} nodes - Nodes in the network.
+ * @returns {Map<string, string>} - Mapping of node IDs to colors.
+ */
+export const generateColorScale = (nodes: SenseNode[]) => {
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    const nodeColorMap = new Map<string, string>();
+
+    nodes.forEach((node, index) => {
+        const depth = node.parentId ? 1 : 0;
+        nodeColorMap.set(node.id, colorScale(`${depth + (index % 10)}`)); // 🛠️ Fix: Ensuring string type
+    });
+
+    return nodeColorMap;
 };
