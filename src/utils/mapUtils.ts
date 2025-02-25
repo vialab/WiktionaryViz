@@ -227,7 +227,7 @@ export const processTranslations = async (
             const [lat, lng, lang, word, roman, code] = key.split("|");
             newMarkers.push({
                 position: [parseFloat(lat), parseFloat(lng)],
-                popupText: `${lang} (${code}): ${word} ${roman ? `(${roman})` : ""}<br>Meaning(s):${meanings.join("")}`,
+                popupText: `${lang} (${code}): ${word} ${roman !== 'undefined' ? `(${roman})` : ""}<br>Meaning(s):${meanings.join("")}`,
             });
         });
 
