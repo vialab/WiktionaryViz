@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/WiktionaryViz/static/css/main.9d721546.css",
-    "main.js": "/WiktionaryViz/static/js/main.83f30d98.js",
+    "main.css": "/WiktionaryViz/static/css/main.4c72f503.css",
+    "main.js": "/WiktionaryViz/static/js/main.1349966a.js",
     "index.html": "/WiktionaryViz/index.html",
-    "main.9d721546.css.map": "/WiktionaryViz/static/css/main.9d721546.css.map",
-    "main.83f30d98.js.map": "/WiktionaryViz/static/js/main.83f30d98.js.map"
+    "main.4c72f503.css.map": "/WiktionaryViz/static/css/main.4c72f503.css.map",
+    "main.1349966a.js.map": "/WiktionaryViz/static/js/main.1349966a.js.map"
   },
   "entrypoints": [
-    "static/css/main.9d721546.css",
-    "static/js/main.83f30d98.js"
+    "static/css/main.4c72f503.css",
+    "static/js/main.1349966a.js"
   ]
 }
