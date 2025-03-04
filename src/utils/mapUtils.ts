@@ -171,7 +171,9 @@ export const getCountryCoordinates = async (
 export const processTranslations = async (
     translations: Translation[],
     languoidData: LanguoidData[],
-    setMarkers: React.Dispatch<React.SetStateAction<Marker[]>>
+    setMarkers: React.Dispatch<React.SetStateAction<Marker[]>>,
+    word1: String,
+    word2: String
 ) => {
     try {
         console.log("Starting to process translations...");

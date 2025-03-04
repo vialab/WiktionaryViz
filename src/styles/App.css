@@ -27,8 +27,6 @@ body {
 .navbar {
   padding: 10px 15px;
   display: flex;
-  justify-content: center;
-  align-items: center;
   gap: 15px;
   flex-wrap: wrap;
   width: 100%;

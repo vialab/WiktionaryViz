@@ -9,7 +9,13 @@ import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import MarkerClusterGroup from "react-leaflet-markercluster";
-import 'react-leaflet-markercluster/styles'
+import 'react-leaflet-markercluster/styles';
+
+// Define props for MapSection
+interface MapSectionProps {
+    word1: string;
+    word2: string;
+}
 
 // Set up the default icon for markers
 const DefaultIcon = L.icon({
@@ -18,16 +24,16 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-const MapSection: React.FC = () => {
+const MapSection: React.FC<MapSectionProps> = ({ word1, word2 }) => {
     const teaData = useTeaData();
     const languoidData = useLanguoidData();
     const [markers, setMarkers] = useState<{ position: [number, number]; popupText: string }[]>([]);
 
     useEffect(() => {
         if (teaData && languoidData.length > 0) {
-            processTranslations(teaData.translations, languoidData, setMarkers);
+            processTranslations(teaData.translations, languoidData, setMarkers, word1, word2);
         }
-    }, [teaData, languoidData]);
+    }, [teaData, languoidData, word1, word2]);
 
     return (
         <section id="map-container" className="section visible">
@@ -44,7 +50,7 @@ const MapSection: React.FC = () => {
                             </Popup>
                         </Marker>
                     ))}
-                </MarkerClusterGroup>;
+                </MarkerClusterGroup>
             </MapContainer>
         </section>
     );

@@ -1,17 +1,13 @@
 interface NavbarProps {
-    sections: string[];
-    onSectionChange: (sectionId: string) => void;
+    title: string;
+    onTitleClick: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ sections, onSectionChange }) => (
+const Navbar: React.FC<NavbarProps> = ({ title, onTitleClick }) => (
     <nav className="navbar">
-        <ul className="navbar-list">
-            {sections.map((id) => (
-                <li key={id} className="navbar-item">
-                    <button onClick={() => onSectionChange(id)}>{id.replace('-', ' ').toUpperCase()}</button>
-                </li>
-            ))}
-        </ul>
+        <h1 className="navbar-title cursor-pointer text-left" onClick={onTitleClick}>
+            {title}
+        </h1>
     </nav>
 );
 
