@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, LayersControl, Polyline } from 'react-leaflet';
 import useTeaData from '@/hooks/useTeaData';
 import useLanguoidData from '@/hooks/useLanguoidData';
-import { processTranslations } from '@/utils/mapUtils';
+import { processTranslations, processEtymologyLineage } from '@/utils/mapUtils';
 import 'leaflet-defaulticon-compatibility';
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -25,10 +25,15 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word1, word2 }) => {
     const teaData = useTeaData();
     const languoidData = useLanguoidData();
     const [markers, setMarkers] = useState<{ position: [number, number]; popupText: string }[]>([]);
+    const [lineage, setLineage] = useState<{ positions: [number, number][], lineageText: string }[]>([]);
 
     useEffect(() => {
         if (teaData?.translations && languoidData.length) {
             processTranslations(teaData.translations, languoidData, setMarkers, word1, word2);
+        }
+        if (teaData?.etymology_templates && languoidData.length) {
+            processEtymologyLineage(teaData.etymology_templates, languoidData, teaData.word, teaData.lang_code)
+                .then(setLineage);
         }
     }, [teaData, languoidData, word1, word2]);
 
@@ -45,15 +50,45 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word1, word2 }) => {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <MarkerClusterGroup>
-                    {markers.map((marker, index) => (
-                        <Marker key={index} position={marker.position}>
-                            <Popup>
-                                <div dangerouslySetInnerHTML={{ __html: marker.popupText }} />
-                            </Popup>
-                        </Marker>
-                    ))}
-                </MarkerClusterGroup>
+                <LayersControl position="topright">
+                    {/* General Etymology Markers Layer */}
+                    <LayersControl.Overlay checked name="Etymology Markers">
+                        <MarkerClusterGroup>
+                            {markers.map((marker, index) => (
+                                <Marker key={index} position={marker.position}>
+                                    <Popup>
+                                        <div dangerouslySetInnerHTML={{ __html: marker.popupText }} />
+                                    </Popup>
+                                </Marker>
+                            ))}
+                        </MarkerClusterGroup>
+                    </LayersControl.Overlay>
+                    {/* Direct Ancestry Lineage Layer */}
+                    <LayersControl.Overlay name="Etymology Lineage">
+                        <>
+                            <MarkerClusterGroup>
+                                {lineage.map((path, index) => (
+                                    <>
+                                        <Polyline
+                                            key={`polyline-${index}`}
+                                            positions={path.positions}
+                                            color="blue"
+                                            weight={3}
+                                            opacity={0.8}
+                                        />
+                                        {path.positions.map((position, posIndex) => (
+                                            <Marker key={`marker-${index}-${posIndex}`} position={position}>
+                                                <Popup>
+                                                    <div dangerouslySetInnerHTML={{ __html: path.lineageText }} />
+                                                </Popup>
+                                            </Marker>
+                                        ))}
+                                    </>
+                                ))}
+                            </MarkerClusterGroup>
+                        </>
+                    </LayersControl.Overlay>
+                </LayersControl>
             </MapContainer>
         </section>
     );

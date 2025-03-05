@@ -81,9 +81,7 @@ const parseCoordinate = (latStr?: string, lngStr?: string): Coordinate | null =>
 
 /**
  * Gets coordinates based on ISO 639-3 code or language name.
- * @param {string} languageCode - The language code.
- * @param {LanguoidData[]} languoidData - The dataset containing language metadata.
- * @returns {Promise<Coordinate | null>} - The best coordinate match.
+ * Handles Wikimedia's custom "-pro" proto-language suffix.
  */
 export const getCoordinatesForLanguage = async (
     languageCode: string,
@@ -96,11 +94,17 @@ export const getCoordinatesForLanguage = async (
         return null;
     }
 
-    let iso639P3 = languageCode;
+    let iso639P3 = languageCode.trim();
+
+    // 🛠 Strip "-pro" suffix if present
+    if (iso639P3.endsWith("-pro")) {
+        iso639P3 = iso639P3.replace("-pro", ""); // Remove "-pro"
+        console.warn(`Detected proto-language. Adjusting lookup: ${languageCode} -> ${iso639P3}`);
+    }
 
     // Convert ISO 639-1 to ISO 639-3 if necessary
-    if (languageCode.length === 2) {
-        const convertedCode = await getIso639P3(languageCode);
+    if (iso639P3.length === 2) {
+        const convertedCode = await getIso639P3(iso639P3);
         if (convertedCode) {
             iso639P3 = convertedCode;
             console.log(`Converted ${languageCode} -> ${iso639P3}`);
@@ -113,7 +117,8 @@ export const getCoordinatesForLanguage = async (
         return null;
     }
 
-    // Try to find a match in the dataset
+    // Try to find an exact match in the dataset
+    console.log(`Looking up coordinates for ISO code: ${iso639P3}`);
     const matchingRow = languoidData.find(row => row.iso639P3code?.toLowerCase() === iso639P3.toLowerCase());
 
     if (matchingRow) {
@@ -121,15 +126,19 @@ export const getCoordinatesForLanguage = async (
         return parseCoordinate(matchingRow.latitude, matchingRow.longitude);
     }
 
-    // Try to find by name
-    const nameMatch = languoidData.find(row => row.name.toLowerCase().includes(languageCode.toLowerCase()));
-    if (nameMatch) {
-        console.log(`Matched using name: ${nameMatch.name}`);
-        return parseCoordinate(nameMatch.latitude, nameMatch.longitude);
+    // 🔥 SAFELY HANDLE MISSING `name` PROPERTY
+    try {
+        const nameMatch = languoidData.find(row => row.name && row.name.toLowerCase().includes(languageCode.toLowerCase()));
+        if (nameMatch) {
+            console.log(`Matched using name: ${nameMatch.name}`);
+            return parseCoordinate(nameMatch.latitude, nameMatch.longitude);
+        }
+    } catch (err) {
+        console.error(`Error while searching by name for language code: ${languageCode}`, err);
     }
 
-    console.log(`No coordinates found for language code: ${iso639P3}`);
-    return null;
+    console.warn(`No coordinates found for language code: ${iso639P3}. Skipping.`);
+    return null; // ✅ SAFELY SKIP if there's no mapping
 };
 
 /**
@@ -239,3 +248,67 @@ export const processTranslations = async (
         console.error("Critical error processing translations:", err);
     }
 };
+
+/**
+ * Processes etymology lineage and generates a direct historical path.
+ * @param {any[]} etymologyTemplates - The etymology templates from teaData.
+ * @param {LanguoidData[]} languoidData - The dataset containing language metadata.
+ * @param {string} targetWord - The final word being traced (e.g., "tea").
+ * @param {string} targetLang - The language code of the word (e.g., "en").
+ * @returns {Promise<{ positions: [number, number][], lineageText: string }[]>} - The ordered lineage path.
+ */
+export const processEtymologyLineage = async (
+    etymologyTemplates: any[],
+    languoidData: LanguoidData[],
+    targetWord: string,
+    targetLang: string
+): Promise<{ positions: [number, number][], lineageText: string }[]> => {
+    if (!etymologyTemplates || etymologyTemplates.length === 0) {
+        console.warn("No etymology templates found.");
+        return [];
+    }
+
+    const lineage: { positions: [number, number][], lineageText: string }[] = [];
+    let currentWord = targetWord;
+    let currentLang = targetLang;
+
+    // Extract and order `bor` and `der` entries
+    const orderedEtymology = etymologyTemplates
+        .filter(entry => entry.name === "bor" || entry.name === "der")
+        .reverse(); // Reverse to ensure we move from the oldest ancestor → modern word
+
+    for (const entry of orderedEtymology) {
+        const { args, expansion } = entry;
+        const sourceLang = args["2"] ? args["2"].trim() : null; // Ensure it exists and trim whitespace
+        const sourceWord = args["3"] ? args["3"].trim() : expansion; // Ensure valid value
+
+        if (!sourceLang) {
+            console.warn(`Skipping entry due to missing sourceLang:`, entry);
+            continue; // Skip this iteration if the source language is missing
+        }
+
+        // Fetch coordinates for source and target languages
+        const sourceCoords = await getCoordinatesForLanguage(sourceLang, languoidData);
+        const targetCoords = await getCoordinatesForLanguage(currentLang, languoidData);
+
+        if (!sourceCoords || !targetCoords) {
+            console.warn(`Skipping entry due to missing coordinates: ${sourceLang} or ${currentLang}`);
+            continue; // ✅ SKIP entries that do not have a valid location
+        }
+
+        lineage.push({
+            positions: [
+                [targetCoords.lat, targetCoords.lng],
+                [sourceCoords.lat, sourceCoords.lng]
+            ],
+            lineageText: `${currentWord} (${currentLang}) ← ${sourceWord} (${sourceLang})`
+        });
+
+        // Update lineage to move back one step in history
+        currentWord = sourceWord;
+        currentLang = sourceLang;
+    }
+
+    return lineage;
+};
+
