@@ -9,14 +9,14 @@ function App() {
   const [word2, setWord2] = useState<string>("");
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       {/* Navbar */}
-      <header className="bg-gray-800 shadow-md p-4">
+      <header className="bg-gray-800 shadow-md p-4 z-50 fixed top-0 w-full">
         <Navbar title="WiktionaryViz" onTitleClick={() => setVisibleSection("landing-page")} />
       </header>
 
-      {/* Conditional Rendering of Sections */}
-      <main className="flex flex-col items-center justify-center px-6 py-12">
+      {/* Main content takes up remaining space */}
+      <main className="flex-1 flex flex-col items-center px-6 py-12 mt-16">
         {visibleSection === "landing-page" && (
           <LandingPage
             setVisibleSection={setVisibleSection}
@@ -26,7 +26,7 @@ function App() {
             word2={word2}
           />
         )}
-        {visibleSection === "map-container" && <MapSection word1={word1} word2={word2} />}
+        {visibleSection === "geospatial" && <MapSection word1={word1} word2={word2} />}
       </main>
     </div>
   );
