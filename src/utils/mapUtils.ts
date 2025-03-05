@@ -1,4 +1,4 @@
-import { getCountryFromLanguageCode } from "./languageUtils";
+import { getCountryFromLanguageCode } from "@/utils/languageUtils";
 import { getLanguage } from "@ladjs/country-language";
 
 /** 

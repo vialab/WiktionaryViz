@@ -1,5 +1,5 @@
 export const fetchData = async (url: string, onSuccess: (data: any) => void) => {
-    const basePath = process.env.PUBLIC_URL || "";
+    const basePath = import.meta.env.BASE_URL || "";
     const fullUrl = `${basePath}${url}`;
 
     try {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchData } from '../utils/fetchUtils';
+import { fetchData } from '@/utils/fetchUtils';
 
 const useTeaData = () => {
     const [teaData, setTeaData] = useState<any>(null);

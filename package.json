@@ -1,65 +1,52 @@
 {
-  "name": "wiktionary-viz",
-  "homepage": "https://vialab.github.io/WiktionaryViz",
-  "proxy": "http://localhost:3000/WiktionaryViz",
-  "version": "0.1.0",
+  "name": "wiktionaryviz",
   "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "homepage": "https://vialab.github.io/WiktionaryViz/",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
   "dependencies": {
     "@ladjs/country-language": "^1.0.3",
     "@mapbox/mapbox-sdk": "^0.16.1",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
-    "@types/ladjs__country-language": "^1.0.0",
-    "@types/node": "^16.18.119",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@tailwindcss/vite": "^4.0.9",
     "d3": "^7.9.0",
-    "i18n-iso-countries": "^7.13.0",
+    "i18n-iso-countries": "^7.14.0",
     "leaflet": "^1.9.4",
     "leaflet-defaulticon-compatibility": "^0.1.2",
-    "leaflet.markercluster": "^1.5.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-geocode": "^1.0.0-alpha.1",
-    "react-leaflet": "^4.2.1",
-    "react-leaflet-markercluster": "^4.2.1",
-    "react-papaparse": "^4.4.0",
-    "react-scripts": "^5.0.1",
-    "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-geocode": "^2.0.1",
+    "react-leaflet": "^5.0.0",
+    "react-leaflet-markercluster": "^5.0.0-rc.0",
+    "react-papaparse": "^4.4.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "gh-pages": "^6.3.0",
+    "globals": "^15.15.0",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.9",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0",
+    "@types/node": "^16.18.119",
     "@types/d3": "^7.4.3",
     "@types/leaflet": "^1.9.14",
     "@types/mapbox__mapbox-sdk": "^0.16.0",
-    "gh-pages": "^6.2.0"
+    "@types/ladjs__country-language": "^1.0.0"
   }
 }

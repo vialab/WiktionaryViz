@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import useTeaData from '../hooks/useTeaData';
-import useLanguoidData from '../hooks/useLanguoidData';
-import { processTranslations } from '../utils/mapUtils';
+import useTeaData from '@/hooks/useTeaData';
+import useLanguoidData from '@/hooks/useLanguoidData';
+import { processTranslations } from '@/utils/mapUtils';
 import 'leaflet-defaulticon-compatibility';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import MarkerClusterGroup from "react-leaflet-markercluster";
-import 'react-leaflet-markercluster/styles';
+import "react-leaflet-markercluster/styles";
+
+
 
 // Define props for MapSection
 interface MapSectionProps {

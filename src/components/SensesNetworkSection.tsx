@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import useTeaData from "../hooks/useTeaData";
+import useTeaData from "@/hooks/useTeaData";
 import { buildSenseNetwork, generateColorScale, SenseNode, SenseLink } from "../utils/senseUtils";
 
 /**

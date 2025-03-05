@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePapaParse } from 'react-papaparse';
-import { fetchData } from '../utils/fetchUtils';
+import { fetchData } from '@/utils/fetchUtils';
 
 const useLanguoidData = () => {
     const [languoidData, setLanguoidData] = useState<any[]>([]);

@@ -1,4 +1,3 @@
-// @ts-ignore
 import * as countryLanguage from '@ladjs/country-language';
 
 export const getCountryFromLanguageCode = (code: string): Promise<any> => {
