@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import LandingPage from "@/components/LandingPage";
-import MapSection from "@/components/MapSection";
+import MapSection from "@/components/Geospatial";
 
 function App() {
   const [visibleSection, setVisibleSection] = useState<string>("landing-page");
