@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { RotateCcw } from "lucide-react";
 
 interface LandingPageProps {
     setVisibleSection: (section: string) => void;
@@ -17,17 +18,49 @@ export default function LandingPage({
 }: LandingPageProps) {
     const [explorationType, setExplorationType] = useState<"single" | "compare" | null>(null);
     const [selectedVisualization, setSelectedVisualization] = useState<string | null>(null);
+    const [interestingWord, setInterestingWord] = useState<{ word: string; reason: string } | null>(null);
+    const [wordCategory, setWordCategory] = useState<string>("");
+
+    // TODO: Replace with real data fetching when preprocessing is implemented
+    const placeholderInterestingWords = {
+        "longest etymology": [
+            { word: "serendipity", reason: "Has one of the longest etymology chains!" },
+            { word: "wanderlust", reason: "Traces its roots through multiple languages!" }
+        ],
+        "most anagrams": [
+            { word: "stop", reason: "Has 4 anagrams: stop, tops, post, spot!" },
+            { word: "rat", reason: "Forms anagrams like art and tar!" }
+        ],
+        "most borrowed": [
+            { word: "tea", reason: "Borrowed into over 50 languages!" },
+            { word: "sugar", reason: "Adopted across multiple trade routes!" }
+        ],
+        "longest words": [
+            { word: "antidisestablishmentarianism", reason: "One of the longest words in English!" },
+            { word: "floccinaucinihilipilification", reason: "Rarely used, but incredibly long!" }
+        ]
+    };
+
+    // Function to pick a random word from a category
+    const selectRandomInterestingWord = () => {
+        const categories = Object.keys(placeholderInterestingWords);
+        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+        const wordsInCategory = placeholderInterestingWords[randomCategory];
+        const randomWordObject = wordsInCategory[Math.floor(Math.random() * wordsInCategory.length)];
+
+        setWordCategory(randomCategory);
+        setInterestingWord(randomWordObject);
+    };
+
+    useEffect(() => {
+        selectRandomInterestingWord();
+    }, []);
 
     return (
         <div className="max-w-lg mx-auto bg-gray-800 p-8 rounded-lg shadow-md text-center">
-            {/* Title */}
             <h1 className="text-3xl font-bold text-white mb-2">Welcome To WiktionaryViz</h1>
             <h2 className="text-lg text-gray-300 mb-4">An exploratory etymology tool for visualizing the evolution of words, their meanings, and relationships.</h2>
-            <p className="text-gray-300 mb-6">
-                To begin your exploration, think of a word that fascinates you from any language—perhaps one with a rich history, an unexpected origin, or a shifting meaning over time. If you're curious about how two words relate, compare them to uncover their shared roots or divergent paths. Choose your approach below to get started.
-            </p>
 
-            {/* Step 1: Select Exploration Type */}
             <h3 className="text-lg font-semibold text-white mb-3">How would you like to explore?</h3>
             <div className="flex justify-center gap-4 mb-6">
                 <button
@@ -46,7 +79,6 @@ export default function LandingPage({
                 </button>
             </div>
 
-            {/* Step 2: Show Inputs Only if an Option is Selected */}
             {explorationType && (
                 <div className="space-y-4">
                     <input
@@ -68,7 +100,30 @@ export default function LandingPage({
                 </div>
             )}
 
-            {/* Step 3: Visualization Type Selection */}
+            {/* Recommended Word Section */}
+            {explorationType && interestingWord && (
+                <div className="mt-4 bg-gray-700 p-4 rounded-md text-white relative">
+                    {/* Refresh Button */}
+                    <button
+                        className="absolute top-2 right-2 text-gray-300 hover:text-white transition"
+                        onClick={selectRandomInterestingWord}
+                        title="Refresh suggestion"
+                    >
+                        <RotateCcw />
+                    </button>
+
+                    <p className="text-sm">Try exploring a word from <b>{wordCategory}</b>:</p>
+                    <button
+                        className="mt-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 rounded-md text-white font-semibold transition"
+                        onClick={() => setWord1(interestingWord.word)}
+                    >
+                        {interestingWord.word}
+                    </button>
+                    <p className="text-sm mt-2 italic text-gray-300">{interestingWord.reason}</p>
+                    {/* TODO: Replace placeholder words with dynamically generated words from Wiktextract */}
+                </div>
+            )}
+
             {explorationType && word1 && (
                 <>
                     <h3 className="text-lg font-semibold text-white mt-6">Select a visualization type:</h3>

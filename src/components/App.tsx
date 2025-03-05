@@ -11,7 +11,7 @@ function App() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       {/* Navbar */}
-      <header className="bg-gray-800 shadow-md p-4 z-50 fixed top-0 w-full">
+      <header className="bg-gray-800 shadow-md p-3 z-50 fixed top-0 w-full">
         <Navbar title="WiktionaryViz" onTitleClick={() => setVisibleSection("landing-page")} />
       </header>
 
