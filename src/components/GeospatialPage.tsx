@@ -39,11 +39,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word1, word2 }) => {
 
     return (
         <section id="geospatial" className="w-full h-screen bg-gray-900 text-white">
-            <MapContainer 
-                center={[0, 0]} 
-                zoom={2} 
+            <MapContainer
+                center={[0, 0]}
+                zoom={2}
                 minZoom={2}
-                scrollWheelZoom={false} 
+                scrollWheelZoom={false}
                 className="w-full h-full"
             >
                 <TileLayer
@@ -53,15 +53,28 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word1, word2 }) => {
                 <LayersControl position="topright">
                     {/* General Etymology Markers Layer */}
                     <LayersControl.Overlay checked name="Etymology Markers">
-                        <MarkerClusterGroup>
-                            {markers.map((marker, index) => (
-                                <Marker key={index} position={marker.position}>
-                                    <Popup>
-                                        <div dangerouslySetInnerHTML={{ __html: marker.popupText }} />
-                                    </Popup>
-                                </Marker>
-                            ))}
+                        <MarkerClusterGroup >
+                            {markers.map((marker, index) => {
+                                return (
+                                    <Marker
+                                        key={index}
+                                        position={marker.position}
+                                        interactive={true}
+                                        eventHandlers={{
+                                            click: (e) => {
+                                                console.log("Marker clicked:", e);
+                                                e.target.openPopup(); // Explicitly open the popup on click
+                                            },
+                                        }}
+                                    >
+                                        <Popup>
+                                            <div dangerouslySetInnerHTML={{ __html: marker.popupText }} />
+                                        </Popup>
+                                    </Marker>
+                                );
+                            })}
                         </MarkerClusterGroup>
+
                     </LayersControl.Overlay>
                     {/* Direct Ancestry Lineage Layer */}
                     <LayersControl.Overlay name="Etymology Lineage">

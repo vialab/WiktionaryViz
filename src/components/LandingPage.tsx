@@ -132,7 +132,7 @@ export default function LandingPage({
                             { label: "Geospatial", value: "geospatial" },
                             { label: "Network", value: "network" },
                             { label: "Radial", value: "radial" },
-                            { label: "Tree", value: "tree"},
+                            { label: "Tree", value: "tree" },
                         ].map((option) => (
                             <li key={option.value} className="flex items-center justify-start">
                                 <label className="flex items-center space-x-3 cursor-pointer">
