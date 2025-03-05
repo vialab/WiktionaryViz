@@ -16,12 +16,12 @@ L.Marker.prototype.options.icon = L.icon({
     shadowUrl: iconShadow,
 });
 
-interface MapSectionProps {
+interface GeospatialPageProps {
     word1: string;
     word2: string;
 }
 
-const MapSection: React.FC<MapSectionProps> = ({ word1, word2 }) => {
+const GeospatialPage: React.FC<GeospatialPageProps> = ({ word1, word2 }) => {
     const teaData = useTeaData();
     const languoidData = useLanguoidData();
     const [markers, setMarkers] = useState<{ position: [number, number]; popupText: string }[]>([]);
@@ -59,4 +59,4 @@ const MapSection: React.FC<MapSectionProps> = ({ word1, word2 }) => {
     );
 };
 
-export default MapSection;
+export default GeospatialPage;

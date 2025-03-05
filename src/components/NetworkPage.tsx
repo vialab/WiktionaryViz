@@ -6,7 +6,7 @@ import { buildSenseNetwork, generateColorScale, SenseNode, SenseLink } from "../
 /**
  * A network visualization of senses for a given word.
  */
-const SensesNetworkSection: React.FC = () => {
+const NetworkPage: React.FC = () => {
     const teaData = useTeaData();
     const svgRef = useRef<SVGSVGElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -175,4 +175,4 @@ const SensesNetworkSection: React.FC = () => {
     );
 };
 
-export default SensesNetworkSection;
+export default NetworkPage;
