@@ -98,3 +98,8 @@ src/sandbox/raw-wiktextract-data.jsonl
 src/sandbox/
 src/sandbox/sandbox.py
 public/raw-wiktextract-data.jsonl
+
+backend/__pycache__/
+backend/venv/
+backend/languoid.csv
+backend/wiktionary_data.jsonl
