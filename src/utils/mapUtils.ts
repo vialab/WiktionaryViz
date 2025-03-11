@@ -48,7 +48,7 @@ export const getIso639P3 = async (iso639_1: string): Promise<string | null> => {
     try {
         if (!iso639_1) return null;
 
-        const language = await new Promise((resolve, reject) => {
+        const language = await new Promise((resolve) => {
             getLanguage(iso639_1, (err, data) => {
                 if (err || !data || !data.iso639_3) {
                     console.warn(`No ISO 639-3 mapping found for: ${iso639_1}`);
@@ -181,8 +181,6 @@ export const processTranslations = async (
     translations: Translation[],
     languoidData: LanguoidData[],
     setMarkers: React.Dispatch<React.SetStateAction<Marker[]>>,
-    word1: String,
-    word2: String
 ) => {
     try {
         console.log("Starting to process translations...");
@@ -258,7 +256,7 @@ export const processTranslations = async (
  * @returns {Promise<{ positions: [number, number][], lineageText: string }[]>} - The ordered lineage path.
  */
 export const processEtymologyLineage = async (
-    etymologyTemplates: any[],
+    etymologyTemplates: { name: string; args: { [key: string]: string }; expansion: string }[],
     languoidData: LanguoidData[],
     targetWord: string,
     targetLang: string

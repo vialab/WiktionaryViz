@@ -103,3 +103,4 @@ backend/__pycache__/
 backend/venv/
 backend/languoid.csv
 backend/wiktionary_data.jsonl
+backend/wiktionary_index.json

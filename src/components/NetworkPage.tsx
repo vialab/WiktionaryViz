@@ -1,28 +1,34 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import useTeaData from "@/hooks/useWordData";
+import useWordData from "@/hooks/useWordData";
 import { buildSenseNetwork, generateColorScale, SenseNode, SenseLink } from "../utils/senseUtils";
+
+
+interface NetworkPageProps {
+    word1: string;
+    word2: string;
+}
 
 /**
  * A network visualization of senses for a given word.
  */
-const NetworkPage: React.FC = () => {
-    const teaData = useTeaData();
+const NetworkPage: React.FC<NetworkPageProps> = ({ word1, word2 }) => {
+    const wordData = useWordData(word1);
     const svgRef = useRef<SVGSVGElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [graphData, setGraphData] = useState<{ nodes: SenseNode[]; links: SenseLink[] }>({ nodes: [], links: [] });
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
     useEffect(() => {
-        if (!teaData?.senses || !svgRef.current) return;
+        if (!wordData?.senses || !svgRef.current) return;
 
-        const { nodes, links } = buildSenseNetwork(teaData.senses, teaData.word, teaData.lang);
+        const { nodes, links } = buildSenseNetwork(wordData.senses, wordData.word, wordData.lang);
         setGraphData({ nodes, links });
 
         if (nodes.length === 0) return;
 
         initializeD3Graph(nodes, links);
-    }, [teaData]);
+    }, [wordData]);
 
     useEffect(() => {
         updateVisibility();

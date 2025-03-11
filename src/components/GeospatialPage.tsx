@@ -17,25 +17,25 @@ L.Marker.prototype.options.icon = L.icon({
 });
 
 interface GeospatialPageProps {
-    word1: string;
-    word2: string;
+    word: string;
+    language: string;
 }
 
-const GeospatialPage: React.FC<GeospatialPageProps> = ({ word1, word2 }) => {
-    const wordData = useWordData(word1);
+const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
+    const wordData = useWordData(word, language);
     const languoidData = useLanguoidData();
     const [markers, setMarkers] = useState<{ position: [number, number]; popupText: string }[]>([]);
     const [lineage, setLineage] = useState<{ positions: [number, number][], lineageText: string }[]>([]);
 
     useEffect(() => {
         if (wordData?.translations && languoidData.length) {
-            processTranslations(wordData.translations, languoidData, setMarkers, word1, word2);
+            processTranslations(wordData.translations, languoidData, setMarkers);
         }
         if (wordData?.etymology_templates && languoidData.length) {
             processEtymologyLineage(wordData.etymology_templates, languoidData, wordData.word, wordData.lang_code)
                 .then(setLineage);
         }
-    }, [wordData, languoidData, word1, word2]);
+    }, [wordData, languoidData]);
 
     return (
         <section id="geospatial" className="w-full h-screen bg-gray-900 text-white">

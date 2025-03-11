@@ -7,6 +7,8 @@ function App() {
   const [visibleSection, setVisibleSection] = useState<string>("landing-page");
   const [word1, setWord1] = useState<string>("");
   const [word2, setWord2] = useState<string>("");
+  const [language1, setLanguage1] = useState('');
+  const [language2, setLanguage2] = useState('');
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
@@ -22,11 +24,15 @@ function App() {
             setVisibleSection={setVisibleSection}
             setWord1={setWord1}
             setWord2={setWord2}
+            setLanguage1={setLanguage1} 
+            setLanguage2={setLanguage2}
             word1={word1}
             word2={word2}
+            language1={language1}
+            language2={language2}
           />
         )}
-        {visibleSection === "geospatial" && <GeospatialPage word1={word1} word2={word2} />}
+        {visibleSection === "geospatial" && <GeospatialPage word={word1} language={language1} />}
       </main>
     </div>
   );

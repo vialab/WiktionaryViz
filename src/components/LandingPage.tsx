@@ -1,20 +1,29 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { RotateCcw } from "lucide-react";
 
 interface LandingPageProps {
     setVisibleSection: (section: string) => void;
     setWord1: (word: string) => void;
     setWord2: (word: string) => void;
+    setLanguage1: (lang: string) => void;
+    setLanguage2: (lang: string) => void;
     word1: string;
-    word2: string;
+    word2?: string;
+    language1: string;
+    language2?: string;
 }
+
 
 export default function LandingPage({
     setVisibleSection,
     setWord1,
     setWord2,
+    setLanguage1,
+    setLanguage2,
     word1,
     word2,
+    language1,
+    language2,
 }: LandingPageProps) {
     const [explorationType, setExplorationType] = useState<"single" | "compare" | null>(null);
     const [selectedVisualization, setSelectedVisualization] = useState<string | null>(null);
@@ -22,39 +31,39 @@ export default function LandingPage({
     const [wordCategory, setWordCategory] = useState<string>("");
 
     // TODO: Replace with real data fetching when preprocessing is implemented
-    const placeholderInterestingWords = {
-        "longest etymology": [
-            { word: "serendipity", reason: "Has one of the longest etymology chains!" },
-            { word: "wanderlust", reason: "Traces its roots through multiple languages!" }
-        ],
-        "most anagrams": [
-            { word: "stop", reason: "Has 4 anagrams: stop, tops, post, spot!" },
-            { word: "rat", reason: "Forms anagrams like art and tar!" }
-        ],
-        "most borrowed": [
-            { word: "tea", reason: "Borrowed into over 50 languages!" },
-            { word: "sugar", reason: "Adopted across multiple trade routes!" }
-        ],
-        "longest words": [
-            { word: "antidisestablishmentarianism", reason: "One of the longest words in English!" },
-            { word: "floccinaucinihilipilification", reason: "Rarely used, but incredibly long!" }
-        ]
-    };
-
     // Function to pick a random word from a category
-    const selectRandomInterestingWord = () => {
+    const selectRandomInterestingWord = useCallback(() => {
+        const placeholderInterestingWords: { [key: string]: { word: string; reason: string }[] } = {
+            "longest etymology": [
+                { word: "serendipity", reason: "Has one of the longest etymology chains!" },
+                { word: "wanderlust", reason: "Traces its roots through multiple languages!" }
+            ],
+            "most anagrams": [
+                { word: "stop", reason: "Has 4 anagrams: stop, tops, post, spot!" },
+                { word: "rat", reason: "Forms anagrams like art and tar!" }
+            ],
+            "most borrowed": [
+                { word: "tea", reason: "Borrowed into over 50 languages!" },
+                { word: "sugar", reason: "Adopted across multiple trade routes!" }
+            ],
+            "longest words": [
+                { word: "antidisestablishmentarianism", reason: "One of the longest words in English!" },
+                { word: "floccinaucinihilipilification", reason: "Rarely used, but incredibly long!" }
+            ]
+        };
+
         const categories = Object.keys(placeholderInterestingWords);
         const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-        const wordsInCategory = placeholderInterestingWords[randomCategory];
+        const wordsInCategory = placeholderInterestingWords[randomCategory as keyof typeof placeholderInterestingWords];
         const randomWordObject = wordsInCategory[Math.floor(Math.random() * wordsInCategory.length)];
 
         setWordCategory(randomCategory);
         setInterestingWord(randomWordObject);
-    };
-
+    }, []);
+    
     useEffect(() => {
         selectRandomInterestingWord();
-    }, []);
+    }, [selectRandomInterestingWord]);
 
     return (
         <div className="max-w-lg mx-auto bg-gray-800 p-8 rounded-lg shadow-md text-center">
@@ -86,16 +95,32 @@ export default function LandingPage({
                         placeholder="Enter a word"
                         value={word1}
                         onChange={(e) => setWord1(e.target.value)}
-                        className="w-full px-4 py-2 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="input-styles"
+                    />
+                    <input
+                        type="text"
+                        placeholder="Enter language code (e.g., en)"
+                        value={language1}
+                        onChange={(e) => setLanguage1(e.target.value)}
+                        className="input-styles"
                     />
                     {explorationType === "compare" && (
-                        <input
-                            type="text"
-                            placeholder="Enter a second word"
-                            value={word2}
-                            onChange={(e) => setWord2(e.target.value)}
-                            className="w-full px-4 py-2 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
+                        <>
+                            <input
+                                type="text"
+                                placeholder="Enter a second word"
+                                value={word2}
+                                onChange={(e) => setWord2(e.target.value)}
+                                className="input-styles"
+                            />
+                            <input
+                                type="text"
+                                placeholder="Enter second language code (e.g., en)"
+                                value={language2}
+                                onChange={(e) => setLanguage2(e.target.value)}
+                                className="input-styles"
+                            />
+                        </>
                     )}
                 </div>
             )}

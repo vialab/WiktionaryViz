@@ -47,25 +47,22 @@ async def get_word_data(
     if key not in index:
         return JSONResponse(content={"message": "No matching entries found."}, status_code=404)
 
-    matches = []
-
     try:
         with open(JSONL_FILE_PATH, "r", encoding="utf-8") as f:
             mmapped_file = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)  # Memory-map the file
 
-            for offset in index[key]:  # Seek directly to the stored byte positions
-                mmapped_file.seek(offset)
-                line = mmapped_file.readline().decode("utf-8").strip()
-
-                try:
-                    entry = json.loads(line)
-                    matches.append(entry)
-                except json.JSONDecodeError:
-                    continue
+            # Just return the first matching entry
+            offset = index[key][0]
+            mmapped_file.seek(offset)
+            line = mmapped_file.readline().decode("utf-8").strip()
 
             mmapped_file.close()
 
-        return JSONResponse(content={"matches": matches})
+            try:
+                entry = json.loads(line)
+                return JSONResponse(content=entry)
+            except json.JSONDecodeError:
+                return JSONResponse(content={"error": "Corrupted JSON entry."}, status_code=500)
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
