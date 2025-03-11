@@ -2,6 +2,7 @@ import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import LandingPage from "@/components/LandingPage";
 import GeospatialPage from "@/components/GeospatialPage";
+import NetworkPage from "@/components/NetworkPage";
 
 function App() {
   const [visibleSection, setVisibleSection] = useState<string>("landing-page");
@@ -33,6 +34,7 @@ function App() {
           />
         )}
         {visibleSection === "geospatial" && <GeospatialPage word={word1} language={language1} />}
+        {visibleSection === "network" && <NetworkPage word1={word1} word2={word2} language1={language1} language2={language2} />}
       </main>
     </div>
   );

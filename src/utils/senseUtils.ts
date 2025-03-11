@@ -160,3 +160,141 @@ const processSubSenses = (
         links.push({ source: parentNode.id, target: subNode.id });
     });
 };
+
+/**
+ * Builds a shortest path network between two words.
+ * @param wordData1 - The first word's data object.
+ * @param wordData2 - The second word's data object.
+ * @returns Nodes and links representing the shortest path.
+ */
+export const buildShortestPathNetwork = (
+    wordData1: { word: string; senses: any[]; lang: string },
+    wordData2: { word: string; senses: any[]; lang: string }
+): { nodes: SenseNode[]; links: SenseLink[] } => {
+    const nodes: SenseNode[] = [];
+    const links: SenseLink[] = [];
+
+    // Central nodes for each word
+    const centralNode1: SenseNode = createNode(
+        `central_${wordData1.word}`,
+        `${wordData1.word} (${wordData1.lang})`,
+        [],
+        true,
+        null,
+        { x: 300, y: 300 }
+    );
+
+    const centralNode2: SenseNode = createNode(
+        `central_${wordData2.word}`,
+        `${wordData2.word} (${wordData2.lang})`,
+        [],
+        true,
+        null,
+        { x: 700, y: 300 }
+    );
+
+    nodes.push(centralNode1, centralNode2);
+
+    // Create a "path" link between the two
+    links.push({ source: centralNode1.id, target: centralNode2.id });
+
+    // Optional: add senses as subnodes (demo, can be expanded to find "real" paths)
+    wordData1.senses.slice(0, 3).forEach((sense, index) => {
+        const senseNode = createNode(
+            `sense1_${index}`,
+            sense.raw_glosses?.[0] || `Sense ${index}`,
+            sense.tags || [],
+            false,
+            centralNode1.id,
+            calculatePosition(index, 3, centralNode1.x!, centralNode1.y!, 150)
+        );
+        nodes.push(senseNode);
+        links.push({ source: centralNode1.id, target: senseNode.id });
+    });
+
+    wordData2.senses.slice(0, 3).forEach((sense, index) => {
+        const senseNode = createNode(
+            `sense2_${index}`,
+            sense.raw_glosses?.[0] || `Sense ${index}`,
+            sense.tags || [],
+            false,
+            centralNode2.id,
+            calculatePosition(index, 3, centralNode2.x!, centralNode2.y!, 150)
+        );
+        nodes.push(senseNode);
+        links.push({ source: centralNode2.id, target: senseNode.id });
+    });
+
+    return { nodes, links };
+};
+
+/**
+ * Builds a comparative network visualization between two words.
+ * @param wordData1 - The first word's data object.
+ * @param wordData2 - The second word's data object.
+ * @returns Nodes and links representing similarities and differences.
+ */
+export const buildComparativeNetwork = (
+    wordData1: { word: string; senses: any[]; lang: string },
+    wordData2: { word: string; senses: any[]; lang: string }
+): { nodes: SenseNode[]; links: SenseLink[] } => {
+    const nodes: SenseNode[] = [];
+    const links: SenseLink[] = [];
+
+    const centerX = 500;
+    const centerY1 = 200;
+    const centerY2 = 500;
+
+    // Central nodes
+    const centralNode1: SenseNode = createNode(
+        `central_${wordData1.word}`,
+        `${wordData1.word} (${wordData1.lang})`,
+        [],
+        true,
+        null,
+        { x: centerX, y: centerY1 }
+    );
+
+    const centralNode2: SenseNode = createNode(
+        `central_${wordData2.word}`,
+        `${wordData2.word} (${wordData2.lang})`,
+        [],
+        true,
+        null,
+        { x: centerX, y: centerY2 }
+    );
+
+    nodes.push(centralNode1, centralNode2);
+
+    // Example similarity link between the two words
+    links.push({ source: centralNode1.id, target: centralNode2.id });
+
+    // Add senses of both words for comparison (you can expand this with similarity logic)
+    wordData1.senses.slice(0, 5).forEach((sense, index) => {
+        const senseNode = createNode(
+            `sense1_${index}`,
+            sense.raw_glosses?.[0] || `Sense ${index}`,
+            sense.tags || [],
+            false,
+            centralNode1.id,
+            calculatePosition(index, 5, centerX, centerY1, 150)
+        );
+        nodes.push(senseNode);
+        links.push({ source: centralNode1.id, target: senseNode.id });
+    });
+
+    wordData2.senses.slice(0, 5).forEach((sense, index) => {
+        const senseNode = createNode(
+            `sense2_${index}`,
+            sense.raw_glosses?.[0] || `Sense ${index}`,
+            sense.tags || [],
+            false,
+            centralNode2.id,
+            calculatePosition(index, 5, centerX, centerY2, 150)
+        );
+        nodes.push(senseNode);
+        links.push({ source: centralNode2.id, target: senseNode.id });
+    });
+
+    return { nodes, links };
+};
