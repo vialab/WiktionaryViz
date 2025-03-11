@@ -47,12 +47,32 @@ const useWordData = (word: string, language: string) => {
             return;
         }
 
-        const fetchData = async () => {
-            const data = await fetchWordData(word, language);
-            setWordData(data);
+        const fetchWordData = async () => {
+            try {
+                const response = await fetch(
+                    `${BACKEND_URL}/word-data?word=${encodeURIComponent(word)}&lang_code=${encodeURIComponent(language)}`
+                );
+
+                if (!response.ok) {
+                    console.error(`[useWordData] Request failed: ${response.status} ${response.statusText}`);
+                    setWordData(null);
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (Object.keys(data).length > 0) {
+                    setWordData(data);
+                } else {
+                    setWordData(null);
+                }
+            } catch (error: unknown) {
+                console.error("[useWordData] Error fetching data:", error);
+                setWordData(null);
+            }
         };
 
-        fetchData();
+        fetchWordData();
     }, [word, language]);
 
     return wordData;
