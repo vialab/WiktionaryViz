@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, LayersControl, Polyline } from 'react-leaflet';
-import useTeaData from '@/hooks/useTeaData';
+import useWordData from '@/hooks/useWordData';
 import useLanguoidData from '@/hooks/useLanguoidData';
 import { processTranslations, processEtymologyLineage } from '@/utils/mapUtils';
 import 'leaflet-defaulticon-compatibility';
@@ -22,20 +22,20 @@ interface GeospatialPageProps {
 }
 
 const GeospatialPage: React.FC<GeospatialPageProps> = ({ word1, word2 }) => {
-    const teaData = useTeaData();
+    const wordData = useWordData(word1);
     const languoidData = useLanguoidData();
     const [markers, setMarkers] = useState<{ position: [number, number]; popupText: string }[]>([]);
     const [lineage, setLineage] = useState<{ positions: [number, number][], lineageText: string }[]>([]);
 
     useEffect(() => {
-        if (teaData?.translations && languoidData.length) {
-            processTranslations(teaData.translations, languoidData, setMarkers, word1, word2);
+        if (wordData?.translations && languoidData.length) {
+            processTranslations(wordData.translations, languoidData, setMarkers, word1, word2);
         }
-        if (teaData?.etymology_templates && languoidData.length) {
-            processEtymologyLineage(teaData.etymology_templates, languoidData, teaData.word, teaData.lang_code)
+        if (wordData?.etymology_templates && languoidData.length) {
+            processEtymologyLineage(wordData.etymology_templates, languoidData, wordData.word, wordData.lang_code)
                 .then(setLineage);
         }
-    }, [teaData, languoidData, word1, word2]);
+    }, [wordData, languoidData, word1, word2]);
 
     return (
         <section id="geospatial" className="w-full h-screen bg-gray-900 text-white">
