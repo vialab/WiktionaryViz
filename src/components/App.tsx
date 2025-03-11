@@ -18,7 +18,7 @@ function App() {
       </header>
 
       {/* Main content takes up remaining space */}
-      <main className="flex-1 flex flex-col items-center px-6 py-12 mt-16">
+      <main className="flex-1 flex flex-col items-center mt-16">
         {visibleSection === "landing-page" && (
           <LandingPage
             setVisibleSection={setVisibleSection}

@@ -66,7 +66,7 @@ export default function LandingPage({
     }, [selectRandomInterestingWord]);
 
     return (
-        <div className="max-w-lg mx-auto bg-gray-800 p-8 rounded-lg shadow-md text-center">
+        <div className="max-w-lg mx-auto bg-gray-800 p-8 rounded-lg shadow-md text-center mt-8">
             <h1 className="text-3xl font-bold text-white mb-2">Welcome To WiktionaryViz</h1>
             <h2 className="text-lg text-gray-300 mb-4">An exploratory etymology tool for visualizing the evolution of words, their meanings, and relationships.</h2>
 
