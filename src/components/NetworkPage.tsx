@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import useWordData from '@/hooks/useWordData';
+import { fetchWordData} from '@/hooks/useWordData';
 import * as d3 from 'd3';
 
 interface NetworkPageProps {
@@ -15,60 +15,80 @@ interface EtymologyTemplate {
     expansion: string;
 }
 
-interface GraphNode {
+interface GraphNode extends d3.SimulationNodeDatum {
     id: string;
     label: string;
     lang: string;
     color?: string;
 }
 
-interface GraphLink {
-    source: string;
-    target: string;
+interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
+    source: string | GraphNode;
+    target: string | GraphNode;
+}
+
+interface QueueItem {
+    word: string;
+    lang: string;
+    color: string;
+    parentId?: string;
 }
 
 export default function NetworkPage({ word1, word2, language1, language2 }: NetworkPageProps) {
-    console.log('[NetworkPage] Props:', { word1, word2, language1, language2 });
-
-    const data1 = useWordData(word1, language1);
-    const data2 = useWordData(word2, language2);
-
-    console.log('[NetworkPage] data1:', data1);
-    console.log('[NetworkPage] data2:', data2);
-
     const [nodes, setNodes] = useState<GraphNode[]>([]);
     const [links, setLinks] = useState<GraphLink[]>([]);
+    const [queue, setQueue] = useState<QueueItem[]>([
+        { word: word1, lang: language1, color: 'steelblue' },
+        { word: word2, lang: language2, color: 'tomato' }
+    ]);
+    const [visited, setVisited] = useState<Set<string>>(new Set());
+
     const svgRef = useRef<SVGSVGElement | null>(null);
 
     useEffect(() => {
-        if (data1 && data2) {
-            console.log('[NetworkPage] Building graphs...');
-            const graph1 = buildEtymologyGraph(data1.etymology_templates || [], 'steelblue');
-            const graph2 = buildEtymologyGraph(data2.etymology_templates || [], 'tomato');
+        if (queue.length === 0) return;
 
-            console.log('[NetworkPage] Graph1:', graph1);
-            console.log('[NetworkPage] Graph2:', graph2);
+        const nextItem = queue[0];
+        const remainingQueue = queue.slice(1);
 
-            setNodes([...graph1.nodes, ...graph2.nodes]);
-            setLinks([...graph1.links, ...graph2.links]);
-        } else {
-            console.log('[NetworkPage] Waiting for both data1 and data2...');
+        const wordKey = `${nextItem.word}-${nextItem.lang}`;
+
+        if (visited.has(wordKey)) {
+            setQueue(remainingQueue);
+            return;
         }
-    }, [data1, data2, word1, word2]);
+
+        const run = async () => {
+            try {
+                const wordData = await fetchWordData(nextItem.word, nextItem.lang);
+                console.log(`[NetworkPage] Data fetched for ${nextItem.word}:`, wordData);
+        
+                const { newNodes, newLinks, newQueueItems } = buildEtymologyGraph(
+                    nextItem,
+                    wordData?.etymology_templates || []
+                );
+        
+                setNodes((prev) => [...prev, ...newNodes]);
+                setLinks((prev) => [...prev, ...newLinks]);
+                setQueue((prev) => [...remainingQueue, ...newQueueItems]);
+                setVisited((prev) => {
+                    const updated = new Set(prev);
+                    updated.add(wordKey);
+                    return updated;
+                });
+            } catch (error) {
+                console.error(`[NetworkPage] Error fetching data for ${nextItem.word}:`, error);
+                setQueue(remainingQueue); // Skip this item if failed
+            }
+        };
+        run();
+    }, [queue, visited]);
 
     useEffect(() => {
-        console.log('[NetworkPage] useEffect triggered for rendering graph.');
-
-        if (!svgRef.current) {
-            console.warn('[NetworkPage] SVG ref is null.');
+        if (!svgRef.current || nodes.length === 0) {
+            console.warn('[NetworkPage] No graph to render.');
             return;
         }
-        if (nodes.length === 0) {
-            console.warn('[NetworkPage] No nodes to render.');
-            return;
-        }
-
-        console.log('[NetworkPage] Rendering graph with nodes and links:', nodes, links);
 
         const svg = d3.select(svgRef.current);
         svg.selectAll('*').remove();
@@ -77,8 +97,8 @@ export default function NetworkPage({ word1, word2, language1, language2 }: Netw
         const height = parseInt(svg.style('height')) || 600;
 
         const simulation = d3
-            .forceSimulation(nodes)
-            .force('link', d3.forceLink(links).id((d: any) => d.id).distance(100))
+            .forceSimulation<GraphNode>(nodes)
+            .force('link', d3.forceLink<GraphNode, GraphLink>(links).id((d) => d.id).distance(100))
             .force('charge', d3.forceManyBody().strength(-300))
             .force('center', d3.forceCenter(width / 2, height / 2));
 
@@ -99,7 +119,7 @@ export default function NetworkPage({ word1, word2, language1, language2 }: Netw
             .join('circle')
             .attr('r', 8)
             .attr('fill', (d) => d.color || 'gray')
-            .call(drag(simulation) as any);
+            .call(drag(simulation));
 
         const label = svg
             .append('g')
@@ -114,35 +134,33 @@ export default function NetworkPage({ word1, word2, language1, language2 }: Netw
 
         simulation.on('tick', () => {
             link
-                .attr('x1', (d) => (d.source as any).x)
-                .attr('y1', (d) => (d.source as any).y)
-                .attr('x2', (d) => (d.target as any).x)
-                .attr('y2', (d) => (d.target as any).y);
+                .attr('x1', (d) => (d.source as GraphNode).x!)
+                .attr('y1', (d) => (d.source as GraphNode).y!)
+                .attr('x2', (d) => (d.target as GraphNode).x!)
+                .attr('y2', (d) => (d.target as GraphNode).y!);
 
             node
-                .attr('cx', (d) => (d as any).x)
-                .attr('cy', (d) => (d as any).y);
+                .attr('cx', (d) => d.x!)
+                .attr('cy', (d) => d.y!);
 
             label
-                .attr('x', (d) => (d as any).x)
-                .attr('y', (d) => (d as any).y);
+                .attr('x', (d) => d.x!)
+                .attr('y', (d) => d.y!);
         });
 
-        function drag(simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>) {
-            return d3.drag()
-                .on('start', (event, d: any) => {
-                    console.log('[NetworkPage] Drag started:', d);
-                    if (!event.active) simulation.alphaTarget(0.3).restart();
+        function drag(sim: d3.Simulation<GraphNode, GraphLink>) {
+            return d3.drag<Element, GraphNode>()
+                .on('start', (event, d) => {
+                    if (!event.active) sim.alphaTarget(0.3).restart();
                     d.fx = d.x;
                     d.fy = d.y;
                 })
-                .on('drag', (event, d: any) => {
+                .on('drag', (event, d) => {
                     d.fx = event.x;
                     d.fy = event.y;
                 })
-                .on('end', (event, d: any) => {
-                    console.log('[NetworkPage] Drag ended:', d);
-                    if (!event.active) simulation.alphaTarget(0);
+                .on('end', (event, d) => {
+                    if (!event.active) sim.alphaTarget(0);
                     d.fx = null;
                     d.fy = null;
                 });
@@ -159,71 +177,79 @@ export default function NetworkPage({ word1, word2, language1, language2 }: Netw
     );
 }
 
-function buildEtymologyGraph(etymologyTemplates: EtymologyTemplate[], color: string): { nodes: GraphNode[]; links: GraphLink[] } {
-    const nodes: GraphNode[] = [];
-    const links: GraphLink[] = [];
+function buildEtymologyGraph(
+    parentItem: QueueItem,
+    etymologyTemplates: EtymologyTemplate[]
+): {
+    newNodes: GraphNode[];
+    newLinks: GraphLink[];
+    newQueueItems: QueueItem[];
+} {
+    const newNodes: GraphNode[] = [];
+    const newLinks: GraphLink[] = [];
+    const newQueueItems: QueueItem[] = [];
 
-    let previousNodeId: string | null = null;
+    const parentId = `${parentItem.word} (${parentItem.lang})`;
 
-    console.log('[buildEtymologyGraph] Building graph with color:', color);
+    // Add parent node
+    newNodes.push({
+        id: parentId,
+        label: parentItem.word,
+        lang: parentItem.lang,
+        color: parentItem.color
+    });
 
-    console.log('[buildEtymologyGraph] Etymology templates:', etymologyTemplates);
-
-    const derivations = etymologyTemplates.filter(t => t.name === 'der');
-    console.log('[buildEtymologyGraph] Derivations:', derivations);
-
+    const derivations = etymologyTemplates.filter((t) => t.name === 'der');
     derivations.forEach((template, index) => {
-        const lang = template.args["2"] || `lang-${index}`;
-        const word = template.args["3"] || `word-${index}`;
-
+        const lang = template.args['2'] || `lang-${index}`;
+        const word = template.args['3'] || `word-${index}`;
         const nodeId = `${word} (${lang})`;
-        console.log(`[buildEtymologyGraph] Adding node: ${nodeId}`);
 
-        nodes.push({
+        newNodes.push({
             id: nodeId,
             label: word,
             lang: lang,
-            color: color
+            color: parentItem.color
         });
 
-        if (previousNodeId) {
-            console.log(`[buildEtymologyGraph] Linking ${previousNodeId} → ${nodeId}`);
-            links.push({
-                source: previousNodeId,
-                target: nodeId
-            });
-        }
+        newLinks.push({
+            source: parentId,
+            target: nodeId
+        });
 
-        previousNodeId = nodeId;
+        newQueueItems.push({
+            word: word,
+            lang: lang,
+            color: parentItem.color,
+            parentId: parentId
+        });
     });
 
-    const cognates = etymologyTemplates.filter(t => t.name === 'cog');
-    console.log('[buildEtymologyGraph] Cognates:', cognates);
-
-    const parentForCognates = previousNodeId || (nodes.length > 0 ? nodes[0].id : null);
-
+    const cognates = etymologyTemplates.filter((t) => t.name === 'cog');
     cognates.forEach((template, index) => {
-        const lang = template.args["1"] || `lang-cog-${index}`;
-        const word = template.args["2"] || `word-cog-${index}`;
-
+        const lang = template.args['1'] || `lang-cog-${index}`;
+        const word = template.args['2'] || `word-cog-${index}`;
         const nodeId = `${word} (${lang})`;
-        console.log(`[buildEtymologyGraph] Adding cognate node: ${nodeId}`);
 
-        nodes.push({
+        newNodes.push({
             id: nodeId,
             label: word,
             lang: lang,
             color: 'orange'
         });
 
-        if (parentForCognates) {
-            console.log(`[buildEtymologyGraph] Linking ${parentForCognates} → ${nodeId}`);
-            links.push({
-                source: parentForCognates,
-                target: nodeId
-            });
-        }
+        newLinks.push({
+            source: parentId,
+            target: nodeId
+        });
+
+        newQueueItems.push({
+            word: word,
+            lang: lang,
+            color: 'orange',
+            parentId: parentId
+        });
     });
 
-    return { nodes, links };
+    return { newNodes, newLinks, newQueueItems };
 }
