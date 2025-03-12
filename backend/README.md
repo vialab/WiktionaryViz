@@ -17,7 +17,7 @@ A high-performance backend API for serving data from a large `wiktionary_data.js
 ## ✅ Prerequisites
 
 - Python 3.9+
-- FastAPI and Uvicorn installed (see below)
+- FastAPI, Uvicorn, and tqdm installed (see below)
 - `wiktionary_data.jsonl` file (20GB+ JSONL file)
 
 ---
@@ -63,6 +63,7 @@ pip install -r requirements.txt
 ```txt
 fastapi
 uvicorn
+tqdm
 ```
 
 ---
@@ -152,17 +153,13 @@ GET http://localhost:8000/word-data?word=tea&lang_code=en
 
 ```json
 {
-  "matches": [
-    {
-      "word": "tea",
-      "lang": "English",
-      "lang_code": "en",
-      "translations": [...],
-      "etymology_templates": [...]
-    },
-    ...
-  ]
-}
+  "word": "tea",
+  "lang": "English",
+  "lang_code": "en",
+  "translations": [...],
+  "etymology_templates": [...],
+  ...
+},
 ```
 
 ---
