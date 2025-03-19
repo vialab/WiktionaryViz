@@ -123,6 +123,7 @@ export const getCoordinatesForLanguage = async (
 
     if (matchingRow) {
         console.log(`Matched language by ISO code: ${iso639P3}`);
+        console.log(`Coordinates: ${matchingRow.latitude}, ${matchingRow.longitude}`);
         return parseCoordinate(matchingRow.latitude, matchingRow.longitude);
     }
 
@@ -275,13 +276,23 @@ export const processEtymologyLineage = async (
         return null;
     }
 
+    const position = await getCoordinatesForLanguage(targetLang, languoidData);
+
     let currentNode: EtymologyNode | null = {
         word: targetWord,
         lang_code: targetLang,
         romanization: null,
-        position: await getCoordinatesForLanguage(targetLang, languoidData),
+        position: position ? [position.lat, position.lng] : null,
         next: null,
     };
+
+    console.log("Current node:", currentNode);
+
+    // Ensure the initial position is valid
+    if (!currentNode.position || isNaN(currentNode.position[0]) || isNaN(currentNode.position[1])) {
+        console.warn(`Initial position for targetLang (${targetLang}) is invalid. Setting default coordinates.`);
+        currentNode.position = [0, 0]; // Default fallback coordinates
+    }
 
     const orderedEtymology = etymologyTemplates.filter(entry => entry.name === "bor" || entry.name === "der");
 
@@ -306,9 +317,10 @@ export const processEtymologyLineage = async (
                 : null;
             sourceCoords = currentCoords
                 ? { lat: currentCoords.lat + 1, lng: currentCoords.lng + 1 }
-                : null;
+                : { lat: 0, lng: 0 }; // Default fallback coordinates
         }
 
+        // Handle specific overrides for known languages
         if (sourceLang === "fa-cls") {
             sourceCoords = { lat: 32.9, lng: 53.3 };
         }
@@ -316,11 +328,17 @@ export const processEtymologyLineage = async (
             sourceCoords = { lat: 27.96, lng: 43.85 };
         }
 
+        // Ensure sourceCoords is valid and not NaN
+        if (!sourceCoords || isNaN(sourceCoords.lat) || isNaN(sourceCoords.lng)) {
+            console.warn(`Source coordinates for ${sourceLang} are invalid. Skipping this entry.`);
+            continue;
+        }
+
         const newNode: EtymologyNode = {
             word: sourceWord,
             lang_code: sourceLang,
             romanization: sourceRomanization,
-            position: sourceCoords ? [sourceCoords.lat, sourceCoords.lng] : null,
+            position: [sourceCoords.lat, sourceCoords.lng],
             next: currentNode,
             expansion: expansion,
         };
