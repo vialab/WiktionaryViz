@@ -255,58 +255,79 @@ export const processTranslations = async (
  * @param {string} targetLang - The language code of the word (e.g., "en").
  * @returns {Promise<{ positions: [number, number][], lineageText: string }[]>} - The ordered lineage path.
  */
+interface EtymologyNode {
+    word: string;
+    lang_code: string;
+    romanization: string | null;
+    position: [number, number] | null;
+    next: EtymologyNode | null;
+    expansion: string;
+}
+
 export const processEtymologyLineage = async (
     etymologyTemplates: { name: string; args: { [key: string]: string }; expansion: string }[],
     languoidData: LanguoidData[],
     targetWord: string,
     targetLang: string
-): Promise<{ positions: [number, number][], lineageText: string }[]> => {
+): Promise<EtymologyNode | null> => {
     if (!etymologyTemplates || etymologyTemplates.length === 0) {
         console.warn("No etymology templates found.");
-        return [];
+        return null;
     }
 
-    const lineage: { positions: [number, number][], lineageText: string }[] = [];
-    let currentWord = targetWord;
-    let currentLang = targetLang;
+    let currentNode: EtymologyNode | null = {
+        word: targetWord,
+        lang_code: targetLang,
+        romanization: null,
+        position: await getCoordinatesForLanguage(targetLang, languoidData),
+        next: null,
+    };
 
-    // Extract and order `bor` and `der` entries
-    const orderedEtymology = etymologyTemplates
-        .filter(entry => entry.name === "bor" || entry.name === "der")
-        .reverse(); // Reverse to ensure we move from the oldest ancestor → modern word
+    const orderedEtymology = etymologyTemplates.filter(entry => entry.name === "bor" || entry.name === "der");
 
     for (const entry of orderedEtymology) {
         const { args, expansion } = entry;
-        const sourceLang = args["2"] ? args["2"].trim() : null; // Ensure it exists and trim whitespace
-        const sourceWord = args["3"] ? args["3"].trim() : expansion; // Ensure valid value
+        const sourceLang = args["2"]?.trim() ?? null;
+        const sourceWord = args["3"]?.trim() ?? expansion;
+        const sourceRomanization = args["tr"]?.trim() ?? null;
 
         if (!sourceLang) {
             console.warn(`Skipping entry due to missing sourceLang:`, entry);
-            continue; // Skip this iteration if the source language is missing
+            continue;
         }
 
-        // Fetch coordinates for source and target languages
-        const sourceCoords = await getCoordinatesForLanguage(sourceLang, languoidData);
-        const targetCoords = await getCoordinatesForLanguage(currentLang, languoidData);
+        let sourceCoords = await getCoordinatesForLanguage(sourceLang, languoidData);
 
-        if (!sourceCoords || !targetCoords) {
-            console.warn(`Skipping entry due to missing coordinates: ${sourceLang} or ${currentLang}`);
-            continue; // ✅ SKIP entries that do not have a valid location
+        // Approximate coordinates if not found
+        if (!sourceCoords) {
+            console.warn(`No coordinates found for sourceLang: ${sourceLang}. Approximating...`);
+            const currentCoords = currentNode.position
+                ? { lat: currentNode.position[0], lng: currentNode.position[1] }
+                : null;
+            sourceCoords = currentCoords
+                ? { lat: currentCoords.lat + 1, lng: currentCoords.lng + 1 }
+                : null;
         }
 
-        lineage.push({
-            positions: [
-                [targetCoords.lat, targetCoords.lng],
-                [sourceCoords.lat, sourceCoords.lng]
-            ],
-            lineageText: `${currentWord} (${currentLang}) ← ${sourceWord} (${sourceLang})`
-        });
+        if (sourceLang === "fa-cls") {
+            sourceCoords = { lat: 32.9, lng: 53.3 };
+        }
+        if (sourceLang === "ar") {
+            sourceCoords = { lat: 27.96, lng: 43.85 };
+        }
 
-        // Update lineage to move back one step in history
-        currentWord = sourceWord;
-        currentLang = sourceLang;
+        const newNode: EtymologyNode = {
+            word: sourceWord,
+            lang_code: sourceLang,
+            romanization: sourceRomanization,
+            position: sourceCoords ? [sourceCoords.lat, sourceCoords.lng] : null,
+            next: currentNode,
+            expansion: expansion,
+        };
+
+        currentNode = newNode;
     }
 
-    return lineage;
+    console.log("Finished processing etymology lineage. Result:", currentNode);
+    return currentNode;
 };
-

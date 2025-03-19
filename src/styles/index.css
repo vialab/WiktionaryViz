@@ -32,3 +32,9 @@ body {
 .leaflet-interactive {
     pointer-events: auto !important;
 }
+
+/* Optional: Clean up arrow icon container */
+.arrow-icon {
+  background: none;
+  border: none;
+}
