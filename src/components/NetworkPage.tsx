@@ -20,6 +20,7 @@ interface GraphNode extends d3.SimulationNodeDatum {
     label: string;
     lang: string;
     color?: string;
+    expansion?: string; // Added expansion property
 }
 
 interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
@@ -123,6 +124,29 @@ export default function NetworkPage({ word1, word2, language1, language2 }: Netw
             })
             .attr('stroke-dasharray', d => d.type === 'cog' ? '4 2' : d.type === 'doublet' ? '6 3' : '');
 
+        // Tooltip div
+        const tooltip = d3.select(wrapperRef.current)
+            .append('div')
+            .style('position', 'absolute')
+            .style('padding', '8px')
+            .style('background', 'rgba(0, 0, 0, 0.8)')
+            .style('color', '#fff')
+            .style('border-radius', '4px')
+            .style('pointer-events', 'none')
+            .style('opacity', 0);
+
+        const showTooltip = (event: MouseEvent, d: GraphNode) => {
+            tooltip
+                .style('opacity', 1)
+                .html(`<strong>${d.label}</strong><br/>${d.expansion || 'No expansion available'}`)
+                .style('left', `${event.pageX + 10}px`)
+                .style('top', `${event.pageY + 10}px`);
+        };
+
+        const hideTooltip = () => {
+            tooltip.style('opacity', 0);
+        };
+
         const node = g.append('g')
             .attr('stroke', '#fff')
             .attr('stroke-width', 1.5)
@@ -131,7 +155,14 @@ export default function NetworkPage({ word1, word2, language1, language2 }: Netw
             .join('circle')
             .attr('r', 10)
             .attr('fill', d => d.color || 'gray')
-            .call(drag(simulation));
+            .call(drag(simulation))
+            .on('mouseover', (event, d) => showTooltip(event, d))
+            .on('mousemove', (event) => {
+                tooltip
+                    .style('left', `${event.pageX + 10}px`)
+                    .style('top', `${event.pageY + 10}px`);
+            })
+            .on('mouseout', hideTooltip);
 
         const label = g.append('g')
             .selectAll('text')
@@ -176,20 +207,27 @@ export default function NetworkPage({ word1, word2, language1, language2 }: Netw
 
         svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, height / 2).scale(1));
 
-        return () => simulation.stop();
+        return () => {
+            simulation.stop();
+            tooltip.remove();
+        };
     }, [nodes, links]);
 
     return (
         <div ref={wrapperRef} className="w-screen h-screen flex flex-col items-center justify-center bg-black overflow-hidden relative">
             <h2 className="text-2xl font-semibold text-white absolute top-4 left-4 z-10">
-                Etymology Network: {word1} & {word2}
+                Etymology Network: {word1} {word2 && `& ${word2}`}
             </h2>
             <svg ref={svgRef} className="w-full h-full bg-gray-900 rounded-none border-none" />
         </div>
     );
 }
 
-function buildEtymologyGraph(parentItem: QueueItem, etymologyTemplates: EtymologyTemplate[], existingNodes: GraphNode[]): {
+function buildEtymologyGraph(
+    parentItem: QueueItem,
+    etymologyTemplates: EtymologyTemplate[],
+    existingNodes: GraphNode[]
+): {
     newNodes: GraphNode[];
     newLinks: GraphLink[];
     newQueueItems: QueueItem[];
@@ -200,7 +238,10 @@ function buildEtymologyGraph(parentItem: QueueItem, etymologyTemplates: Etymolog
 
     const parentId = `${parentItem.word} (${parentItem.lang})`;
 
-    if (!existingNodes.find(node => node.id === parentId) && !newNodes.find(node => node.id === parentId)) {
+    if (
+        !existingNodes.find(node => node.id === parentId) &&
+        !newNodes.find(node => node.id === parentId)
+    ) {
         newNodes.push({
             id: parentId,
             label: parentItem.word,
@@ -211,22 +252,31 @@ function buildEtymologyGraph(parentItem: QueueItem, etymologyTemplates: Etymolog
 
     let previousId = parentId;
 
-    const derivations = etymologyTemplates.filter(t => t.name === 'der' || t.name === 'inh');
+    const derivations = etymologyTemplates.filter(
+        t => t.name === 'der' || t.name === 'inh'
+    );
 
     derivations.forEach((template, index) => {
-        const lang = template.args['2'] || `lang-${index}`;
-        const word = template.args['3'] || `word-${index}`;
-        const nodeId = `${word} (${lang})`;
+        const lang = template.args['2'];
+        const word = template.args['3'];
+        const expansion = template.expansion;
+
+        if (!word) return;
+
+        const nodeId = `${word} (${lang || 'unknown'})`;
         const relationType = template.name;
 
-        const nodeExists = existingNodes.find(node => node.id === nodeId) || newNodes.find(node => node.id === nodeId);
+        const nodeExists =
+            existingNodes.find(node => node.id === nodeId) ||
+            newNodes.find(node => node.id === nodeId);
 
         if (!nodeExists) {
             newNodes.push({
                 id: nodeId,
                 label: word,
-                lang: lang,
-                color: parentItem.color
+                lang: lang || 'unknown',
+                color: parentItem.color,
+                expansion: expansion
             });
         }
 
@@ -240,7 +290,7 @@ function buildEtymologyGraph(parentItem: QueueItem, etymologyTemplates: Etymolog
 
         newQueueItems.push({
             word: word,
-            lang: lang,
+            lang: lang || 'unknown',
             color: parentItem.color,
             parentId: previousId
         });
@@ -248,18 +298,25 @@ function buildEtymologyGraph(parentItem: QueueItem, etymologyTemplates: Etymolog
 
     const cognates = etymologyTemplates.filter(t => t.name === 'cog');
     cognates.forEach((template, index) => {
-        const lang = template.args['1'] || `lang-cog-${index}`;
-        const word = template.args['2'] || `word-cog-${index}`;
-        const nodeId = `${word} (${lang})`;
+        const lang = template.args['1'];
+        const word = template.args['2'];
+        const expansion = template.expansion;
 
-        const nodeExists = existingNodes.find(node => node.id === nodeId) || newNodes.find(node => node.id === nodeId);
+        if (!word) return;
+
+        const nodeId = `${word} (${lang || 'unknown'})`;
+
+        const nodeExists =
+            existingNodes.find(node => node.id === nodeId) ||
+            newNodes.find(node => node.id === nodeId);
 
         if (!nodeExists) {
             newNodes.push({
                 id: nodeId,
                 label: word,
-                lang: lang,
-                color: 'orange'
+                lang: lang || 'unknown',
+                color: 'orange',
+                expansion: expansion
             });
         }
 
@@ -271,7 +328,7 @@ function buildEtymologyGraph(parentItem: QueueItem, etymologyTemplates: Etymolog
 
         newQueueItems.push({
             word: word,
-            lang: lang,
+            lang: lang || 'unknown',
             color: 'orange',
             parentId: parentId
         });
@@ -280,16 +337,23 @@ function buildEtymologyGraph(parentItem: QueueItem, etymologyTemplates: Etymolog
     const doublets = etymologyTemplates.filter(t => t.name === 'doublet');
     doublets.forEach((template, index) => {
         Object.values(template.args).forEach(word => {
+            const expansion = template.expansion;
+
+            if (!word) return;
+
             const nodeId = `${word} (doublet)`;
 
-            const nodeExists = existingNodes.find(node => node.id === nodeId) || newNodes.find(node => node.id === nodeId);
+            const nodeExists =
+                existingNodes.find(node => node.id === nodeId) ||
+                newNodes.find(node => node.id === nodeId);
 
             if (!nodeExists) {
                 newNodes.push({
                     id: nodeId,
                     label: word,
                     lang: parentItem.lang,
-                    color: 'magenta'
+                    color: 'magenta',
+                    expansion: expansion
                 });
             }
 
