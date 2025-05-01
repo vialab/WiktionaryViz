@@ -100,3 +100,20 @@ async def phonetic_drift(
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+    
+@app.get("/available-languages")
+async def get_available_languages(
+    word: str = Query(..., description="The word to list available language codes for")
+):
+    word = word.lower()
+    matching_langs = []
+
+    for key in index:
+        if key.startswith(f"{word}_"):
+            lang_code = key.split("_", 1)[1]
+            matching_langs.append(lang_code)
+
+    if not matching_langs:
+        return JSONResponse(content={"message": "No languages found for this word."}, status_code=404)
+
+    return JSONResponse(content={"languages": sorted(set(matching_langs))})
