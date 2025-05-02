@@ -36,33 +36,32 @@ export default function LandingPage({
     const [language2Loading, setLanguage2Loading] = useState<boolean>(false);
 
     const inputBaseStyles =
-        "w-full px-4 py-2 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
+        "w-full px-4 py-2 rounded-md bg-[#1C1C1E] text-[#F5F5F5] placeholder-[#888] border border-[#B79F58] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]";
 
-        const selectRandomInterestingWord = useCallback(async () => {
-            try {
-                const res = await fetch("http://localhost:8000/random-interesting-word");
-                const data = await res.json();
-        
-                if (data?.entry?.word && data?.entry?.lang_code) {
-                    setInterestingWord({
-                        word: data.entry.word,
-                        reason:
-                            data.entry.reason ||
-                            `Highlighted in ${data.category.replace(/_/g, " ")} category`,
-                    });
-                    setWordCategory(data.category.replace(/_/g, " "));
-                } else {
-                    throw new Error("Invalid format");
-                }
-            } catch {
+    const selectRandomInterestingWord = useCallback(async () => {
+        try {
+            const res = await fetch("http://localhost:8000/random-interesting-word");
+            const data = await res.json();
+
+            if (data?.entry?.word && data?.entry?.lang_code) {
                 setInterestingWord({
-                    word: "example",
-                    reason: "Could not fetch real interesting words.",
+                    word: data.entry.word,
+                    reason:
+                        data.entry.reason ||
+                        `Highlighted in ${data.category.replace(/_/g, " ")} category`,
                 });
-                setWordCategory("unknown");
+                setWordCategory(data.category.replace(/_/g, " "));
+            } else {
+                throw new Error("Invalid format");
             }
-        }, []);
-        
+        } catch {
+            setInterestingWord({
+                word: "example",
+                reason: "Could not fetch real interesting words.",
+            });
+            setWordCategory("unknown");
+        }
+    }, []);
 
     useEffect(() => {
         selectRandomInterestingWord();
@@ -107,26 +106,28 @@ export default function LandingPage({
     }, [word2]);
 
     return (
-        <div className="max-w-lg mx-auto bg-gray-800 p-6 sm:p-8 rounded-lg shadow-xl text-center mt-10 overflow-y-auto">
-            <h1 className="text-3xl font-bold text-white mb-2">Welcome To WiktionaryViz</h1>
-            <p className="text-gray-300 text-base mb-6">
+        <div className="max-w-lg mx-auto bg-[#1C1C1E] p-6 sm:p-8 rounded-lg shadow-xl text-center mt-10 overflow-y-auto">
+            <h1 className="text-3xl font-bold text-[#D4AF37] mb-2">Welcome To WiktionaryViz</h1>
+            <p className="text-[#F5F5F5] text-base mb-6">
                 An exploratory tool for visualizing the evolution of words and their relationships.
             </p>
 
-            <h3 className="text-lg font-semibold text-white mb-3">How would you like to explore?</h3>
+            <h3 className="text-lg font-semibold text-[#F5F5F5] mb-3">How would you like to explore?</h3>
             <div className="flex justify-center gap-4 mb-6">
                 <button
                     className={`px-4 py-2 rounded-md font-semibold transition ${explorationType === "single"
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-700 text-gray-200 hover:bg-gray-600"}`}
+                            ? "bg-[#D4AF37] text-black"
+                            : "bg-[#0F0F0F] text-[#D4AF37] border border-[#D4AF37] hover:bg-[#1C1C1E]"
+                        }`}
                     onClick={() => setExplorationType("single")}
                 >
                     Explore one word
                 </button>
                 <button
                     className={`px-4 py-2 rounded-md font-semibold transition ${explorationType === "compare"
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-700 text-gray-200 hover:bg-gray-600"}`}
+                            ? "bg-[#D4AF37] text-black"
+                            : "bg-[#0F0F0F] text-[#D4AF37] border border-[#D4AF37] hover:bg-[#1C1C1E]"
+                        }`}
                     onClick={() => setExplorationType("compare")}
                 >
                     Compare two words
@@ -145,7 +146,7 @@ export default function LandingPage({
 
                     {word1 && (
                         languageLoading ? (
-                            <p className="text-gray-400">Loading languages...</p>
+                            <p className="text-[#B79F58]">Loading languages...</p>
                         ) : (
                             <select
                                 value={language1}
@@ -174,7 +175,7 @@ export default function LandingPage({
 
                             {word2 && (
                                 language2Loading ? (
-                                    <p className="text-gray-400">Loading second language list...</p>
+                                    <p className="text-[#B79F58]">Loading second language list...</p>
                                 ) : (
                                     <select
                                         value={language2}
@@ -196,32 +197,32 @@ export default function LandingPage({
             )}
 
             {explorationType && interestingWord && (
-                <div className="mt-6 bg-gray-700 p-4 rounded-md text-white relative">
+                <div className="mt-6 bg-[#252525FF] p-4 rounded-md text-[#F5F5F5] relative">
                     <button
-                        className="absolute top-2 right-2 text-gray-300 hover:text-white transition"
+                        className="absolute top-2 right-2 text-[#B79F58] hover:text-[#D4AF37] transition"
                         onClick={selectRandomInterestingWord}
                         title="Refresh suggestion"
                     >
                         <RotateCcw size={18} />
                     </button>
-                    <p className="text-sm text-gray-300">
-                        Try exploring a word from <span className="text-white font-medium">{wordCategory}</span>:
+                    <p className="text-sm text-[#B79F58]">
+                        Try exploring a word from <span className="text-[#D4AF37] font-medium">{wordCategory}</span>:
                     </p>
                     <button
-                        className="mt-2 px-4 py-1 bg-purple-600 hover:bg-purple-700 rounded-full text-sm text-white font-medium"
+                        className="mt-2 px-4 py-1 bg-[#D4AF37] hover:bg-[#B79F58] text-black rounded-full text-sm font-medium transition"
                         onClick={() => setWord1(interestingWord.word)}
                     >
                         {interestingWord.word}
                     </button>
-                    <p className="text-xs mt-2 italic text-gray-300">{interestingWord.reason}</p>
+                    <p className="text-xs mt-2 italic text-[#B79F58]">{interestingWord.reason}</p>
                 </div>
             )}
 
             {explorationType && word1 && (
                 <>
-                    <h3 className="text-lg font-semibold text-white mt-6">Select a visualization type:</h3>
-                    <ul className="mt-3 grid grid-cols-2 gap-3 text-left">
-                        {["geospatial", "network", "radial", "tree"].map((value) => (
+                    <h3 className="text-lg font-semibold text-[#F5F5F5] mt-6">Select an available visualization type:</h3>
+                    <ul className="mt-3 grid grid-cols-1 gap-3 text-left">
+                        {["geospatial", "network"].map((value) => (
                             <li key={value}>
                                 <label className="flex items-center space-x-3 cursor-pointer">
                                     <input
@@ -232,10 +233,10 @@ export default function LandingPage({
                                         onChange={() => setSelectedVisualization(value)}
                                         className="hidden peer"
                                     />
-                                    <div className="w-5 h-5 rounded-full border-2 border-white peer-checked:border-blue-500 peer-checked:bg-blue-500 flex items-center justify-center hover:border-blue-400 transition-all cursor-pointer">
-                                        <div className="w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <div className="w-5 h-5 rounded-full border-2 border-[#F5F5F5] peer-checked:border-[#D4AF37] peer-checked:bg-[#D4AF37] flex items-center justify-center hover:border-[#B79F58] transition-all cursor-pointer">
+                                        <div className="w-2.5 h-2.5 bg-black rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
                                     </div>
-                                    <span className="text-white capitalize">{value}</span>
+                                    <span className="text-[#F5F5F5] capitalize">{value}</span>
                                 </label>
                             </li>
                         ))}
@@ -245,7 +246,7 @@ export default function LandingPage({
 
             {selectedVisualization && (
                 <button
-                    className="mt-8 px-6 py-2 bg-green-500 hover:bg-green-600 rounded-md text-white font-semibold transition"
+                    className="mt-8 px-6 py-2 bg-[#D4AF37] hover:bg-[#B79F58] rounded-md text-black font-semibold transition"
                     onClick={() => setVisibleSection(selectedVisualization)}
                 >
                     Start Visualization
