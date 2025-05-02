@@ -70,12 +70,15 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
                         index_key = f"{word}_{lang_code}"
                         word_lang_index[index_key].append(byte_offset)
 
-                        # ✅ Longest words (exclude sign language codes)
-                        if lang_code not in SIGN_LANG_CODES:
+                        pos = entry.get("pos", "").lower()
+
+                        # ✅ Longest words (exclude sign languages + phrases)
+                        if lang_code not in SIGN_LANG_CODES and pos != "phrase":
                             word_len = len(word)
                             heapq.heappush(longest_words_heap, (word_len, word, lang_code))
                             if len(longest_words_heap) > TOP_N:
                                 heapq.heappop(longest_words_heap)
+
 
                         # TODO: Update other Hall of Fame category structures here
 
