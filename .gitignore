@@ -105,3 +105,5 @@ backend/languoid.csv
 backend/wiktionary_data.jsonl
 backend/wiktionary_index.json
 backend/longest_words.json
+backend/most_translations.json
+backend/most_descendants.json
