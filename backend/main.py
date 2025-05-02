@@ -124,7 +124,7 @@ async def get_available_languages(
 async def get_random_interesting_word():
     categories = {
         "longest_words": "longest_words.json",
-        # "most_translations": "most_translations.json",
+        "most_translations": "most_translations.json",
         # "most_senses": "most_senses.json",
         # etc.
     }

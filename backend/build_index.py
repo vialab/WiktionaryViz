@@ -7,20 +7,11 @@ from tqdm import tqdm
 JSONL_FILE_PATH = "wiktionary_data.jsonl"
 INDEX_OUTPUT_PATH = "wiktionary_index.json"
 LONGEST_WORDS_OUTPUT_PATH = "longest_words.json"
+MOST_TRANSLATIONS_OUTPUT_PATH = "most_translations.json"
 
 # Languages to exclude from longest word category (sign languages, gloss systems)
 SIGN_LANG_CODES = {
-    "ase",  # American Sign Language
-    "icl",  # International Sign
-    "isg",  # Irish Sign Language
-    "gsg",  # German Sign Language
-    "fsl",  # French Sign Language
-    "dgs",  # German Sign Language (alt code)
-    "bfi",  # British Sign Language
-    "sfb",  # Swiss-French Sign Language
-    "vgt",  # Flemish Sign Language
-    "rsl",  # Russian Sign Language
-    "tsl",  # Thai Sign Language
+    "ase", "icl", "isg", "gsg", "fsl", "dgs", "bfi", "sfb", "vgt", "rsl", "tsl",
 }
 
 def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None:
@@ -33,6 +24,7 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
 
     TOP_N = 100
     longest_words_heap = []
+    most_translations_heap = []
 
     # =======================
     # TODO: Initialize other Hall of Fame categories
@@ -49,7 +41,6 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
     # most_pronunciations = ...
     # most_spellings = ...
     # most_syllables_one_character = ...
-    # most_translations = ...
 
     with open(jsonl_file_path, "r", encoding="utf-8") as jsonl_file:
         with tqdm(desc="Indexing records", unit=" lines") as progress_bar:
@@ -79,6 +70,16 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
                             if len(longest_words_heap) > TOP_N:
                                 heapq.heappop(longest_words_heap)
 
+                        # ✅ Most translations
+                        translations = entry.get("translations", [])
+                        num_translations = len(translations)
+                        if num_translations > 0:
+                            heapq.heappush(
+                                most_translations_heap,
+                                (num_translations, word, lang_code)
+                            )
+                            if len(most_translations_heap) > TOP_N:
+                                heapq.heappop(most_translations_heap)
 
                         # TODO: Update other Hall of Fame category structures here
 
@@ -88,8 +89,10 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
                 except json.JSONDecodeError:
                     continue
 
+    # Save index
     save_index_to_json(word_lang_index, index_output_path)
 
+    # Save longest words
     longest_words_sorted = sorted(longest_words_heap, reverse=True)
     longest_words_output = [
         {"word": word, "lang_code": lang_code, "length": length}
@@ -97,8 +100,17 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
     ]
     save_json(longest_words_output, LONGEST_WORDS_OUTPUT_PATH)
 
+    # Save most translations
+    most_translations_sorted = sorted(most_translations_heap, reverse=True)
+    most_translations_output = [
+        {"word": word, "lang_code": lang_code, "translation_count": count}
+        for count, word, lang_code in most_translations_sorted
+    ]
+    save_json(most_translations_output, MOST_TRANSLATIONS_OUTPUT_PATH)
+
     print(f"Indexed {record_count} records.")
     print(f"Saved Top {TOP_N} longest words to {LONGEST_WORDS_OUTPUT_PATH}")
+    print(f"Saved Top {TOP_N} entries with most translations to {MOST_TRANSLATIONS_OUTPUT_PATH}")
 
 
 def save_index_to_json(index: defaultdict, output_path: str) -> None:
