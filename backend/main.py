@@ -1,3 +1,5 @@
+import os
+import random
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -117,3 +119,34 @@ async def get_available_languages(
         return JSONResponse(content={"message": "No languages found for this word."}, status_code=404)
 
     return JSONResponse(content={"languages": sorted(set(matching_langs))})
+
+@app.get("/random-interesting-word")
+async def get_random_interesting_word():
+    categories = {
+        "longest_words": "longest_words.json",
+        # "most_translations": "most_translations.json",
+        # "most_senses": "most_senses.json",
+        # etc.
+    }
+
+    chosen_category = random.choice(list(categories.keys()))
+    file_path = categories[chosen_category]
+
+    if not os.path.exists(file_path):
+        return JSONResponse(content={"error": f"Data file not found for category '{chosen_category}'."}, status_code=500)
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        if not data:
+            return JSONResponse(content={"error": f"No entries found in {file_path}."}, status_code=404)
+
+        chosen_entry = random.choice(data)
+        return {
+            "category": chosen_category,
+            "entry": chosen_entry
+        }
+
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
