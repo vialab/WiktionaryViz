@@ -104,3 +104,4 @@ backend/venv/
 backend/languoid.csv
 backend/wiktionary_data.jsonl
 backend/wiktionary_index.json
+backend/longest_words.json

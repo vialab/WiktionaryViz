@@ -38,33 +38,31 @@ export default function LandingPage({
     const inputBaseStyles =
         "w-full px-4 py-2 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
-    const selectRandomInterestingWord = useCallback(() => {
-        const placeholderInterestingWords = {
-            "longest etymology": [
-                { word: "serendipity", reason: "Has one of the longest etymology chains!" },
-                { word: "wanderlust", reason: "Traces its roots through multiple languages!" },
-            ],
-            "most anagrams": [
-                { word: "stop", reason: "Has 4 anagrams: stop, tops, post, spot!" },
-                { word: "rat", reason: "Forms anagrams like art and tar!" },
-            ],
-            "most borrowed": [
-                { word: "tea", reason: "Borrowed into over 50 languages!" },
-                { word: "sugar", reason: "Adopted across multiple trade routes!" },
-            ],
-            "longest words": [
-                { word: "antidisestablishmentarianism", reason: "One of the longest words in English!" },
-                { word: "floccinaucinihilipilification", reason: "Rarely used, but incredibly long!" },
-            ],
-        };
-
-        const categories = Object.keys(placeholderInterestingWords);
-        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-        const randomWord = placeholderInterestingWords[randomCategory as keyof typeof placeholderInterestingWords][Math.floor(Math.random() * placeholderInterestingWords[randomCategory as keyof typeof placeholderInterestingWords].length)];
-
-        setWordCategory(randomCategory);
-        setInterestingWord(randomWord);
-    }, []);
+        const selectRandomInterestingWord = useCallback(async () => {
+            try {
+                const res = await fetch("http://localhost:8000/random-interesting-word");
+                const data = await res.json();
+        
+                if (data?.entry?.word && data?.entry?.lang_code) {
+                    setInterestingWord({
+                        word: data.entry.word,
+                        reason:
+                            data.entry.reason ||
+                            `Highlighted in ${data.category.replace(/_/g, " ")} category`,
+                    });
+                    setWordCategory(data.category.replace(/_/g, " "));
+                } else {
+                    throw new Error("Invalid format");
+                }
+            } catch {
+                setInterestingWord({
+                    word: "example",
+                    reason: "Could not fetch real interesting words.",
+                });
+                setWordCategory("unknown");
+            }
+        }, []);
+        
 
     useEffect(() => {
         selectRandomInterestingWord();
