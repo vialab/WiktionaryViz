@@ -1,6 +1,37 @@
 from panphon.distance import Distance
 from panphon.featuretable import FeatureTable
 
+"""
+PanPhon Feature Definitions
+────────────────────────────
+Each IPA segment in PanPhon is represented using a set of binary/ternary phonological features
+that describe its articulatory and phonological properties.
+
+Feature List:
+    syl     : syllabic — functions as a syllable nucleus (e.g. vowels, syllabic consonants)
+    son     : sonorant — produced with continuous, non-turbulent airflow (e.g. vowels, nasals, glides)
+    cons    : consonantal — significant vocal tract constriction (e.g. stops, fricatives)
+    cont    : continuant — airflow continues through oral cavity (e.g. vowels, fricatives)
+    delrel  : delayed release — affricates with a stop followed by fricative release (e.g. [t͡ʃ])
+    lat     : lateral — airflow passes around the sides of the tongue (e.g. [l])
+    nas     : nasal — airflow through the nasal cavity (e.g. [m], [n])
+    strid   : strident — high-intensity turbulent sounds (e.g. [s], [ʃ], [d͡ʒ])
+    voi     : voice — vocal cords vibrate (e.g. [b], [z], [v])
+    sg      : spread glottis — aspiration or glottal spreading (e.g. [pʰ])
+    cg      : constricted glottis — tighter glottal constriction (e.g. ejectives)
+    ant     : anterior — sounds made in the front of the mouth (e.g. [t], [s])
+    cor     : coronal — tongue tip or blade involved (e.g. [t], [n], [ʃ])
+    distr   : distributed — broader contact between tongue and roof of mouth (e.g. [ʃ])
+    lab     : labial — produced with one or both lips (e.g. [p], [f], [m])
+    hi      : high — tongue raised close to the roof of the mouth (e.g. [i], [u], [k])
+    lo      : low — tongue lowered (e.g. [a])
+    back    : back — tongue positioned toward the back of the mouth (e.g. [u], [o])
+    round   : round — lips rounded during articulation (e.g. [u], [o])
+    velaric : velaric airstream mechanism — used in click consonants (e.g. [ǃ])
+    tense   : tense — greater muscular tension or advanced tongue root (e.g. [i] vs. [ɪ])
+    long    : long — segment has extended duration (e.g. [aː])
+"""
+
 # Initialize tools
 ft = FeatureTable()
 dst = Distance()
