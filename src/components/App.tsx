@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import LandingPage from "@/components/LandingPage";
 import GeospatialPage from "@/components/GeospatialPage";
 import NetworkPage from "@/components/NetworkPage";
+import TimelinePage from "@/components/TimelinePage";
 
 function App() {
   const [visibleSection, setVisibleSection] = useState<string>("landing-page");
@@ -42,6 +43,10 @@ function App() {
             language2={language2}
           />
         )}
+        {visibleSection === "timeline" && (
+          <TimelinePage />
+        )}
+        
       </main>
     </div>
   );

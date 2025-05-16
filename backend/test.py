@@ -68,11 +68,7 @@ for i in range(len(ipa_sequence) - 1):
     normalized = raw_distance / avg_len
     drift_scores.append(normalized)
     transition_labels.append(f"{lang1}→{lang2}")
-
-    alignment = aligner.align(segments1, segments2)[0]
-    aligned1 = alignment.target
-    aligned2 = alignment.query
-
+    
     print(f"{lang1} → {lang2}")
     print(f"  IPA: {ipa1} → {ipa2}")
     print(f"  Segments: {segments1} → {segments2}")
@@ -81,21 +77,33 @@ for i in range(len(ipa_sequence) - 1):
     print(f"  Normalized Drift per Segment: {normalized:.2f}")
     print(f"  Feature Differences by Aligned Segments:")
 
-    for s1, s2 in zip(aligned1, aligned2):
+    alignments = aligner.align(segments1, segments2)
+    alignment = alignments[0]
+    aligned1 = alignment.aligned[0]
+    aligned2 = alignment.aligned[1]
+
+    a1, a2 = alignment[0], alignment[1]
+    for ch1, ch2 in zip(a1, a2):
+        s1 = ch1 if ch1 is not None else "-"
+        s2 = ch2 if ch2 is not None else "-"
+        s1_str = s1 if s1 != None else "-"
+        s2_str = s2 if s2 != None else "-"
+
         if s1 == "-" and s2 != "-":
-            print(f"    {'-':<4} → {s2:<4} | Insertion")
+            print(f"    -    → {s2:<4} | Insertion")
         elif s2 == "-" and s1 != "-":
-            print(f"    {s1:<4} → {'-':<4} | Deletion")
+            print(f"    {s1:<4} → -    | Deletion")
         elif s1 == s2:
             print(f"    {s1:<4} → {s2:<4} | 0 feature diffs")
         else:
             try:
-                v1 = ft.word_to_vector_list(s1, numeric=True)[0]
-                v2 = ft.word_to_vector_list(s2, numeric=True)[0]
+                v1 = ft.word_to_vector_list(s1_str, numeric=True)[0]
+                v2 = ft.word_to_vector_list(s2_str, numeric=True)[0]
                 diff_count = sum(x != y for x, y in zip(v1, v2))
-                print(f"    {s1:<4} → {s2:<4} | {diff_count} feature diff{'s' if diff_count != 1 else ''}")
+                print(f"    {s1_str:<4} → {s2_str:<4} | {diff_count} feature diff{'s' if diff_count != 1 else ''}")
             except:
-                print(f"    {s1 or '-':<4} → {s2 or '-':<4} | Unable to compare")
+                print(f"    {s1_str:<4} → {s2_str:<4} | Unable to compare")
+
     print()
 
 # === Plot Drift Accumulation ===

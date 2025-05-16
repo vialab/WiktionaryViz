@@ -222,7 +222,7 @@ export default function LandingPage({
                 <>
                     <h3 className="text-lg font-semibold text-[#F5F5F5] mt-6">Select an available visualization type:</h3>
                     <ul className="mt-3 grid grid-cols-1 gap-3 text-left">
-                        {["geospatial", "network"].map((value) => (
+                        {["geospatial", "network", "timeline"].map((value) => (
                             <li key={value}>
                                 <label className="flex items-center space-x-3 cursor-pointer">
                                     <input
