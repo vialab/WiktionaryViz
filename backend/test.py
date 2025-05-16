@@ -149,7 +149,17 @@ def compare_words(word1: str, word2: str, ft: FeatureTable, label1="Word 1", lab
                 if diff_count == 0:
                     print(f"    {s1:<4} → {s2:<4} | 0 feature diffs")
                 else:
-                    print(f"    {s1:<4} → {s2:<4} | {diff_count} feature diff{'s' if diff_count != 1 else ''}")
+                    def symbol(v):
+                        return {1: '+', 0: '0', -1: '-'}.get(v, '?')
+
+                    diff_lines = []
+                    for feat in diffs:
+                        before = symbol(fa[feat])
+                        after = symbol(fb[feat])
+                        diff_lines.append(f"{feat}: {before} → {after}")
+                    diff_block = ', '.join(diff_lines)
+
+                    print(f"    {s1:<4} → {s2:<4} | {diff_count} feature diff{'s' if diff_count != 1 else ''}: [{diff_block}]")
             else:
                 print(f"    {s1:<4} → {s2:<4} | unknown segment(s)")
         elif s1 and not s2:
