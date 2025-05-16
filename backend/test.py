@@ -1,15 +1,34 @@
 from panphon.distance import Distance
 from panphon.featuretable import FeatureTable
-from Bio import Align
-import matplotlib.pyplot as plt
 
+# Initialize tools
 ft = FeatureTable()
 dst = Distance()
 
+# Constants for phonological edit distance
+
 MAX_FEATURE_DIFFS = len(ft.names)
+"""
+Maximum number of phonological features available in the feature table.
+Used to define a substitution ceiling for penalty calculation.
+"""
+
 INSERTION_COST = MAX_FEATURE_DIFFS + 1
+"""
+Fixed cost for inserting a segment during alignment.
+Set slightly higher than the maximum possible substitution cost to prefer substitutions over insert/delete.
+"""
+
 DELETION_COST = MAX_FEATURE_DIFFS + 1
-UNKNOWN_COST = MAX_FEATURE_DIFFS 
+"""
+Fixed cost for deleting a segment during alignment.
+Set to match INSERTION_COST for symmetry.
+"""
+
+UNKNOWN_COST = MAX_FEATURE_DIFFS
+"""
+Cost assigned when one or both segments in comparison are unknown or missing from the feature table.
+"""
 
 ipa_map = {
     "Sanskrit": "nɑːrəŋɡ",
@@ -21,8 +40,24 @@ ipa_map = {
     "Dutch": "ˌoːˈrɑn.jə",
     "Indonesian": "oˈra.ɲə"
 }
+"""
+Mapping of languages to their corresponding IPA word forms in a historical evolution chain.
+Used for pairwise phonological comparison.
+"""
 
-def phonological_cost(a, b, ft):
+def phonological_cost(a: str, b: str, ft: FeatureTable) -> int:
+    """
+    Computes the phonological substitution cost between two IPA segments using the PanPhon feature table.
+
+    Args:
+        a (str): First IPA segment.
+        b (str): Second IPA segment.
+        ft (FeatureTable): PanPhon FeatureTable instance.
+
+    Returns:
+        int: The number of differing phonological features between segments,
+            or insertion/deletion/unknown penalties as applicable.
+    """
     if a == b:
         return 0
     if a is None or b is None:
@@ -33,7 +68,18 @@ def phonological_cost(a, b, ft):
         return UNKNOWN_COST
     return len(f1.differing_specs(f2))
 
-def align_segments(seg1, seg2, ft):
+def align_segments(seg1: list[str], seg2: list[str], ft: FeatureTable) -> list[tuple[str, str]]:
+    """
+    Aligns two IPA segment lists using dynamic programming with phonological feature-based costs.
+
+    Args:
+        seg1 (list[str]): List of IPA segments from the first word.
+        seg2 (list[str]): List of IPA segments from the second word.
+        ft (FeatureTable): PanPhon FeatureTable instance.
+
+    Returns:
+        list[tuple[str, str]]: A list of aligned segment pairs (with `None` used for insertions/deletions).
+    """
     m, n = len(seg1), len(seg2)
     dp = [[float('inf')] * (n + 1) for _ in range(m + 1)]
     back = [[None] * (n + 1) for _ in range(m + 1)]
@@ -71,7 +117,21 @@ def align_segments(seg1, seg2, ft):
 
     return aligned[::-1]
 
-def compare_words(word1, word2, ft, label1="Word 1", label2="Word 2"):
+def compare_words(word1: str, word2: str, ft: FeatureTable, label1="Word 1", label2="Word 2") -> None:
+    """
+    Compares two IPA words by segmenting them and displaying phonological differences.
+
+    Args:
+        word1 (str): The first IPA word.
+        word2 (str): The second IPA word.
+        ft (FeatureTable): PanPhon FeatureTable instance.
+        label1 (str): Label for the first language/stage.
+        label2 (str): Label for the second language/stage.
+
+    Prints:
+        A step-by-step display of aligned IPA segments, their match status,
+        and number of phonological feature differences.
+    """
     segs1 = ft.ipa_segs(word1)
     segs2 = ft.ipa_segs(word2)
     alignment = align_segments(segs1, segs2, ft)
@@ -98,6 +158,7 @@ def compare_words(word1, word2, ft, label1="Word 1", label2="Word 2"):
             print(f"    -    → {s2:<4} | Insertion")
     print()
 
+# Run pairwise comparisons across all IPA transitions in order
 ipa_items = list(ipa_map.items())
 for i in range(len(ipa_items) - 1):
     label1, word1 = ipa_items[i]
