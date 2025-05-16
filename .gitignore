@@ -107,3 +107,11 @@ backend/wiktionary_index.json
 backend/longest_words.json
 backend/most_translations.json
 backend/most_descendants.json
+
+backend/test-sandbox/
+
+backend/data/
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
