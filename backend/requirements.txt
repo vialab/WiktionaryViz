@@ -5,3 +5,4 @@ regex                 # Needed for PanPhon (uses Unicode regex features)
 python-multipart      # Required for FastAPI to handle form/query input robustly (esp. if expanding later)
 httpx                 # For testing your FastAPI routes
 pytest                # For writing and running tests
+tqdm                  # For progress bars in long-running tasks

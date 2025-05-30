@@ -349,3 +349,20 @@ export const processEtymologyLineage = async (
     console.log("Finished processing etymology lineage. Result:", currentNode);
     return currentNode;
 };
+
+// Utility: fetches the IPA for a given word/lang from /word-data
+export const fetchIPAForWord = async (word: string, lang: string): Promise<string | null> => {
+    try {
+        const res = await fetch(`http://localhost:8000/word-data?word=${encodeURIComponent(word)}&lang_code=${encodeURIComponent(lang)}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        // Try to get IPA from sounds
+        if (Array.isArray(data.sounds) && data.sounds.length > 0 && data.sounds[0].ipa) {
+            return data.sounds[0].ipa;
+        }
+        // Fallback: try to get IPA from head_templates or forms if needed (not implemented here)
+        return null;
+    } catch {
+        return null;
+    }
+};

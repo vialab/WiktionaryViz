@@ -20,7 +20,7 @@ from tqdm import tqdm
 from functools import lru_cache
 
 # File paths
-JSONL_FILE_PATH = "wiktionary_data.jsonl"
+JSONL_FILE_PATH = "data/wiktionary_data.jsonl"
 INDEX_OUTPUT_PATH = "wiktionary_index.json"
 LONGEST_WORDS_OUTPUT_PATH = "longest_words.json"
 MOST_TRANSLATIONS_OUTPUT_PATH = "most_translations.json"

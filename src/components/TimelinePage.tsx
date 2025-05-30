@@ -1,5 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
+import useLanguoidData from '@/hooks/useLanguoidData';
+import useWordData from '@/hooks/useWordData';
+import { processEtymologyLineage, fetchIPAForWord } from '@/utils/mapUtils';
 
 interface NodeData {
     language: string;
@@ -7,159 +10,133 @@ interface NodeData {
     tooltip: string;
 }
 
-const data: NodeData[] = [
-    {
-        language: 'Sanskrit',
-        drift: 0,
-        tooltip: `Sanskrit → Classical Persian
-IPA: nɑːrəŋɡ → nɑː.ˈɾaŋɡ
-Segments: ['n', 'ɑː', 'r', 'ə', 'ŋ', 'ɡ'] → ['n', 'ɑː', 'ɾ', 'a', 'ŋ', 'ɡ']
-Raw Weighted Distance: 0.75
-Avg Segment Count: 6.00
-Normalized Drift per Segment: 0.12
-Feature Differences by Aligned Segments:
-  n    → n    | 0 feature diffs
-  ɑː   → ɑː   | 0 feature diffs
-  r    → ɾ    | 0 feature diffs
-  ə    → a    | 2 feature diffs
-  ŋ    → ŋ    | 0 feature diffs
-  ɡ    → ɡ    | 0 feature diffs`
-    },
-    {
-        language: 'Classical Persian',
-        drift: 0.12,
-        tooltip: `Classical Persian → Arabic
-IPA: nɑː.ˈɾaŋɡ → naː.rand͡ʒ
-Segments: ['n', 'ɑː', 'ɾ', 'a', 'ŋ', 'ɡ'] → ['n', 'aː', 'r', 'a', 'n', 'd͡ʒ']
-Raw Weighted Distance: 4.75
-Avg Segment Count: 6.00
-Normalized Drift per Segment: 0.79
-Feature Differences by Aligned Segments:
-  n    → n    | 0 feature diffs
-  ɑː   → aː   | 1 feature diff
-  ɾ    → r    | 0 feature diffs
-  a    → a    | 0 feature diffs
-  ŋ    → n    | 5 feature diffs
-  ɡ    → d͡ʒ  | 6 feature diffs`
-    },
-    {
-        language: 'Arabic',
-        drift: 0.91,
-        tooltip: `Arabic → Old Spanish
-IPA: naː.rand͡ʒ → naˈɾãŋ.xa
-Segments: ['n', 'aː', 'r', 'a', 'n', 'd͡ʒ'] → ['n', 'a', 'ɾ', 'ã', 'ŋ', 'x', 'a']
-Raw Weighted Distance: 14.00
-Avg Segment Count: 6.50
-Normalized Drift per Segment: 2.15
-Feature Differences by Aligned Segments:
-  n    → n    | 0 feature diffs
-  aː   → a    | 1 feature diff
-  r    → ɾ    | 0 feature diffs
-  a    → ã   | 1 feature diff
-  n    → ŋ    | 5 feature diffs
-  d͡ʒ  → x    | 8 feature diffs`
-    },
-    {
-        language: 'Old Spanish',
-        drift: 3.06,
-        tooltip: `Old Spanish → Latin
-IPA: naˈɾãŋ.xa → aˈran.t͡ʃa
-Segments: ['n', 'a', 'ɾ', 'ã', 'ŋ', 'x', 'a'] → ['a', 'r', 'a', 'n', 't͡ʃ', 'a']
-Raw Weighted Distance: 13.25
-Avg Segment Count: 6.50
-Normalized Drift per Segment: 2.04
-Feature Differences by Aligned Segments:
-  n    → a    | 10 feature diffs
-  a    → r    | 10 feature diffs
-  ɾ    → a    | 10 feature diffs
-  ã   → n    | 9 feature diffs
-  ŋ    → t͡ʃ  | 9 feature diffs
-  x    → a    | 8 feature diffs`
-    },
-    {
-        language: 'Latin',
-        drift: 5.10,
-        tooltip: `Latin → Old French
-IPA: aˈran.t͡ʃa → ɔˈrɛndʒə
-Segments: ['a', 'r', 'a', 'n', 't͡ʃ', 'a'] → ['ɔ', 'r', 'ɛ', 'n', 'd', 'ʒ', 'ə']
-Raw Weighted Distance: 12.25
-Avg Segment Count: 6.50
-Normalized Drift per Segment: 1.88
-Feature Differences by Aligned Segments:
-  a    → ɔ    | 3 feature diffs
-  r    → r    | 0 feature diffs
-  a    → ɛ    | 3 feature diffs
-  n    → n    | 0 feature diffs
-  t͡ʃ  → d    | 5 feature diffs
-  a    → ʒ    | 10 feature diffs`
-    },
-    {
-        language: 'Old French',
-        drift: 6.98,
-        tooltip: `Old French → Dutch
-IPA: ɔˈrɛndʒə → ˌoːˈrɑn.jə
-Segments: ['ɔ', 'r', 'ɛ', 'n', 'd', 'ʒ', 'ə'] → ['oː', 'r', 'ɑ', 'n', 'j', 'ə']
-Raw Weighted Distance: 14.88
-Avg Segment Count: 6.50
-Normalized Drift per Segment: 2.29
-Feature Differences by Aligned Segments:
-  ɔ    → oː   | 2 feature diffs
-  r    → r    | 0 feature diffs
-  ɛ    → ɑ    | 4 feature diffs
-  n    → n    | 0 feature diffs
-  d    → j    | 7 feature diffs
-  ʒ    → ə    | 9 feature diffs`
-    },
-    {
-        language: 'Dutch',
-        drift: 9.27,
-        tooltip: `Dutch → Indonesian
-IPA: ˌoːˈrɑn.jə → oˈra.ɲə
-Segments: ['oː', 'r', 'ɑ', 'n', 'j', 'ə'] → ['o', 'r', 'a', 'ɲ', 'ə']
-Raw Weighted Distance: 9.62
-Avg Segment Count: 5.50
-Normalized Drift per Segment: 1.75
-Feature Differences by Aligned Segments:
-  oː   → o    | 1 feature diff
-  r    → r    | 0 feature diffs
-  ɑ    → a    | 1 feature diff
-  n    → ɲ    | 4 feature diffs
-  j    → ə    | 5 feature diffs`
-    }
-];
 
-const TimelinePage: React.FC = () => {
+interface TimelinePageProps {
+    word: string;
+    language: string;
+}
+
+const TimelinePage: React.FC<TimelinePageProps> = ({ word, language }) => {
     const svgRef = useRef<SVGSVGElement | null>(null);
+    const languoidData = useLanguoidData();
+    const wordData = useWordData(word, language);
+    const [data, setData] = useState<NodeData[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        async function fetchTimeline() {
+            setLoading(true);
+            if (!wordData) {
+                setData([]);
+                setLoading(false);
+                return;
+            }
+            // Build etymology chain from etymology_templates, starting from the current word
+            const chain = [];
+            // Start with the current word
+            chain.push({
+                word: wordData.word,
+                lang: wordData.lang,
+                lang_code: wordData.lang_code
+            });
+            // Walk through etymology_templates in order (bor/der)
+            const templates = (wordData.etymology_templates as any[]) || [];
+            for (const entry of templates) {
+                if (entry.name === 'bor' || entry.name === 'der') {
+                    const lang_code = entry.args['2'];
+                    const word = entry.args['3'] || entry.expansion;
+                    if (lang_code && word) {
+                        // We'll fetch /word-data for this step
+                        chain.push({ word, lang: null, lang_code });
+                    }
+                }
+            }
+            // For each node, fetch /word-data to get lang, lang_code, and IPA
+            const ipaArr: { lang: string; lang_code: string; word: string; ipa: string | null }[] = [];
+            for (const n of chain) {
+                let lang = n.lang;
+                let lang_code = n.lang_code;
+                let ipa: string | null = null;
+                try {
+                    const res = await fetch(`http://localhost:8000/word-data?word=${encodeURIComponent(n.word)}&lang_code=${encodeURIComponent(n.lang_code)}`);
+                    if (res.ok) {
+                        const d = await res.json();
+                        lang = d.lang || lang;
+                        lang_code = d.lang_code || lang_code;
+                        if (Array.isArray(d.sounds) && d.sounds.length > 0 && d.sounds[0].ipa) {
+                            ipa = d.sounds[0].ipa;
+                        }
+                    }
+                } catch {}
+                ipaArr.push({ lang, lang_code, word: n.word, ipa });
+            }
+            // For each pair, call phonology API
+            const driftData: NodeData[] = [];
+            if (ipaArr.length > 0) {
+                driftData.push({ language: `${ipaArr[0].lang} (${ipaArr[0].lang_code})`, drift: 0, tooltip: `${ipaArr[0].word} (${ipaArr[0].lang} - ${ipaArr[0].lang_code})\nIPA: ${ipaArr[0].ipa || 'N/A'}` });
+            }
+            for (let i = 1; i < ipaArr.length; i++) {
+                const ipa1 = ipaArr[i - 1].ipa || '';
+                const ipa2 = ipaArr[i].ipa || '';
+                let drift = 0;
+                let tooltip = `${ipaArr[i - 1].word} (${ipaArr[i - 1].lang} - ${ipaArr[i - 1].lang_code}) → ${ipaArr[i].word} (${ipaArr[i].lang} - ${ipaArr[i].lang_code})\nIPA: ${ipa1} → ${ipa2}`;
+                try {
+                    if (ipa1 && ipa2) {
+                        const res = await fetch(`http://localhost:8000/phonetic-drift-detailed?ipa1=${encodeURIComponent(ipa1)}&ipa2=${encodeURIComponent(ipa2)}`);
+                        const json = await res.json();
+                        drift = Array.isArray(json.alignment)
+                            ? json.alignment.filter((d: { changes?: Record<string, string>; status?: string }) => d.changes || d.status === 'deletion' || d.status === 'insertion').length
+                            : 0;
+                        if (Array.isArray(json.alignment)) {
+                            tooltip += '\nFeature Differences by Aligned Segments:';
+                            for (const diff of json.alignment) {
+                                if (diff.changes) {
+                                    tooltip += `\n  ${diff.from} → ${diff.to} | ${Object.keys(diff.changes).length} feature diffs`;
+                                } else if (diff.status === 'deletion') {
+                                    tooltip += `\n  ${diff.from} → ∅ | deletion`;
+                                } else if (diff.status === 'insertion') {
+                                    tooltip += `\n  ∅ → ${diff.to} | insertion`;
+                                }
+                            }
+                        }
+                    } else {
+                        tooltip += '\n(IPA missing for one or both words)';
+                    }
+                } catch {
+                    tooltip += '\n(error fetching drift)';
+                }
+                driftData.push({ language: `${ipaArr[i].lang} (${ipaArr[i].lang_code})`, drift, tooltip });
+            }
+            setData(driftData);
+            setLoading(false);
+        }
+        fetchTimeline();
+    }, [word, language, wordData, languoidData]);
+
+    useEffect(() => {
+        if (loading || data.length === 0) return;
         const width = 1000;
         const height = 200;
         const margin = 50;
-
         const maxDrift = d3.max(data, d => d.drift) || 1;
         const sizeScale = d3.scaleLinear().domain([0, maxDrift]).range([300, 2000]);
-
         const svg = d3.select(svgRef.current);
         svg.selectAll('*').remove();
-
         const g = svg.append('g').attr('transform', `translate(${margin},${height / 2})`);
-
         const xScale = d3.scalePoint()
             .domain(data.map(d => d.language))
             .range([0, width - margin * 2])
             .padding(0.5);
-
         // Tooltip
         const tooltip = d3.select('body')
-    .append('div')
-    .attr('class', 'tooltip bg-black text-white p-2 rounded text-xs max-w-sm')
-    .style('position', 'absolute')
-    .style('z-index', '10')
-    .style('visibility', 'hidden')
-    .style('max-width', '300px') // Ensure wrapping occurs
-    .style('word-wrap', 'break-word')
-    .style('white-space', 'pre-wrap'); // Allow newlines and wrapping
-
+            .append('div')
+            .attr('class', 'tooltip bg-black text-white p-2 rounded text-xs max-w-sm')
+            .style('position', 'absolute')
+            .style('z-index', '10')
+            .style('visibility', 'hidden')
+            .style('max-width', '300px')
+            .style('word-wrap', 'break-word')
+            .style('white-space', 'pre-wrap');
         // Lines
         g.selectAll('line')
             .data(data.slice(1))
@@ -171,7 +148,6 @@ const TimelinePage: React.FC = () => {
             .attr('y2', 0)
             .attr('stroke', 'gray')
             .attr('stroke-width', 2);
-
         // Circles (nodes)
         g.selectAll('circle')
             .data(data)
@@ -194,7 +170,6 @@ const TimelinePage: React.FC = () => {
             .on('mouseout', () => {
                 tooltip.style('visibility', 'hidden');
             });
-
         // Labels
         g.selectAll('text')
             .data(data)
@@ -205,16 +180,15 @@ const TimelinePage: React.FC = () => {
             .attr('text-anchor', 'middle')
             .attr('class', 'text-sm fill-white')
             .text(d => d.language);
-
         return () => {
             tooltip.remove();
         };
-    }, []);
+    }, [data, loading]);
 
     return (
         <div className="p-4">
             <h1 className="text-xl font-bold mb-4">Phonetic Drift Timeline</h1>
-            <svg ref={svgRef} width={1000} height={200} />
+            {loading ? <div>Loading timeline...</div> : <svg ref={svgRef} width={1000} height={200} />} 
         </div>
     );
 };

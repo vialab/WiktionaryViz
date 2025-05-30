@@ -44,7 +44,10 @@ function App() {
           />
         )}
         {visibleSection === "timeline" && (
-          <TimelinePage />
+          <TimelinePage
+            word={word1}
+            language={language1}
+          />
         )}
         
       </main>
