@@ -350,6 +350,33 @@ export const processEtymologyLineage = async (
     return currentNode;
 };
 
+// Extracts all possible ancestor forms for each etymology step from etymology_text
+export function extractEtymologyVariants(etymologyText: string): { lang: string; word: string }[] {
+    // Example regex: matches 'from Middle Dutch arance, orange', 'from Old French orenge, arange', etc.
+    // Handles: from <Language> <word1>[,| and| or] <word2> ...
+    const variants: { lang: string; word: string }[] = [];
+    if (!etymologyText) return variants;
+    // Regex to match: from <Language> <word>[,| and| or] <word2> ...
+    const regex = /from ([A-Z][a-zA-Z ]+?) ([^,.;()\[\]]+)(?:, ([^,.;()\[\]]+))*/g;
+    let match;
+    while ((match = regex.exec(etymologyText)) !== null) {
+        const lang = match[1].trim();
+        // match[2] is the first word, match[3] is the second (if present), etc.
+        if (match[2]) variants.push({ lang, word: match[2].trim() });
+        // Check for additional comma-separated words
+        if (match[0].includes(',')) {
+            const rest = match[0].split(/from [A-Z][a-zA-Z ]+ /)[1];
+            if (rest) {
+                rest.split(',').slice(1).forEach(w => {
+                    const word = w.trim().replace(/^(and|or) /, '');
+                    if (word) variants.push({ lang, word });
+                });
+            }
+        }
+    }
+    return variants;
+}
+
 // Utility: fetches the IPA for a given word/lang from /word-data
 export const fetchIPAForWord = async (word: string, lang: string): Promise<string | null> => {
     try {
