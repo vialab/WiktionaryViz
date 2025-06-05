@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "backend": "cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000"
   },
   "dependencies": {
     "@ladjs/country-language": "^1.0.3",
