@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
+import { motion, AnimatePresence } from 'framer-motion';
 import useLanguoidData from '@/hooks/useLanguoidData';
 import useWordData from '@/hooks/useWordData';
 import { processEtymologyLineage, fetchIPAForWord } from '@/utils/mapUtils';
@@ -22,6 +23,7 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ word, language }) => {
     const wordData = useWordData(word, language);
     const [data, setData] = useState<NodeData[]>([]);
     const [loading, setLoading] = useState(true);
+    const [tooltip, setTooltip] = useState<{ x: number; y: number; content: string } | null>(null);
 
     useEffect(() => {
         async function fetchTimeline() {
@@ -113,82 +115,132 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ word, language }) => {
         fetchTimeline();
     }, [word, language, wordData, languoidData]);
 
-    useEffect(() => {
-        if (loading || data.length === 0) return;
-        const width = 1000;
-        const height = 200;
-        const margin = 50;
-        const maxDrift = d3.max(data, d => d.drift) || 1;
-        const sizeScale = d3.scaleLinear().domain([0, maxDrift]).range([300, 2000]);
-        const svg = d3.select(svgRef.current);
-        svg.selectAll('*').remove();
-        const g = svg.append('g').attr('transform', `translate(${margin},${height / 2})`);
-        const xScale = d3.scalePoint()
-            .domain(data.map(d => d.language))
-            .range([0, width - margin * 2])
-            .padding(0.5);
-        // Tooltip
-        const tooltip = d3.select('body')
-            .append('div')
-            .attr('class', 'tooltip bg-black text-white p-2 rounded text-xs max-w-sm')
-            .style('position', 'absolute')
-            .style('z-index', '10')
-            .style('visibility', 'hidden')
-            .style('max-width', '300px')
-            .style('word-wrap', 'break-word')
-            .style('white-space', 'pre-wrap');
-        // Lines
-        g.selectAll('line')
-            .data(data.slice(1))
-            .enter()
-            .append('line')
-            .attr('x1', (_, i) => xScale(data[i].language)!)
-            .attr('x2', (_, i) => xScale(data[i + 1].language)!)
-            .attr('y1', 0)
-            .attr('y2', 0)
-            .attr('stroke', 'gray')
-            .attr('stroke-width', 2);
-        // Circles (nodes)
-        g.selectAll('circle')
-            .data(data)
-            .enter()
-            .append('circle')
-            .attr('cx', d => xScale(d.language)!)
-            .attr('cy', 0)
-            .attr('r', d => Math.sqrt(sizeScale(d.drift) / Math.PI))
-            .attr('fill', 'tomato')
-            .attr('stroke', 'black')
-            .on('mouseover', (_, d) => {
-                tooltip.html(`<div>${d.tooltip}</div>`)
-                    .style('visibility', 'visible');
-            })
-            .on('mousemove', (event) => {
-                tooltip
-                    .style('top', `${event.pageY - 10}px`)
-                    .style('left', `${event.pageX + 10}px`);
-            })
-            .on('mouseout', () => {
-                tooltip.style('visibility', 'hidden');
-            });
-        // Labels
-        g.selectAll('text')
-            .data(data)
-            .enter()
-            .append('text')
-            .attr('x', d => xScale(d.language)!)
-            .attr('y', 50)
-            .attr('text-anchor', 'middle')
-            .attr('class', 'text-sm fill-white')
-            .text(d => d.language);
-        return () => {
-            tooltip.remove();
-        };
-    }, [data, loading]);
+    // Remove the d3 SVG rendering useEffect, and instead use d3 for layout only
+    // We'll use React/JSX for rendering and framer-motion for animation
+
+    // Layout calculations
+    const width = 1000;
+    const height = 200;
+    const margin = 50;
+    const maxDrift = d3.max(data, d => d.drift) || 1;
+    const sizeScale = d3.scaleLinear().domain([0, maxDrift]).range([300, 2000]);
+    const xScale = d3.scalePoint<string>()
+        .domain(data.map(d => d.language))
+        .range([0, width - margin * 2])
+        .padding(0.5);
 
     return (
-        <div className="p-4">
+        <div className="p-4 relative">
             <h1 className="text-xl font-bold mb-4">Phonetic Drift Timeline</h1>
-            {loading ? <div>Loading timeline...</div> : <svg ref={svgRef} width={1000} height={200} />} 
+            {loading ? (
+                <div>Loading timeline...</div>
+            ) : (
+                <svg ref={svgRef} width={width} height={height}>
+                    <g transform={`translate(${margin},${height / 2})`}>
+                        {/* Lines */}
+                        <AnimatePresence>
+                            {data.slice(1).map((d, i) => (
+                                <motion.line
+                                    key={`line-${i}`}
+                                    initial={{
+                                        x1: xScale(data[i].language),
+                                        x2: xScale(data[i].language),
+                                        opacity: 0
+                                    }}
+                                    animate={{
+                                        x1: xScale(data[i].language),
+                                        x2: xScale(data[i + 1].language),
+                                        opacity: 1
+                                    }}
+                                    exit={{ opacity: 0 }}
+                                    y1={0}
+                                    y2={0}
+                                    stroke="gray"
+                                    strokeWidth={2}
+                                    transition={{ duration: 0.7, delay: i * 0.1 }}
+                                />
+                            ))}
+                        </AnimatePresence>
+                        {/* Circles (nodes) */}
+                        <AnimatePresence>
+                            {data.map((d, i) => (
+                                <motion.circle
+                                    key={`circle-${i}`}
+                                    initial={{
+                                        cx: xScale(d.language),
+                                        cy: 0,
+                                        r: 0,
+                                        opacity: 0
+                                    }}
+                                    animate={{
+                                        cx: xScale(d.language),
+                                        cy: 0,
+                                        r: Math.sqrt(sizeScale(d.drift) / Math.PI),
+                                        opacity: 1
+                                    }}
+                                    exit={{ opacity: 0, r: 0 }}
+                                    fill="tomato"
+                                    stroke="black"
+                                    onMouseOver={e => {
+                                        setTooltip({
+                                            x: e.clientX,
+                                            y: e.clientY,
+                                            content: d.tooltip
+                                        });
+                                    }}
+                                    onMouseMove={e => {
+                                        setTooltip(t => t ? { ...t, x: e.clientX, y: e.clientY } : null);
+                                    }}
+                                    onMouseOut={() => setTooltip(null)}
+                                    transition={{ duration: 0.7, delay: i * 0.1 }}
+                                />
+                            ))}
+                        </AnimatePresence>
+                        {/* Labels */}
+                        <AnimatePresence>
+                            {data.map((d, i) => (
+                                <motion.text
+                                    key={`label-${i}`}
+                                    x={xScale(d.language)}
+                                    y={50}
+                                    textAnchor="middle"
+                                    className="text-sm fill-white"
+                                    initial={{ opacity: 0, y: 70 }}
+                                    animate={{ opacity: 1, y: 50 }}
+                                    exit={{ opacity: 0, y: 70 }}
+                                    transition={{ duration: 0.7, delay: i * 0.1 }}
+                                >
+                                    {d.language}
+                                </motion.text>
+                            ))}
+                        </AnimatePresence>
+                    </g>
+                </svg>
+            )}
+            {/* Tooltip */}
+            <AnimatePresence>
+                {tooltip && (
+                    <motion.div
+                        className="tooltip bg-black text-white p-2 rounded text-xs max-w-sm"
+                        style={{
+                            position: 'fixed',
+                            top: tooltip.y + 10,
+                            left: tooltip.x + 10,
+                            zIndex: 10,
+                            maxWidth: '300px',
+                            wordWrap: 'break-word',
+                            whiteSpace: 'pre-wrap',
+                            pointerEvents: 'none',
+                        }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <div>{tooltip.content}</div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
