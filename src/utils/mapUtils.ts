@@ -393,3 +393,75 @@ export const fetchIPAForWord = async (word: string, lang: string): Promise<strin
         return null;
     }
 };
+
+/**
+ * Normalizes a position to a [lat, lng] tuple.
+ */
+export const normalizePosition = (
+    pos: [number, number] | { lat: number; lng: number } | null | undefined
+): [number, number] => {
+    if (!pos) {
+        console.warn('Missing position:', pos);
+        return [0, 0]; // Fallback
+    }
+    if (Array.isArray(pos)) {
+        return pos;
+    }
+    if (typeof pos === 'object' && 'lat' in pos && 'lng' in pos) {
+        return [pos.lat, pos.lng];
+    }
+    console.error('Invalid position format:', pos);
+    return [0, 0];
+};
+
+/**
+ * Creates a Leaflet arrow icon with the given rotation angle.
+ */
+export const createArrowIcon = (angle: number) => {
+    // @ts-ignore
+    return window.L.divIcon({
+        className: 'arrow-icon',
+        html: `<div style="
+            transform: rotate(${angle}deg);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 10px solid #2158A5FF; 
+        "></div>`,
+        iconSize: [10, 10],
+        iconAnchor: [5, 5],
+    });
+};
+
+/**
+ * Calculates the bearing (angle) between two coordinates.
+ */
+export const calculateBearing = (start: [number, number], end: [number, number]): number => {
+    const [lat1, lon1] = start.map(deg => deg * Math.PI / 180);
+    const [lat2, lon2] = end.map(deg => deg * Math.PI / 180);
+    const deltaLon = lon2 - lon1;
+    const x = Math.sin(deltaLon) * Math.cos(lat2);
+    const y = Math.cos(lat1) * Math.sin(lat2) -
+              Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLon);
+    const bearingRad = Math.atan2(x, y);
+    const bearingDeg = (bearingRad * 180 / Math.PI + 360) % 360;
+    return bearingDeg;
+};
+
+/**
+ * Calculates the midpoint between two coordinates in Mercator projection.
+ */
+export const calculateMercatorMidpoint = (coord1: [number, number], coord2: [number, number]): [number, number] => {
+    const [lat1, lng1] = coord1;
+    const [lat2, lng2] = coord2;
+    const srcLatRad = lat1 * (Math.PI / 180);
+    const dstLatRad = lat2 * (Math.PI / 180);
+    const middleLatRad = Math.atan(Math.sinh(Math.log(Math.sqrt(
+        (Math.tan(dstLatRad) + 1 / Math.cos(dstLatRad)) *
+        (Math.tan(srcLatRad) + 1 / Math.cos(srcLatRad))
+    ))));
+    const middleLat = middleLatRad * (180 / Math.PI);
+    const middleLng = (lng1 + lng2) / 2;
+    return [middleLat, middleLng];
+};
