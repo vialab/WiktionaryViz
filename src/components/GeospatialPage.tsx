@@ -15,12 +15,22 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import "react-leaflet-markercluster/styles";
 import TranslationMarkers, { TranslationMarker } from './geospatial/TranslationMarkers';
-import EtymologyLineagePath, { EtymologyNode } from './geospatial/EtymologyLineagePath';
+import EtymologyLineagePath from './geospatial/EtymologyLineagePath';
+import type { EtymologyNode } from '@/types/etymology';
+import type { Translation } from '@/utils/mapUtils';
 
 L.Marker.prototype.options.icon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
 });
+
+// Define the expected structure for wordData
+interface WordData {
+    translations?: Translation[];
+    etymology_templates?: { name: string; args: { [key: string]: string }; expansion: string }[];
+    word: string;
+    lang_code: string;
+}
 
 interface GeospatialPageProps {
     word: string;
@@ -32,7 +42,7 @@ interface GeospatialPageProps {
  * Uses modular components for maintainability and performance.
  */
 const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
-    const wordData = useWordData(word, language);
+    const wordData = useWordData(word, language) as WordData | null;
     const languoidData = useLanguoidData();
     const [markers, setMarkers] = useState<TranslationMarker[]>([]);
     const [lineage, setLineage] = useState<EtymologyNode | null>(null);
@@ -42,8 +52,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
             processTranslations(wordData.translations, languoidData, setMarkers);
         }
         if (Array.isArray(wordData?.etymology_templates) && languoidData.length) {
-            processEtymologyLineage(wordData.etymology_templates, languoidData, wordData.word, wordData.lang_code)
-                .then(setLineage);
+            processEtymologyLineage(
+                wordData.etymology_templates,
+                languoidData,
+                wordData.word,
+                wordData.lang_code
+            ).then(setLineage);
         }
     }, [wordData, languoidData]);
 

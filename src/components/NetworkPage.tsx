@@ -40,8 +40,9 @@ export default function NetworkPage({ word1, word2, language1, language2 }: Netw
     }]);
     const [visited, setVisited] = useState<Set<string>>(new Set());
 
-    const svgRef = useRef<SVGSVGElement | null>(null);
-    const wrapperRef = useRef<HTMLDivElement | null>(null);
+    // Change svgRef and wrapperRef types to non-nullable RefObject
+    const svgRef = useRef<SVGSVGElement>(null) as React.RefObject<SVGSVGElement>;
+    const wrapperRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
 
     // Use the custom D3 hook for rendering and simulation
     useD3NetworkGraph(svgRef, wrapperRef, nodes, links);
@@ -62,7 +63,8 @@ export default function NetworkPage({ word1, word2, language1, language2 }: Netw
                 const { newNodes, newLinks, newQueueItems } = buildEtymologyGraph(nextItem, wordData?.etymology_templates || [], nodes);
                 setNodes(prev => mergeUniqueNodes(prev, newNodes));
                 setLinks(prev => [...prev, ...newLinks]);
-                setQueue(prev => [...remainingQueue, ...newQueueItems]);
+                // Remove unused variable 'prev' in setQueue
+                setQueue([...remainingQueue, ...newQueueItems]);
                 setVisited(prev => new Set(prev).add(wordKey));
             } catch (error) {
                 console.error(`Error fetching data for ${nextItem.word}:`, error);
@@ -119,7 +121,9 @@ function buildEtymologyGraph(
         t => t.name === 'der' || t.name === 'inh'
     );
 
-    derivations.forEach((template, index) => {
+    // Remove unused variable 'index' in forEach loops
+    // derivations.forEach((template, index) => { ... })
+    derivations.forEach((template) => {
         const lang = template.args['2'];
         const word = template.args['3'];
         const expansion = template.expansion;
@@ -160,7 +164,8 @@ function buildEtymologyGraph(
     });
 
     const cognates = etymologyTemplates.filter(t => t.name === 'cog');
-    cognates.forEach((template, index) => {
+    // cognates.forEach((template, index) => { ... })
+    cognates.forEach((template) => {
         const lang = template.args['1'];
         const word = template.args['2'];
         const expansion = template.expansion;
@@ -198,7 +203,8 @@ function buildEtymologyGraph(
     });
 
     const doublets = etymologyTemplates.filter(t => t.name === 'doublet');
-    doublets.forEach((template, index) => {
+    // doublets.forEach((template, index) => { ... })
+    doublets.forEach((template) => {
         Object.values(template.args).forEach(word => {
             const expansion = template.expansion;
 

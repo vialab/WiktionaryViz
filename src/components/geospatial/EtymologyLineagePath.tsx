@@ -1,7 +1,7 @@
 import React, { FC, memo } from 'react';
 import { Polyline, Marker, CircleMarker, Popup } from 'react-leaflet';
 import { normalizePosition, createArrowIcon, calculateBearing, calculateMercatorMidpoint } from '@/utils/mapUtils';
-import type { EtymologyNode } from './EtymologyLineagePath';
+import type { EtymologyNode } from '@/types/etymology';
 
 export interface EtymologyLineagePathProps {
   lineage: EtymologyNode | null;

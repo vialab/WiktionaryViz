@@ -1,10 +1,11 @@
 import { getCountryFromLanguageCode } from "@/utils/languageUtils";
 import { getLanguage } from "@ladjs/country-language";
+import type { EtymologyNode } from '@/types/etymology';
 
 /** 
  * Represents a translation entry. 
  */
-interface Translation {
+export interface Translation {
     lang: string;
     code: string;
     word: string;
@@ -256,15 +257,6 @@ export const processTranslations = async (
  * @param {string} targetLang - The language code of the word (e.g., "en").
  * @returns {Promise<{ positions: [number, number][], lineageText: string }[]>} - The ordered lineage path.
  */
-interface EtymologyNode {
-    word: string;
-    lang_code: string;
-    romanization: string | null;
-    position: [number, number] | null;
-    next: EtymologyNode | null;
-    expansion: string;
-}
-
 export const processEtymologyLineage = async (
     etymologyTemplates: { name: string; args: { [key: string]: string }; expansion: string }[],
     languoidData: LanguoidData[],
@@ -284,14 +276,15 @@ export const processEtymologyLineage = async (
         romanization: null,
         position: position ? [position.lat, position.lng] : null,
         next: null,
+        expansion: targetWord // Use the word itself as the initial expansion
     };
 
     console.log("Current node:", currentNode);
 
     // Ensure the initial position is valid
-    if (!currentNode.position || isNaN(currentNode.position[0]) || isNaN(currentNode.position[1])) {
+    if (currentNode && (!currentNode.position || isNaN(currentNode.position[0]) || isNaN(currentNode.position[1]))) {
         console.warn(`Initial position for targetLang (${targetLang}) is invalid. Setting default coordinates.`);
-        currentNode.position = [0, 0]; // Default fallback coordinates
+        if (currentNode) currentNode.position = [0, 0]; // Default fallback coordinates
     }
 
     const orderedEtymology = etymologyTemplates.filter(entry => entry.name === "bor" || entry.name === "der");
@@ -312,12 +305,11 @@ export const processEtymologyLineage = async (
         // Approximate coordinates if not found
         if (!sourceCoords) {
             console.warn(`No coordinates found for sourceLang: ${sourceLang}. Approximating...`);
-            const currentCoords = currentNode.position
-                ? { lat: currentNode.position[0], lng: currentNode.position[1] }
-                : null;
-            sourceCoords = currentCoords
-                ? { lat: currentCoords.lat + 1, lng: currentCoords.lng + 1 }
-                : { lat: 0, lng: 0 }; // Default fallback coordinates
+            if (currentNode && currentNode.position) {
+                sourceCoords = { lat: currentNode.position[0] + 1, lng: currentNode.position[1] + 1 };
+            } else {
+                sourceCoords = { lat: 0, lng: 0 };
+            }
         }
 
         // Handle specific overrides for known languages
@@ -340,7 +332,7 @@ export const processEtymologyLineage = async (
             romanization: sourceRomanization,
             position: [sourceCoords.lat, sourceCoords.lng],
             next: currentNode,
-            expansion: expansion,
+            expansion: expansion
         };
 
         currentNode = newNode;
@@ -418,7 +410,6 @@ export const normalizePosition = (
  * Creates a Leaflet arrow icon with the given rotation angle.
  */
 export const createArrowIcon = (angle: number) => {
-    // @ts-ignore
     return window.L.divIcon({
         className: 'arrow-icon',
         html: `<div style="

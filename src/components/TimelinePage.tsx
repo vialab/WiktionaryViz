@@ -29,10 +29,10 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ word, language }) => {
         .padding(0.5);
 
     // Tooltip handlers for TimelineChart
-    const handleNodeHover = (e: React.MouseEvent<SVGCircleElement, MouseEvent>, d: any) => {
+    const handleNodeHover = (e: React.MouseEvent<SVGCircleElement, MouseEvent>, d: { tooltip: string }) => {
         setTooltip({ x: e.clientX, y: e.clientY, content: d.tooltip });
     };
-    const handleNodeMove = (e: React.MouseEvent<SVGCircleElement, MouseEvent>, d: any) => {
+    const handleNodeMove = (e: React.MouseEvent<SVGCircleElement, MouseEvent>) => {
         setTooltip(t => t ? { ...t, x: e.clientX, y: e.clientY } : null);
     };
     const handleNodeOut = () => setTooltip(null);

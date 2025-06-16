@@ -33,7 +33,7 @@ const TimelineChart: React.FC<TimelineChartProps> = ({
         <g transform={`translate(${margin},${height / 2})`}>
             {/* Lines */}
             <AnimatePresence>
-                {data.slice(1).map((d, i) => (
+                {data.slice(1).map((_, i) => (
                     <motion.line
                         key={`line-${i}`}
                         initial={{
