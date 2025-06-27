@@ -138,7 +138,8 @@ async def build_etymology_tree(word, lang_code, depth=0, max_depth=10):
     node["etymology_children"] = children
     return node
 
-@router.get("/word-etymology-tree")
-async def get_word_etymology_tree(word: str = Query(...), lang_code: str = Query(...)):
-    tree = await build_etymology_tree(word, lang_code)
-    return JSONResponse(content=tree)
+# Remove or comment out the old recursive /word-etymology-tree endpoint
+#@router.get("/word-etymology-tree")
+#async def get_word_etymology_tree(word: str = Query(...), lang_code: str = Query(...)):
+#    tree = await build_etymology_tree(word, lang_code)
+#    return JSONResponse(content=tree)
