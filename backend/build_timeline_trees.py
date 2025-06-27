@@ -50,6 +50,41 @@ def compute_phonetic_drift(ipa1, ipa2):
         diffs.append({"from": s1, "to": s2})
     return {"ipa1": ipa1, "ipa2": ipa2, "alignment": diffs}
 
+def make_id(word, lang_code):
+    word = word.lower() if word else "unknown"
+    lang_code = lang_code.lower() if lang_code else "unknown"
+    return f"{word}_{lang_code}_id"
+
+def extract_pronunciation(data):
+    if data and data.get("sounds"):
+        for s in data["sounds"]:
+            if s.get("ipa"):
+                return s["ipa"]
+    return data.get("ai_estimated_ipa") or "estimated"
+
+def extract_etymology_chain(word, lang_code, etymology_text, etymology_templates):
+    chain = []
+    # Start with the current word
+    chain.append({
+        "word": word,
+        "lang_code": lang_code,
+        "etymology": etymology_text,
+        "template": None
+    })
+    # Walk through etymology_templates
+    for tpl in etymology_templates:
+        rel = "borrowed_from" if tpl["name"] == "bor" else "derived_from"
+        lang = tpl["args"].get("2")
+        w = tpl["args"].get("3") or "unknown"
+        chain.append({
+            "word": w,
+            "lang_code": lang,
+            "etymology": tpl.get("expansion", ""),
+            "template": tpl,
+            "relation": rel
+        })
+    return chain
+
 # Recursively build the etymology tree with phonetic drift
 
 def build_etymology_tree(word, lang_code, depth=0, max_depth=10, seen=None):
@@ -85,11 +120,46 @@ def build_etymology_tree(word, lang_code, depth=0, max_depth=10, seen=None):
 # After writing timeline_trees.jsonl, build the index for fast retrieval
 if __name__ == "__main__":
     with open(TIMELINE_TREES_FILE, "w", encoding="utf-8") as out:
-        for key in tqdm(index.keys(), desc="Building timeline trees"):
+        for key in tqdm(index.keys(), desc="Building timeline linked nodes"):
             word, lang_code = key.rsplit("_", 1)
-            tree = build_etymology_tree(word, lang_code)
-            if tree:
-                out.write(json.dumps({"word": word, "lang_code": lang_code, "tree": tree}, ensure_ascii=False) + "\n")
-    print(f"✅ Wrote timeline trees to {TIMELINE_TREES_FILE}")
-    # Build the index file for fast lookup
+            data = get_word_data(key)
+            if not data:
+                continue
+            etymology_text = data.get("etymology_text", "")
+            etymology_templates = data.get("etymology_templates", [])
+            chain = extract_etymology_chain(word, lang_code, etymology_text, etymology_templates)
+            # Build nodes with links
+            for i, node in enumerate(chain):
+                node_id = make_id(node["word"], node["lang_code"])
+                linked_nodes = []
+                if i+1 < len(chain):
+                    prev = chain[i+1]
+                    linked_nodes.append({
+                        "id": make_id(prev["word"], prev["lang_code"]),
+                        "relation": prev.get("relation", "derived_from"),
+                        "language": prev["lang_code"],
+                        "word": prev["word"]
+                    })
+                # Try to get pronunciation from data if available
+                pron = None
+                if i == 0:
+                    pron = extract_pronunciation(data)
+                else:
+                    # Try to get from wiktionary if present
+                    word_part = node['word'].lower() if node['word'] else "unknown"
+                    lang_part = node['lang_code'].lower() if node['lang_code'] else "unknown"
+                    k = f"{word_part}_{lang_part}"
+                    d = get_word_data(k)
+                    pron = extract_pronunciation(d) if d else "estimated"
+                out.write(json.dumps({
+                    "id": node_id,
+                    "word": node["word"],
+                    "lang_code": node["lang_code"],
+                    "data": {
+                        "etymology": node["etymology"],
+                        "linked_nodes": linked_nodes
+                    },
+                    "pronunciation": pron
+                }, ensure_ascii=False) + "\n")
+    print(f"✅ Wrote timeline linked nodes to {TIMELINE_TREES_FILE}")
     os.system(f"python {os.path.join(os.path.dirname(__file__), 'build_timeline_trees_index.py')}")

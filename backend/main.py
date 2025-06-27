@@ -44,7 +44,7 @@ def get_rebuild_flags():
 async def lifespan(app: FastAPI):
     rebuild_index, rebuild_trees = get_rebuild_flags()
     ensure_main_index(rebuild_index)
-    ensure_timeline_trees(rebuild_trees)
+    # ensure_timeline_trees(rebuild_trees)
     load_index()
     yield
     # (Optional) Add any shutdown/cleanup logic here
@@ -68,7 +68,7 @@ async def root():
 
 def rebuild_all():
     ensure_main_index(True)
-    ensure_timeline_trees(True)
+    # ensure_timeline_trees(True)
     print("[INFO] Rebuild complete.")
 
 if __name__ == "__main__":
