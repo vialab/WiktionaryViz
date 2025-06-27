@@ -1,24 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 import sys
 import subprocess
 import os
 
 from api_routes import phonology, word_data, descendants, word_etymology_tree_precomputed
 from constants import load_index
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], allow_credentials=True,
-    allow_methods=["*"], allow_headers=["*"],
-)
-
-app.include_router(phonology.router)
-app.include_router(word_data.router)
-app.include_router(descendants.router)
-app.include_router(word_etymology_tree_precomputed.router)
 
 # Helper: check and (re)build timeline trees and index if needed or requested
 def ensure_timeline_trees(rebuild=False):
@@ -45,15 +33,53 @@ def ensure_main_index(rebuild=False):
     else:
         print("[INFO] Main index and stats files already exist. Skipping rebuild.")
 
-@app.on_event("startup")
-async def startup_event():
-    # Check for rebuild flags
+def get_rebuild_flags():
+    # Only --rebuild-all triggers both. --rebuild-timeline-trees triggers only trees, --rebuild-index only index
     rebuild_index = any(arg in ("--rebuild-index", "--rebuild-all") for arg in sys.argv)
+    # Only rebuild trees if --rebuild-timeline-trees or --rebuild-all is present
     rebuild_trees = any(arg in ("--rebuild-timeline-trees", "--rebuild-all") for arg in sys.argv)
+    return rebuild_index, rebuild_trees
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    rebuild_index, rebuild_trees = get_rebuild_flags()
     ensure_main_index(rebuild_index)
-    ensure_timeline_trees(rebuild_trees)
+    # ensure_timeline_trees(rebuild_trees)
     load_index()
+    yield
+    # (Optional) Add any shutdown/cleanup logic here
+
+app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], allow_credentials=True,
+    allow_methods=["*"], allow_headers=["*"],
+)
+
+app.include_router(phonology.router)
+app.include_router(word_data.router)
+app.include_router(descendants.router)
+app.include_router(word_etymology_tree_precomputed.router)
 
 @app.get("/")
 async def root():
     return {"message": "FastAPI JSONL Backend is running"}
+
+def rebuild_all():
+    ensure_main_index(True)
+    # ensure_timeline_trees(True)
+    print("[INFO] Rebuild complete.")
+
+if __name__ == "__main__":
+    if "--rebuild-all" in sys.argv:
+        rebuild_all()
+    elif "--rebuild-index" in sys.argv:
+        ensure_main_index(True)
+        print("[INFO] Main index rebuild complete.")
+    elif "--rebuild-timeline-trees" in sys.argv:
+        ensure_timeline_trees(True)
+        print("[INFO] Timeline trees rebuild complete.")
+    else:
+        import uvicorn
+        uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

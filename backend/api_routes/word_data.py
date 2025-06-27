@@ -17,11 +17,13 @@ async def get_word_data(word: str = Query(...), lang_code: str = Query(...)):
     try:
         with open(JSONL_FILE_PATH, "r", encoding="utf-8") as f:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-            mm.seek(index[key][0])
+            mm.seek(index[key])  # Use the integer offset directly
             line = mm.readline().decode("utf-8").strip()
+            print(f"[DEBUG] Raw line for word='{word}', lang_code='{lang_code}': {line}")
             mm.close()
             return JSONResponse(content=json.loads(line))
     except Exception as e:
+        print(f"[ERROR] get_word_data failed for word='{word}', lang_code='{lang_code}': {e}")
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @router.get("/available-languages")
@@ -62,16 +64,16 @@ async def get_word_data_or_ai(word, lang_code):
             line = mm.readline().decode("utf-8").strip()
             mm.close()
             data = json.loads(line)
-            # If IPA missing, try to supplement
-            if not data.get("sounds") or not any(s.get("ipa") for s in data.get("sounds", [])):
-                data["ai_estimated_ipa"] = await ai_estimate_ipa(word, lang_code)
+            # # If IPA missing, try to supplement
+            # if not data.get("sounds") or not any(s.get("ipa") for s in data.get("sounds", [])):
+            #     data["ai_estimated_ipa"] = await ai_estimate_ipa(word, lang_code)
             return data
     # Not found, supplement with AI
     return {
         "word": word,
         "lang_code": lang_code,
-        "ai_estimated": True,
-        "ai_estimated_ipa": await ai_estimate_ipa(word, lang_code)
+        # "ai_estimated": True,
+        # "ai_estimated_ipa": await ai_estimate_ipa(word, lang_code)
     }
 
 # Helper: AI estimation for IPA using latest OpenAI async API

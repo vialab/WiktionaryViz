@@ -15,14 +15,17 @@ with open(INDEX_FILE_PATH, "r", encoding="utf-8") as f:
 
 # Helper: get word data from JSONL using byte offset
 def get_word_data(key):
-    offsets = index.get(key)
-    if not offsets:
+    offset = index.get(key)
+    if offset is None:
         return None
     with open(JSONL_FILE_PATH, "r", encoding="utf-8") as f:
         mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-        mm.seek(offsets[0])
+        mm.seek(offset)
         line = mm.readline().decode("utf-8").strip()
         mm.close()
+        if not line:
+            # Optionally log: print(f"[WARN] Empty line for key {key} at offset {offset}")
+            return None
         return json.loads(line)
 
 # Helper: get IPA from word data

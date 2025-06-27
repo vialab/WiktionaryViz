@@ -1,4 +1,4 @@
-    # =======================
+# =======================
     # TODO: Implement other Hall of Fame categories
     # =======================
     # longest_etymological_chains = ...
@@ -39,7 +39,7 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
     - Most descendants (via reverse descendant links)
     """
 
-    word_lang_index = defaultdict(list)
+    word_lang_index = dict()
     record_count = 0
 
     TOP_N = 100
@@ -67,7 +67,8 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
 
                     if word and lang_code:
                         index_key = f"{word}_{lang_code}"
-                        word_lang_index[index_key].append(byte_offset)
+                        if index_key not in word_lang_index:
+                            word_lang_index[index_key] = byte_offset
                         all_entry_keys.add(index_key)
 
                         pos = entry.get("pos", "").lower()
