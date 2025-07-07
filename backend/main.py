@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 import sys
 import subprocess
 import os
+import signal
 
 from api_routes import phonology, word_data, descendants, word_etymology_tree_precomputed
 from constants import load_index
@@ -13,9 +14,12 @@ def ensure_timeline_trees(rebuild=False):
     from constants import DATA_DIR
     trees_path = os.path.join(DATA_DIR, "timeline_trees.jsonl")
     index_path = os.path.join(DATA_DIR, "timeline_trees_index.json")
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
     if rebuild or not (os.path.exists(trees_path) and os.path.exists(index_path)):
         print("[INFO] Building timeline trees and index...")
-        subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), "build_timeline_trees.py")], check=True)
+        subprocess.run([
+            sys.executable, os.path.join(backend_dir, "build_timeline_trees.py")
+        ], check=True, cwd=backend_dir)
     else:
         print("[INFO] Timeline trees and index already exist. Skipping rebuild.")
 
@@ -27,9 +31,12 @@ def ensure_main_index(rebuild=False):
     most_translations_path = os.path.join(DATA_DIR, "most_translations.json")
     most_descendants_path = os.path.join(DATA_DIR, "most_descendants.json")
     required_files = [index_path, longest_words_path, most_translations_path, most_descendants_path]
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
     if rebuild or not all(os.path.exists(f) for f in required_files):
         print("[INFO] Building main index and stats files...")
-        subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), "build_index.py")], check=True)
+        subprocess.run([
+            sys.executable, os.path.join(backend_dir, "build_index.py")
+        ], check=True, cwd=backend_dir)
     else:
         print("[INFO] Main index and stats files already exist. Skipping rebuild.")
 
@@ -40,14 +47,29 @@ def get_rebuild_flags():
     rebuild_trees = any(arg in ("--rebuild-timeline-trees", "--rebuild-all") for arg in sys.argv)
     return rebuild_index, rebuild_trees
 
+shutdown_initiated = False
+
+def handle_shutdown_signal(signum, frame):
+    global shutdown_initiated
+    if not shutdown_initiated:
+        shutdown_initiated = True
+        print(f"[INFO] Received signal {signum}. Initiating graceful shutdown...")
+
+# Register signal handlers for SIGINT (Ctrl+C) and SIGTERM
+def register_signal_handlers():
+    signal.signal(signal.SIGINT, handle_shutdown_signal)
+    signal.signal(signal.SIGTERM, handle_shutdown_signal)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    register_signal_handlers()
     rebuild_index, rebuild_trees = get_rebuild_flags()
     ensure_main_index(rebuild_index)
-    # ensure_timeline_trees(rebuild_trees)
+    ensure_timeline_trees(rebuild_trees)
     load_index()
     yield
-    # (Optional) Add any shutdown/cleanup logic here
+    # Shutdown/cleanup logic: log shutdown event (expand as needed)
+    print("[INFO] FastAPI backend is shutting down. Cleanup complete.")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -68,7 +90,7 @@ async def root():
 
 def rebuild_all():
     ensure_main_index(True)
-    # ensure_timeline_trees(True)
+    ensure_timeline_trees(True)
     print("[INFO] Rebuild complete.")
 
 if __name__ == "__main__":

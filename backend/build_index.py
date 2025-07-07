@@ -21,10 +21,10 @@ from functools import lru_cache
 
 # File paths
 JSONL_FILE_PATH = "data/wiktionary_data.jsonl"
-INDEX_OUTPUT_PATH = "wiktionary_index.json"
-LONGEST_WORDS_OUTPUT_PATH = "longest_words.json"
-MOST_TRANSLATIONS_OUTPUT_PATH = "most_translations.json"
-MOST_DESCENDANTS_OUTPUT_PATH = "most_descendants.json"
+INDEX_OUTPUT_PATH = "data/wiktionary_index.json"
+LONGEST_WORDS_OUTPUT_PATH = "data/longest_words.json"
+MOST_TRANSLATIONS_OUTPUT_PATH = "data/most_translations.json"
+MOST_DESCENDANTS_OUTPUT_PATH = "data/most_descendants.json"
 
 # Languages to exclude from longest word category (sign languages, gloss systems)
 SIGN_LANG_CODES = {
