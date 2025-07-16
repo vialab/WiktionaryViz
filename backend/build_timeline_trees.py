@@ -142,24 +142,35 @@ if __name__ == "__main__":
                     })
                 # Try to get pronunciation from data if available
                 pron = None
-                if i == 0:
-                    pron = extract_pronunciation(data)
-                else:
-                    # Try to get from wiktionary if present
-                    word_part = node['word'].lower() if node['word'] else "unknown"
-                    lang_part = node['lang_code'].lower() if node['lang_code'] else "unknown"
-                    k = f"{word_part}_{lang_part}"
-                    d = get_word_data(k)
-                    pron = extract_pronunciation(d) if d else "estimated"
+                word_part = node['word'].lower() if node['word'] else "unknown"
+                lang_part = node['lang_code'].lower() if node['lang_code'] else "unknown"
+                k = f"{word_part}_{lang_part}"
+                d = get_word_data(k)
+                pron = extract_pronunciation(d) if d else "estimated"
+                # Convert etymology_templates into linked_nodes if present
+                if etymology_templates:
+                    linked_nodes = []
+                    for tpl in etymology_templates:
+                        child_word = tpl['args'].get('3')
+                        child_lang = tpl['args'].get('2')
+                        if child_word and child_lang:
+                            linked_nodes.append({
+                                "id": make_id(child_word, child_lang),
+                                "relation": tpl.get("name", "derived_from"),
+                                "language": child_lang,
+                                "word": child_word
+                            })
+                # Always write a node, even if we have no data for it (stub if missing)
                 out.write(json.dumps({
                     "id": node_id,
                     "word": node["word"],
                     "lang_code": node["lang_code"],
                     "data": {
                         "etymology": node["etymology"],
-                        "linked_nodes": linked_nodes
+                        "linked_nodes": linked_nodes,
+                        "etymology_templates": data.get("etymology_templates", [])
                     },
-                    "pronunciation": pron
+                    "pronunciation": pron if d else None
                 }, ensure_ascii=False) + "\n")
     print(f"✅ Wrote timeline linked nodes to {TIMELINE_TREES_FILE}")
     os.system(f"python {os.path.join(os.path.dirname(__file__), 'build_timeline_trees_index.py')}")

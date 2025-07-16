@@ -6,7 +6,6 @@ import type { NodeData } from './useTimelineData';
 interface TimelineChartProps {
     data: NodeData[];
     sizeScale: d3.ScaleLinear<number, number>;
-    xScale: d3.ScalePoint<string>;
     onNodeHover: (e: React.MouseEvent<SVGCircleElement, MouseEvent>, d: NodeData) => void;
     onNodeMove: (e: React.MouseEvent<SVGCircleElement, MouseEvent>, d: NodeData) => void;
     onNodeOut: () => void;
@@ -16,92 +15,98 @@ interface TimelineChartProps {
 }
 
 /**
- * Renders the timeline SVG chart with animated lines, nodes, and labels.
+ * Renders the timeline SVG chart with animated lines, nodes, and labels in a linear ancestry chain.
  */
 const TimelineChart: React.FC<TimelineChartProps> = ({
     data,
     sizeScale,
-    xScale,
     onNodeHover,
     onNodeMove,
     onNodeOut,
     width,
     height,
     margin
-}) => (
-    <svg width={width} height={height}>
-        <g transform={`translate(${margin},${height / 2})`}>
-            {/* Lines */}
-            <AnimatePresence>
-                {data.slice(1).map((_, i) => (
-                    <motion.line
-                        key={`line-${i}`}
-                        initial={{
-                            x1: xScale(data[i].language),
-                            x2: xScale(data[i].language),
-                            opacity: 0
-                        }}
-                        animate={{
-                            x1: xScale(data[i].language),
-                            x2: xScale(data[i + 1].language),
-                            opacity: 1
-                        }}
-                        exit={{ opacity: 0 }}
-                        y1={0}
-                        y2={0}
-                        stroke="gray"
-                        strokeWidth={2}
-                        transition={{ duration: 0.7, delay: i * 0.1 }}
-                    />
-                ))}
-            </AnimatePresence>
-            {/* Circles (nodes) */}
-            <AnimatePresence>
-                {data.map((d, i) => (
-                    <motion.circle
-                        key={`circle-${i}`}
-                        initial={{
-                            cx: xScale(d.language),
-                            cy: 0,
-                            r: 0,
-                            opacity: 0
-                        }}
-                        animate={{
-                            cx: xScale(d.language),
-                            cy: 0,
-                            r: Math.sqrt(sizeScale(d.drift) / Math.PI),
-                            opacity: 1
-                        }}
-                        exit={{ opacity: 0, r: 0 }}
-                        fill="tomato"
-                        stroke="black"
-                        onMouseOver={e => onNodeHover(e, d)}
-                        onMouseMove={e => onNodeMove(e, d)}
-                        onMouseOut={onNodeOut}
-                        transition={{ duration: 0.7, delay: i * 0.1 }}
-                    />
-                ))}
-            </AnimatePresence>
-            {/* Labels */}
-            <AnimatePresence>
-                {data.map((d, i) => (
-                    <motion.text
-                        key={`label-${i}`}
-                        x={xScale(d.language)}
-                        y={50}
-                        textAnchor="middle"
-                        className="text-sm fill-white"
-                        initial={{ opacity: 0, y: 70 }}
-                        animate={{ opacity: 1, y: 50 }}
-                        exit={{ opacity: 0, y: 70 }}
-                        transition={{ duration: 0.7, delay: i * 0.1 }}
-                    >
-                        {d.language}
-                    </motion.text>
-                ))}
-            </AnimatePresence>
-        </g>
-    </svg>
-);
+}) => {
+    // Linear layout: space nodes evenly along the width
+    const nodeCount = data.length;
+    const innerWidth = width - 2 * margin;
+    const xStep = nodeCount > 1 ? innerWidth / (nodeCount - 1) : 0;
+    const getX = (i: number) => margin + i * xStep;
+    return (
+        <svg width={width} height={height}>
+            <g transform={`translate(0,${height / 2})`}>
+                {/* Lines */}
+                <AnimatePresence>
+                    {data.slice(1).map((_, i) => (
+                        <motion.line
+                            key={`line-${i}`}
+                            initial={{
+                                x1: getX(i),
+                                x2: getX(i),
+                                opacity: 0
+                            }}
+                            animate={{
+                                x1: getX(i),
+                                x2: getX(i + 1),
+                                opacity: 1
+                            }}
+                            exit={{ opacity: 0 }}
+                            y1={0}
+                            y2={0}
+                            stroke="gray"
+                            strokeWidth={2}
+                            transition={{ duration: 0.7, delay: i * 0.1 }}
+                        />
+                    ))}
+                </AnimatePresence>
+                {/* Circles (nodes) */}
+                <AnimatePresence>
+                    {data.map((d, i) => (
+                        <motion.circle
+                            key={`circle-${i}`}
+                            initial={{
+                                cx: getX(i),
+                                cy: 0,
+                                r: 0,
+                                opacity: 0
+                            }}
+                            animate={{
+                                cx: getX(i),
+                                cy: 0,
+                                r: Math.sqrt(sizeScale(d.drift) / Math.PI),
+                                opacity: 1
+                            }}
+                            exit={{ opacity: 0, r: 0 }}
+                            fill="tomato"
+                            stroke="black"
+                            onMouseOver={e => onNodeHover(e, d)}
+                            onMouseMove={e => onNodeMove(e, d)}
+                            onMouseOut={onNodeOut}
+                            transition={{ duration: 0.7, delay: i * 0.1 }}
+                        />
+                    ))}
+                </AnimatePresence>
+                {/* Labels */}
+                <AnimatePresence>
+                    {data.map((d, i) => (
+                        <motion.text
+                            key={`label-${i}`}
+                            x={getX(i)}
+                            y={50}
+                            textAnchor="middle"
+                            className="text-sm fill-white"
+                            initial={{ opacity: 0, y: 70 }}
+                            animate={{ opacity: 1, y: 50 }}
+                            exit={{ opacity: 0, y: 70 }}
+                            transition={{ duration: 0.7, delay: i * 0.1 }}
+                        >
+                            {d.language}
+                        </motion.text>
+                    ))}
+                </AnimatePresence>
+            </g>
+        </svg>
+    );
+};
 
 export default TimelineChart;
