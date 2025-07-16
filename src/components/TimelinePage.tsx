@@ -21,7 +21,6 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ word, language }) => {
 
     return (
         <div className="p-4 relative w-full max-w-4xl mx-auto">
-            <h1 className="text-xl font-bold mb-4">Etymology Timeline</h1>
             <EtymologyCarousel cards={data} onFocusChange={setFocusIdx} />
             <MetadataPanel card={data[focusIdx]} />
         </div>

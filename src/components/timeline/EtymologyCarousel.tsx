@@ -37,7 +37,7 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
     <div className="relative w-full flex items-center">
       {/* Left Arrow */}
       <button
-        className="absolute left-0 z-10 h-16 w-10 flex items-center justify-center bg-zinc-800 bg-opacity-60 text-white rounded-r-xl shadow hover:bg-opacity-80 transition disabled:opacity-30"
+        className="absolute left-0 z-10 h-16 w-10 flex items-center justify-center bg-[#252525] bg-opacity-80 text-[#D4AF37]  rounded-r-xl shadow hover:bg-opacity-90 transition disabled:opacity-30"
         style={{ top: '50%', transform: 'translateY(-50%)' }}
         onClick={() => setFocusIdx(idx => Math.max(0, idx - 1))}
         disabled={focusIdx === 0}
@@ -48,7 +48,7 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
       {/* Carousel */}
       <div
         ref={containerRef}
-        className="flex overflow-x-auto snap-x py-8 px-4 space-x-8 scrollbar-hidden cursor-grab w-full"
+        className="flex overflow-x-auto snap-x py-8 px-4 space-x-8 scrollbar-hidden cursor-grab w-full bg-[#181818] rounded-xl"
         style={{ scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch' }}
       >
         {cards.map((card, i) => {
@@ -63,7 +63,9 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
               key={i}
               className={clsx(
                 'snap-center flex-shrink-0 rounded-xl shadow-lg transition-all duration-300',
-                offset === 0 ? 'bg-zinc-700 text-white' : 'bg-white text-gray-800'
+                offset === 0
+                  ? 'bg-[#252525] text-[#F5F5F5]'
+                  : 'bg-[#181818] text-[#B79F58]'
               )}
               style={{
                 width: CARD_WIDTH,
@@ -83,10 +85,10 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
                 <div className="text-2xl font-bold">{card.word}</div>
                 <div className="text-sm mb-2">{card.lang_code}</div>
                 {card.pronunciation && (
-                  <div className="text-xs italic text-gray-500">{card.pronunciation}</div>
+                  <div className="text-xs italic text-[#B79F58]">{card.pronunciation}</div>
                 )}
                 {card.tooltip && (
-                  <div className="mt-2 text-xs">{card.tooltip}</div>
+                  <div className="mt-2 text-xs text-[#B79F58]">{card.tooltip}</div>
                 )}
               </div>
             </motion.div>
@@ -95,7 +97,7 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
       </div>
       {/* Right Arrow */}
       <button
-        className="absolute right-0 z-10 h-16 w-10 flex items-center justify-center bg-zinc-800 bg-opacity-60 text-white rounded-l-xl shadow hover:bg-opacity-80 transition disabled:opacity-30"
+        className="absolute right-0 z-10 h-16 w-10 flex items-center justify-center bg-[#252525] bg-opacity-80 text-[#D4AF37] rounded-l-xl shadow hover:bg-opacity-90 transition disabled:opacity-30"
         style={{ top: '50%', transform: 'translateY(-50%)' }}
         onClick={() => setFocusIdx(idx => Math.min(cards.length - 1, idx + 1))}
         disabled={focusIdx === cards.length - 1}
