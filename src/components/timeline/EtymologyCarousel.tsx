@@ -43,7 +43,7 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
         disabled={focusIdx === 0}
         aria-label="Previous"
       >
-        <span className="text-2xl">&#8592;</span>
+        <span className="material-icons text-3xl">chevron_left</span>
       </button>
       {/* Carousel */}
       <div
@@ -101,7 +101,7 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
         disabled={focusIdx === cards.length - 1}
         aria-label="Next"
       >
-        <span className="text-2xl">&#8594;</span>
+        <span className="material-icons text-3xl">chevron_right</span>
       </button>
     </div>
   );
