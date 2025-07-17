@@ -118,11 +118,17 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
     # Get root node
     node = await get_word_data_or_ai(word, lang_code)
     ipa = None
+    phonemic_ipa = None
     if node.get("sounds"):
         for s in node["sounds"]:
-            if s.get("ipa"): ipa = s["ipa"]
+            if s.get("ipa"):
+                ipa_candidate = s["ipa"]
+                if ipa_candidate.startswith("/") and ipa_candidate.endswith("/"):
+                    phonemic_ipa = ipa_candidate
+                else:
+                    ipa = ipa_candidate
     if not ipa:
-        # Estimate IPA with OpenAI if not present
+        # If only phonemic IPA, estimate phonetic IPA
         expansion = node.get("expansion")
         ipa = await ai_estimate_ipa(word, lang_code, expansion)
         node["ai_estimated_ipa"] = ipa
@@ -130,6 +136,7 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
         "word": word,
         "lang_code": lang_code,
         "ipa": ipa,
+        "phonemic_ipa": phonemic_ipa,
         "node": node
     })
     # Walk through all etymology_templates in order
@@ -140,11 +147,17 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
         if lang and w:
             ancestor_node = await get_word_data_or_ai(w, lang)
             ancestor_ipa = None
+            ancestor_phonemic_ipa = None
             if ancestor_node.get("sounds"):
                 for s in ancestor_node["sounds"]:
-                    if s.get("ipa"): ancestor_ipa = s["ipa"]
+                    if s.get("ipa"):
+                        ipa_candidate = s["ipa"]
+                        if ipa_candidate.startswith("/") and ipa_candidate.endswith("/"):
+                            ancestor_phonemic_ipa = ipa_candidate
+                        else:
+                            ancestor_ipa = ipa_candidate
             if not ancestor_ipa:
-                # Estimate IPA with OpenAI if not present
+                # If only phonemic IPA, estimate phonetic IPA
                 expansion = tpl.get("expansion")
                 ancestor_ipa = await ai_estimate_ipa(w, lang, expansion)
                 ancestor_node["ai_estimated_ipa"] = ancestor_ipa
@@ -152,6 +165,7 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
                 "word": w,
                 "lang_code": lang,
                 "ipa": ancestor_ipa,
+                "phonemic_ipa": ancestor_phonemic_ipa,
                 "node": ancestor_node
             })
     return chain

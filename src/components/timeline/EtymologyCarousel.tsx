@@ -60,14 +60,20 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
           const zIndex = 100 - Math.abs(offset);
           const opacity = offset === 0 ? 1 : 0.7;
 
+          // Border color by data quality
+          let borderColor = '#D4AF37'; // default gold
+          if (card.dataQuality === 'complete') borderColor = '#22c55e'; // green
+          else if (card.dataQuality === 'partial-ai') borderColor = '#f59e42'; // orange
+          else if (card.dataQuality === 'full-ai') borderColor = '#ef4444'; // red
+
           return (
             <motion.div
               key={i}
               className={clsx(
                 'snap-center flex-shrink-0 rounded-xl shadow-lg transition-all duration-300 border-2',
                 offset === 0
-                  ? 'bg-[#252525] text-[#F5F5F5] border-[#D4AF37]'
-                  : 'bg-[#181818] text-[#B79F58] border-[#B79F58]'
+                  ? 'bg-[#252525] text-[#F5F5F5]'
+                  : 'bg-[#181818] text-[#B79F58]'
               )}
               style={{
                 width: CARD_WIDTH,
@@ -75,6 +81,7 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
                 opacity,
                 marginRight: i === reversedCards.length - 1 ? 0 : CARD_GAP,
                 perspective: 1000,
+                borderColor: borderColor,
               }}
               animate={{
                 scale,

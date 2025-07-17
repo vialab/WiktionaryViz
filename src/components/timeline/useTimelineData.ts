@@ -7,6 +7,7 @@ export interface NodeData {
     word: string;
     lang_code: string;
     pronunciation?: string;
+    dataQuality: 'complete' | 'partial-ai' | 'full-ai';
 }
 
 /**
@@ -15,6 +16,7 @@ export interface NodeData {
  * @param language - The target language
  */
 interface AncestryChainEntry {
+    phonemic_ipa: any;
     word: string;
     lang_code: string;
     ipa?: string;
@@ -36,14 +38,31 @@ export function useTimelineData(word: string, language: string) {
                 if (!res.ok) throw new Error('Failed to fetch ancestry chain');
                 const result = await res.json();
                 if (result.ancestry_chain && Array.isArray(result.ancestry_chain)) {
-                    const timeline: NodeData[] = result.ancestry_chain.map((entry: AncestryChainEntry) => ({
-                        language: entry.lang_code,
-                        drift: 0,
-                        tooltip: `${entry.word} (${entry.lang_code})\nIPA: ${entry.ipa || 'N/A'}`,
-                        word: entry.word,
-                        lang_code: entry.lang_code,
-                        pronunciation: entry.ipa || ''
-                    }));
+                    const timeline: NodeData[] = result.ancestry_chain.map((entry: AncestryChainEntry) => {
+                        let dataQuality: 'complete' | 'partial-ai' | 'full-ai' = 'complete';
+                        const hasPhonemic = !!entry.phonemic_ipa;
+                        const hasPhonetic = !!entry.ipa && (!entry.node || !entry.node.ai_estimated_ipa);
+                        const isAIPhonetic = !!entry.ipa && entry.node && entry.node.ai_estimated_ipa;
+                        if (isAIPhonetic && hasPhonemic) {
+                            // Had only phonemic IPA, so AI was used for phonetic
+                            dataQuality = 'partial-ai';
+                        } else if (isAIPhonetic && !hasPhonemic) {
+                            // No IPA at all, fully AI estimated
+                            dataQuality = 'full-ai';
+                        } else if (hasPhonetic) {
+                            // IPA was present and not estimated
+                            dataQuality = 'complete';
+                        }
+                        return {
+                            language: entry.lang_code,
+                            drift: 0,
+                            tooltip: `${entry.word} (${entry.lang_code})\nIPA: ${entry.ipa || 'N/A'}`,
+                            word: entry.word,
+                            lang_code: entry.lang_code,
+                            pronunciation: entry.ipa || '',
+                            dataQuality
+                        };
+                    });
                     setData(timeline);
                 } else {
                     setData([]);
