@@ -14,10 +14,6 @@ async def ancestry_chain(word: str = Query(...), lang_code: str = Query(...)):
     """
     chain = await build_ancestry_chain(word, lang_code)
     return JSONResponse(content={"ancestry_chain": chain})
-from fastapi import APIRouter, Query
-from fastapi.responses import JSONResponse
-from constants import ft
-from services.aligner import align_segments, symbol
 
 
 @router.get("/phonetic-drift-detailed")

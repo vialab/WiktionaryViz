@@ -119,11 +119,13 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
     node = await get_word_data_or_ai(word, lang_code)
     ipa = None
     phonemic_ipa = None
-    # Find real IPA if present
+    print(f"[DEBUG] build_ancestry_chain: word={word}, lang_code={lang_code}, node.sounds={node.get('sounds')}")
+    # Prefer real IPA and phonemic IPA from sounds
     if node.get("sounds"):
         for s in node["sounds"]:
             if s.get("ipa"):
                 ipa_candidate = s["ipa"]
+                print(f"[DEBUG] IPA candidate for root: {ipa_candidate}")
                 if ipa_candidate.startswith("/") and ipa_candidate.endswith("/"):
                     phonemic_ipa = ipa_candidate
                 elif not ipa:
@@ -131,22 +133,15 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
     # Only estimate IPA if no real IPA found
     if not ipa:
         expansion = node.get("expansion")
+        print(f"[DEBUG] No real IPA for root, estimating with AI for word={word}, lang_code={lang_code}, expansion={expansion}")
         ipa = await ai_estimate_ipa(word, lang_code, expansion)
         node["ai_estimated_ipa"] = ipa
+    else:
+        print(f"[DEBUG] Real IPA found for root: {ipa}")
+        # Remove ai_estimated_ipa if real IPA exists
+        node.pop("ai_estimated_ipa", None)
     from constants import dst, ft
-    chain = []
-    # Get root node
-    node = await get_word_data_or_ai(word, lang_code)
-    ipa = None
-    phonemic_ipa = None
-    if node.get("sounds"):
-        for s in node["sounds"]:
-            pass  # ...existing code...
-    if not ipa:
-        # If only phonemic IPA, estimate phonetic IPA
-        expansion = node.get("expansion")
-        ipa = await ai_estimate_ipa(word, lang_code, expansion)
-        node["ai_estimated_ipa"] = ipa
+    # (Removed duplicate root node logic that overwrote real IPA)
     chain.append({
         "word": word,
         "lang_code": lang_code,
@@ -161,32 +156,42 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
     for tpl in templates:
         lang = tpl["args"].get("2")
         w = tpl["args"].get("3")
+        print(f"[DEBUG] Template: lang={lang}, word={w}")
         if lang and w:
             # Get ancestor node
             ancestor = await get_word_data_or_ai(w, lang)
+            print(f"[DEBUG] Ancestor node for word={w}, lang={lang}: sounds={ancestor.get('sounds')}")
             ancestor_ipa = None
             ancestor_phonemic_ipa = None
-            # Find real IPA if present
+            # Prefer real IPA and phonemic IPA from sounds
             if ancestor.get("sounds"):
                 for s in ancestor["sounds"]:
                     if s.get("ipa"):
                         ipa_candidate = s["ipa"]
+                        print(f"[DEBUG] IPA candidate for ancestor {w}: {ipa_candidate}")
                         if ipa_candidate.startswith("/") and ipa_candidate.endswith("/"):
                             ancestor_phonemic_ipa = ipa_candidate
                         elif not ancestor_ipa:
                             ancestor_ipa = ipa_candidate
-                # Only estimate IPA if no real IPA found
+            # Only estimate IPA if no real IPA found
             if not ancestor_ipa:
                 expansion = ancestor.get("expansion")
+                print(f"[DEBUG] No real IPA for ancestor {w}, estimating with AI, expansion={expansion}")
                 ancestor_ipa = await ai_estimate_ipa(w, lang, expansion)
                 ancestor["ai_estimated_ipa"] = ancestor_ipa
+            else:
+                print(f"[DEBUG] Real IPA found for ancestor {w}: {ancestor_ipa}")
+                # Remove ai_estimated_ipa if real IPA exists
+                ancestor.pop("ai_estimated_ipa", None)
             # Compute drift score
             drift_score = 0
             if prev_ipa and ancestor_ipa:
                 try:
                     drift_score = dst.feature_edit_distance(str(prev_ipa), str(ancestor_ipa))
-                except Exception:
+                except Exception as e:
+                    print(f"[DEBUG] Drift score computation failed for {w}: {e}")
                     drift_score = 0
+            print(f"[DEBUG] Chain append: word={w}, lang={lang}, ipa={ancestor_ipa}, phonemic_ipa={ancestor_phonemic_ipa}, drift={drift_score}")
             chain.append({
                 "word": w,
                 "lang_code": lang,
