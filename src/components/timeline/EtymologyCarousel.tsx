@@ -93,6 +93,8 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
 
           // Drift bar and badge
           const drift = card.drift ?? 0;
+          // Round drift to 3 significant figures for display
+          const driftDisplay = drift === 0 ? '0' : Number(drift).toPrecision(3);
           const driftBarStyle = {
             width: driftBarLength(drift),
             height: 8,
@@ -149,7 +151,7 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
               onClick={() => setFocusIdx(i)}
             >
               {/* Drift score badge */}
-              <div style={badgeStyle}>Δ = {drift}</div>
+              <div style={badgeStyle}>Δ = {driftDisplay}</div>
               <div className="p-6 flex flex-col items-center">
                 <div className="text-2xl font-bold">{card.word}</div>
                 <div className="text-sm mb-2">{card.lang_code}</div>
