@@ -119,14 +119,29 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
     node = await get_word_data_or_ai(word, lang_code)
     ipa = None
     phonemic_ipa = None
+    # Find real IPA if present
     if node.get("sounds"):
         for s in node["sounds"]:
             if s.get("ipa"):
                 ipa_candidate = s["ipa"]
                 if ipa_candidate.startswith("/") and ipa_candidate.endswith("/"):
                     phonemic_ipa = ipa_candidate
-                else:
+                elif not ipa:
                     ipa = ipa_candidate
+    # Only estimate IPA if no real IPA found
+    if not ipa:
+        expansion = node.get("expansion")
+        ipa = await ai_estimate_ipa(word, lang_code, expansion)
+        node["ai_estimated_ipa"] = ipa
+    from constants import dst, ft
+    chain = []
+    # Get root node
+    node = await get_word_data_or_ai(word, lang_code)
+    ipa = None
+    phonemic_ipa = None
+    if node.get("sounds"):
+        for s in node["sounds"]:
+            pass  # ...existing code...
     if not ipa:
         # If only phonemic IPA, estimate phonetic IPA
         expansion = node.get("expansion")
@@ -137,35 +152,48 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
         "lang_code": lang_code,
         "ipa": ipa,
         "phonemic_ipa": phonemic_ipa,
-        "node": node
+        "node": node,
+        "drift": 0  # root node has no drift
     })
     # Walk through all etymology_templates in order
     templates = node.get("etymology_templates", [])
+    prev_ipa = ipa
     for tpl in templates:
         lang = tpl["args"].get("2")
         w = tpl["args"].get("3")
         if lang and w:
-            ancestor_node = await get_word_data_or_ai(w, lang)
+            # Get ancestor node
+            ancestor = await get_word_data_or_ai(w, lang)
             ancestor_ipa = None
             ancestor_phonemic_ipa = None
-            if ancestor_node.get("sounds"):
-                for s in ancestor_node["sounds"]:
+            # Find real IPA if present
+            if ancestor.get("sounds"):
+                for s in ancestor["sounds"]:
                     if s.get("ipa"):
                         ipa_candidate = s["ipa"]
                         if ipa_candidate.startswith("/") and ipa_candidate.endswith("/"):
                             ancestor_phonemic_ipa = ipa_candidate
-                        else:
+                        elif not ancestor_ipa:
                             ancestor_ipa = ipa_candidate
+                # Only estimate IPA if no real IPA found
             if not ancestor_ipa:
-                # If only phonemic IPA, estimate phonetic IPA
-                expansion = tpl.get("expansion")
+                expansion = ancestor.get("expansion")
                 ancestor_ipa = await ai_estimate_ipa(w, lang, expansion)
-                ancestor_node["ai_estimated_ipa"] = ancestor_ipa
+                ancestor["ai_estimated_ipa"] = ancestor_ipa
+            # Compute drift score
+            drift_score = 0
+            if prev_ipa and ancestor_ipa:
+                try:
+                    drift_score = dst.feature_edit_distance(str(prev_ipa), str(ancestor_ipa))
+                except Exception:
+                    drift_score = 0
             chain.append({
                 "word": w,
                 "lang_code": lang,
                 "ipa": ancestor_ipa,
                 "phonemic_ipa": ancestor_phonemic_ipa,
-                "node": ancestor_node
+                "node": ancestor,
+                "drift": drift_score
             })
+            prev_ipa = ancestor_ipa
     return chain

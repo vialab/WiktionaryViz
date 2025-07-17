@@ -38,24 +38,29 @@ export function useTimelineData(word: string, language: string) {
                 if (!res.ok) throw new Error('Failed to fetch ancestry chain');
                 const result = await res.json();
                 if (result.ancestry_chain && Array.isArray(result.ancestry_chain)) {
-                    const timeline: NodeData[] = result.ancestry_chain.map((entry: AncestryChainEntry) => {
+                    const timeline: NodeData[] = result.ancestry_chain.map((entry: AncestryChainEntry & { drift?: number }) => {
                         let dataQuality: 'complete' | 'partial-ai' | 'full-ai' = 'complete';
+                        // AI transparency logic:
+                        // - If IPA is present and not estimated, 'complete'
+                        // - If IPA is present and estimated, but phonemic IPA was available, 'partial-ai'
+                        // - If IPA is present and estimated, and no phonemic IPA, 'full-ai'
+                        // - If no IPA, fallback to 'full-ai'
                         const hasPhonemic = !!entry.phonemic_ipa;
-                        const hasPhonetic = !!entry.ipa && (!entry.node || !entry.node.ai_estimated_ipa);
-                        const isAIPhonetic = !!entry.ipa && entry.node && entry.node.ai_estimated_ipa;
+                        const aiIpa = entry.node && entry.node.ai_estimated_ipa;
+                        const isAIPhonetic = !!aiIpa && entry.ipa === aiIpa;
+                        const hasPhonetic = !!entry.ipa && (!isAIPhonetic);
                         if (isAIPhonetic && hasPhonemic) {
-                            // Had only phonemic IPA, so AI was used for phonetic
                             dataQuality = 'partial-ai';
                         } else if (isAIPhonetic && !hasPhonemic) {
-                            // No IPA at all, fully AI estimated
                             dataQuality = 'full-ai';
                         } else if (hasPhonetic) {
-                            // IPA was present and not estimated
                             dataQuality = 'complete';
+                        } else if (!entry.ipa) {
+                            dataQuality = 'full-ai';
                         }
                         return {
                             language: entry.lang_code,
-                            drift: 0,
+                            drift: entry.drift ?? 0,
                             tooltip: `${entry.word} (${entry.lang_code})\nIPA: ${entry.ipa || 'N/A'}`,
                             word: entry.word,
                             lang_code: entry.lang_code,
