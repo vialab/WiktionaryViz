@@ -1,9 +1,24 @@
+
+from fastapi import APIRouter, Query
+from fastapi.responses import JSONResponse
+from constants import ft
+from services.aligner import align_segments, symbol
+from api_routes.word_data import build_ancestry_chain
+
+router = APIRouter()
+
+@router.get("/ancestry-chain")
+async def ancestry_chain(word: str = Query(...), lang_code: str = Query(...)):
+    """
+    Returns the ancestry chain for a word and language for timeline visualization.
+    """
+    chain = await build_ancestry_chain(word, lang_code)
+    return JSONResponse(content={"ancestry_chain": chain})
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 from constants import ft
 from services.aligner import align_segments, symbol
 
-router = APIRouter()
 
 @router.get("/phonetic-drift-detailed")
 async def phonetic_drift_detailed(

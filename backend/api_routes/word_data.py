@@ -21,7 +21,8 @@ async def get_word_data(word: str = Query(...), lang_code: str = Query(...)):
             line = mm.readline().decode("utf-8").strip()
             print(f"[DEBUG] Raw line for word='{word}', lang_code='{lang_code}': {line}")
             mm.close()
-            return JSONResponse(content=json.loads(line))
+            data = json.loads(line)
+            return JSONResponse(content=data)
     except Exception as e:
         print(f"[ERROR] get_word_data failed for word='{word}', lang_code='{lang_code}': {e}")
         return JSONResponse(content={"error": str(e)}, status_code=500)
@@ -60,7 +61,7 @@ async def get_word_data_or_ai(word, lang_code):
     if key in index:
         with open(JSONL_FILE_PATH, "r", encoding="utf-8") as f:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-            mm.seek(index[key][0])
+            mm.seek(index[key])
             line = mm.readline().decode("utf-8").strip()
             mm.close()
             data = json.loads(line)
@@ -107,41 +108,41 @@ async def get_phonetic_drift(ipa1, ipa2):
             pass
     return None
 
-# Recursive tree builder
-async def build_etymology_tree(word, lang_code, depth=0, max_depth=10):
-    if depth > max_depth:
-        return None
-    node = await get_word_data_or_ai(word, lang_code)
-    children = []
-    # Find etymology_templates for further recursion
-    for tpl in node.get("etymology_templates", []):
-        child_word = tpl["args"].get("3")
-        child_lang = tpl["args"].get("2")
-        if child_word and child_lang:
-            child_node = await build_etymology_tree(child_word, child_lang, depth+1, max_depth)
-            # Add phonetic drift if IPA available
-            ipa1 = None
-            ipa2 = None
-            if node.get("sounds"):
-                for s in node["sounds"]:
-                    if s.get("ipa"): ipa1 = s["ipa"]
-            if child_node and child_node.get("sounds"):
-                for s in child_node["sounds"]:
-                    if s.get("ipa"): ipa2 = s["ipa"]
-            if not ipa1: ipa1 = node.get("ai_estimated_ipa")
-            if child_node and not ipa2: ipa2 = child_node.get("ai_estimated_ipa")
-            drift = await get_phonetic_drift(ipa1, ipa2) if ipa1 and ipa2 else None
-            children.append({
-                "word": child_word,
-                "lang_code": child_lang,
-                "data": child_node,
-                "phonetic_drift": drift
-            })
-    node["etymology_children"] = children
-    return node
 
-# Remove or comment out the old recursive /word-etymology-tree endpoint
-#@router.get("/word-etymology-tree")
-#async def get_word_etymology_tree(word: str = Query(...), lang_code: str = Query(...)):
-#    tree = await build_etymology_tree(word, lang_code)
-#    return JSONResponse(content=tree)
+# Flat ancestry chain builder for timeline
+async def build_ancestry_chain(word, lang_code, max_depth=10):
+    chain = []
+    # Get root node
+    node = await get_word_data_or_ai(word, lang_code)
+    ipa = None
+    if node.get("sounds"):
+        for s in node["sounds"]:
+            if s.get("ipa"): ipa = s["ipa"]
+    if not ipa:
+        ipa = node.get("ai_estimated_ipa")
+    chain.append({
+        "word": word,
+        "lang_code": lang_code,
+        "ipa": ipa,
+        "node": node
+    })
+    # Walk through all etymology_templates in order
+    templates = node.get("etymology_templates", [])
+    for tpl in templates:
+        lang = tpl["args"].get("2")
+        w = tpl["args"].get("3")
+        if lang and w:
+            ancestor_node = await get_word_data_or_ai(w, lang)
+            ancestor_ipa = None
+            if ancestor_node.get("sounds"):
+                for s in ancestor_node["sounds"]:
+                    if s.get("ipa"): ancestor_ipa = s["ipa"]
+            if not ancestor_ipa:
+                ancestor_ipa = ancestor_node.get("ai_estimated_ipa")
+            chain.append({
+                "word": w,
+                "lang_code": lang,
+                "ipa": ancestor_ipa,
+                "node": ancestor_node
+            })
+    return chain
