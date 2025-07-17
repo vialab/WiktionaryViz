@@ -153,14 +153,12 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
               {/* Drift score badge */}
               <div style={badgeStyle}>Δ = {driftDisplay}</div>
               <div className="p-6 flex flex-col items-center">
+                {/* Title: word */}
                 <div className="text-2xl font-bold">{card.word}</div>
-                <div className="text-sm mb-2">{card.lang_code}</div>
-                {card.pronunciation && (
-                  <div className="text-xs italic text-[#B79F58]">{card.pronunciation}</div>
-                )}
-                {card.tooltip && (
-                  <div className="mt-2 text-xs text-[#B79F58]">{card.tooltip}</div>
-                )}
+                {/* Subtitle: IPA */}
+                <div className="text-sm italic text-[#B79F58] mb-1">{card.pronunciation || 'N/A'}</div>
+                {/* Subsubtitle: Language name */}
+                <div className="text-xs text-[#B79F58] mb-2">{card.lang}</div>
               </div>
               {/* Drift bar below card */}
               <div style={driftBarStyle} />

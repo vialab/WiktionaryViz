@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 export interface NodeData {
-    language: string;
+    lang: string; // Full language name (e.g., 'Indonesian') or expansion fallback
     drift: number;
     tooltip: string;
     word: string;
@@ -37,6 +37,13 @@ export function useTimelineData(word: string, language: string) {
                 const res = await fetch(`http://localhost:8000/ancestry-chain?word=${encodeURIComponent(word)}&lang_code=${encodeURIComponent(language)}`);
                 if (!res.ok) throw new Error('Failed to fetch ancestry chain');
                 const result = await res.json();
+                let rootExpansion = '';
+                if (result.ancestry_chain && result.ancestry_chain.length > 0) {
+                    const rootNode = result.ancestry_chain[0].node;
+                    if (rootNode && Array.isArray(rootNode.etymology_templates) && rootNode.etymology_templates.length > 0 && rootNode.etymology_templates[0].expansion) {
+                        rootExpansion = rootNode.etymology_templates[0].expansion;
+                    }
+                }
                 if (result.ancestry_chain && Array.isArray(result.ancestry_chain)) {
                     const timeline: NodeData[] = result.ancestry_chain.map((entry: AncestryChainEntry & { drift?: number }) => {
                         let dataQuality: 'complete' | 'partial-ai' | 'full-ai' = 'complete';
@@ -58,10 +65,33 @@ export function useTimelineData(word: string, language: string) {
                         } else if (!entry.ipa) {
                             dataQuality = 'full-ai';
                         }
+                        // Use full language name if available, otherwise use matching etymology_template expansion from root node, then lang_code
+                        let lang = entry.node && entry.node.lang;
+                        if (!lang && result.ancestry_chain.length > 0) {
+                            const rootNode = result.ancestry_chain[0].node;
+                            if (rootNode && Array.isArray(rootNode.etymology_templates)) {
+                                // Find the template where args[2] matches entry.lang_code
+                                const match = rootNode.etymology_templates.find(
+                                    (tpl: any) => tpl.args && tpl.args["2"] === entry.lang_code && tpl.expansion
+                                );
+                                if (match) {
+                                    // Remove the word from the expansion string
+                                    const wordToRemove = entry.word;
+                                    // Remove word at end, with or without parentheses, and trim
+                                    lang = match.expansion.replace(new RegExp(`\\s*${wordToRemove}(\\s*\(.*\))?$`), '').trim();
+                                }
+                            }
+                        }
+                        if (!lang && rootExpansion) {
+                            lang = rootExpansion;
+                        } else if (!lang) {
+                            lang = entry.lang_code;
+                        }
+                        console.debug(`Processing entry: ${entry.word} (${lang}) - IPA: ${entry.ipa}, Phonemic: ${hasPhonemic}, AI Estimated: ${isAIPhonetic}, Data Quality: ${dataQuality}`);
                         return {
-                            language: entry.lang_code,
+                            lang,
                             drift: entry.drift ?? 0,
-                            tooltip: `${entry.word} (${entry.lang_code})\nIPA: ${entry.ipa || 'N/A'}`,
+                            tooltip: `${entry.word} [${entry.ipa || 'N/A'}]\n${lang}`,
                             word: entry.word,
                             lang_code: entry.lang_code,
                             pronunciation: entry.ipa || '',
