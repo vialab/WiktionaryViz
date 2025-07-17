@@ -78,10 +78,13 @@ async def get_word_data_or_ai(word, lang_code):
     }
 
 # Helper: AI estimation for IPA using latest OpenAI async API
-async def ai_estimate_ipa(word, lang_code):
+async def ai_estimate_ipa(word, lang_code, expansion=None):
     load_dotenv()
     client = AsyncOpenAI()
-    prompt = f"Provide the IPA transcription for the word '{word}' in language code '{lang_code}'. If unknown, make your best guess. Only return the IPA."
+    context = f"word '{word}' in language code '{lang_code}'"
+    if expansion:
+        context += f" (etymological context: {expansion})"
+    prompt = f"Provide the phonetic IPA transcription for {context}. If unknown, make your best guess. Only return the IPA in square brackets."
     try:
         completion = await client.chat.completions.create(
             model="gpt-4.1-nano",
@@ -119,7 +122,10 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
         for s in node["sounds"]:
             if s.get("ipa"): ipa = s["ipa"]
     if not ipa:
-        ipa = node.get("ai_estimated_ipa")
+        # Estimate IPA with OpenAI if not present
+        expansion = node.get("expansion")
+        ipa = await ai_estimate_ipa(word, lang_code, expansion)
+        node["ai_estimated_ipa"] = ipa
     chain.append({
         "word": word,
         "lang_code": lang_code,
@@ -138,7 +144,10 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
                 for s in ancestor_node["sounds"]:
                     if s.get("ipa"): ancestor_ipa = s["ipa"]
             if not ancestor_ipa:
-                ancestor_ipa = ancestor_node.get("ai_estimated_ipa")
+                # Estimate IPA with OpenAI if not present
+                expansion = tpl.get("expansion")
+                ancestor_ipa = await ai_estimate_ipa(w, lang, expansion)
+                ancestor_node["ai_estimated_ipa"] = ancestor_ipa
             chain.append({
                 "word": w,
                 "lang_code": lang,
