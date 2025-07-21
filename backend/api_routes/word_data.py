@@ -81,16 +81,34 @@ async def get_word_data_or_ai(word, lang_code):
 async def ai_estimate_ipa(word, lang_code, expansion=None):
     load_dotenv()
     client = AsyncOpenAI()
-    context = f"word '{word}' in language code '{lang_code}'"
+
     if expansion:
-        context += f" (etymological context: {expansion})"
-    prompt = f"Provide the phonetic IPA transcription for {context}. If unknown, make your best guess. Only return the IPA in square brackets."
+        prompt = (
+            f"Estimate the IPA pronunciation of the historical word in this etymological context: {expansion}. "
+            "Respond only with the phonetic IPA transcription in square brackets, without additional explanation or text. "
+            "If the pronunciation is unknown, make your best linguistic guess based on phonological reasoning and related forms."
+        )
+    else:
+        prompt = (
+            f"Estimate the IPA pronunciation of the historical word '{word}' in the language '{lang_code}'. "
+            "Respond only with the IPA transcription in square brackets, without additional explanation or text. "
+            "If the pronunciation is unknown, make your best linguistic guess based on phonological reasoning and related forms."
+        )
+
+    print(f"[DEBUG] AI estimation prompt: {prompt}")
+
     try:
         completion = await client.chat.completions.create(
             model="gpt-4.1-nano",
             messages=[
-                {"role": "system", "content": "You are a linguist and expert in phonetic transcription."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": "You are a historical linguist and expert in phonological reconstruction and IPA transcription. You estimate historical pronunciations using comparative linguistics, etymology, and knowledge of sound changes. Only respond with the most plausible IPA transcription in square brackets. No extra text."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
             ],
             max_tokens=20
         )
@@ -133,7 +151,7 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
     # Only estimate IPA if no real IPA found
     if not ipa:
         expansion = node.get("expansion")
-        # print(f"[DEBUG] No real IPA for root, estimating with AI for word={word}, lang_code={lang_code}, expansion={expansion}")
+        print(f"[DEBUG] No real IPA for root, estimating with AI for word={word}, lang_code={lang_code}, expansion={expansion}")
         ipa = await ai_estimate_ipa(word, lang_code, expansion)
         node["ai_estimated_ipa"] = ipa
     else:
@@ -176,7 +194,7 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
             # Only estimate IPA if no real IPA found
             if not ancestor_ipa:
                 expansion = ancestor.get("expansion")
-                # print(f"[DEBUG] No real IPA for ancestor {w}, estimating with AI, expansion={expansion}")
+                print(f"[DEBUG] No real IPA for ancestor {w}, estimating with AI, expansion={expansion}")
                 ancestor_ipa = await ai_estimate_ipa(w, lang, expansion)
                 ancestor["ai_estimated_ipa"] = ancestor_ipa
             else:

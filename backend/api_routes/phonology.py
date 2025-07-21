@@ -15,7 +15,6 @@ async def ancestry_chain(word: str = Query(...), lang_code: str = Query(...)):
     chain = await build_ancestry_chain(word, lang_code)
     return JSONResponse(content={"ancestry_chain": chain})
 
-
 @router.get("/phonetic-drift-detailed")
 async def phonetic_drift_detailed(
     ipa1: str = Query(...), ipa2: str = Query(...)
