@@ -33,3 +33,6 @@ async def descendant_tree_from_root(word: str, lang_code: str):
             return tree
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# TODO [HIGH LEVEL]: Progressive disclosure support by level/depth and link strength threshold.
+# TODO [LOW LEVEL]: Add query params `max_depth`, `min_strength` and compute weights from attested links.

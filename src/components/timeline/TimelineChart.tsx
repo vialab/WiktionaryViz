@@ -32,6 +32,12 @@ const TimelineChart: React.FC<TimelineChartProps> = ({
     const innerWidth = width - 2 * margin;
     const xStep = nodeCount > 1 ? innerWidth / (nodeCount - 1) : 0;
     const getX = (i: number) => margin + i * xStep;
+
+    // TODO [HIGH LEVEL]: Visual encoding for uncertainty and contested info (e.g., dotted connectors, desaturated colors, alt paths).
+    // TODO [LOW LEVEL]: Drive strokeDasharray and fill opacity from NodeData flags like `contested` or `uncertain`.
+
+    // TODO [HIGH LEVEL]: Data quality encoding (complete vs partial-ai vs full-ai) to support transparency about AI use.
+    // TODO [LOW LEVEL]: Map NodeData.dataQuality to color/opacity legend and add a small legend component near the chart.
     return (
         <svg width={width} height={height}>
             <g transform={`translate(0,${height / 2})`}>
@@ -77,6 +83,7 @@ const TimelineChart: React.FC<TimelineChartProps> = ({
                                 opacity: 1
                             }}
                             exit={{ opacity: 0, r: 0 }}
+                            // TODO [LOW LEVEL]: Use quality-aware color scale instead of static 'tomato'.
                             fill="tomato"
                             stroke="black"
                             onMouseOver={e => onNodeHover(e, d)}
@@ -100,7 +107,7 @@ const TimelineChart: React.FC<TimelineChartProps> = ({
                             exit={{ opacity: 0, y: 70 }}
                             transition={{ duration: 0.7, delay: i * 0.1 }}
                         >
-                            {d.language}
+                            {d.lang}
                         </motion.text>
                     ))}
                 </AnimatePresence>

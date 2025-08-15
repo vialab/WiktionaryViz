@@ -38,7 +38,10 @@ export function useD3NetworkGraph(
         const width = wrapperRef.current?.clientWidth || window.innerWidth;
         const height = wrapperRef.current?.clientHeight || window.innerHeight;
 
-        const g = svg.append('g');
+    const g = svg.append('g');
+
+    // TODO [HIGH LEVEL]: Zoom-to-fit and saved camera states for sharable links and lecture mode.
+    // TODO [LOW LEVEL]: Compute graph bounds and apply zoom.transform to fit; expose getter/setter for camera state.
 
         // Zoom behavior
         // @ts-expect-error: D3 zoom type mismatch workaround
@@ -72,7 +75,7 @@ export function useD3NetworkGraph(
             })
             .attr('stroke-dasharray', d => d.type === 'cog' ? '4 2' : d.type === 'doublet' ? '6 3' : '');
 
-        // Tooltip div
+    // Tooltip div
         const tooltip = d3.select(wrapperRef.current)
             .append('div')
             .style('position', 'absolute')
@@ -83,10 +86,11 @@ export function useD3NetworkGraph(
             .style('pointer-events', 'none')
             .style('opacity', 0);
 
-        const showTooltip = (event: MouseEvent, d: GraphNode) => {
+    const showTooltip = (event: MouseEvent, d: GraphNode) => {
             tooltip
                 .style('opacity', 1)
-                .html(`<strong>${d.label}</strong><br/>${d.expansion || 'No expansion available'}`)
+        // TODO [LOW LEVEL]: Enrich tooltip with definitions/examples and sense links.
+        .html(`<strong>${d.label}</strong><br/>${d.expansion || 'No expansion available'}`)
                 .style('left', `${event.pageX + 10}px`)
                 .style('top', `${event.pageY + 10}px`);
         };
@@ -96,7 +100,7 @@ export function useD3NetworkGraph(
         };
 
         // Draw nodes
-        const node = g.append('g')
+    const node = g.append('g')
             .attr('stroke', '#fff')
             .attr('stroke-width', 1.5)
             .selectAll('circle')
@@ -113,6 +117,8 @@ export function useD3NetworkGraph(
                     .style('top', `${event.pageY + 10}px`);
             })
             .on('mouseout', hideTooltip);
+
+    // TODO [LOW LEVEL]: Support in-graph filtering (click a node to filter neighbors by type or distance; highlight by attribute).
 
         // Draw labels
         const label = g.append('g')

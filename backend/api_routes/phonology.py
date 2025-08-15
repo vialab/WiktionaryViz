@@ -52,3 +52,9 @@ async def phonetic_drift_detailed(
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# TODO [HIGH LEVEL]: Return compact drift score endpoint for tooltips (e.g., /phonetic-drift?ipa1&ipa2).
+# TODO [LOW LEVEL]: Compute feature edit distance only and return numeric score.
+
+# TODO [HIGH LEVEL]: Compare two words endpoint that includes both detailed and compact drift along ancestry.
+# TODO [LOW LEVEL]: GET /compare?word1&lang1&word2&lang2 returning side-by-side ancestry and drift arrays.

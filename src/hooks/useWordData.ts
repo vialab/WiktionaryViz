@@ -78,4 +78,10 @@ const useWordData = (word: string, language: string) => {
     return wordData;
 };
 
+// TODO [HIGH LEVEL]: Add `useKwicExamples(word, lang, decade?)` hook to surface examples in Timeline/Metadata.
+// TODO [LOW LEVEL]: Implement fetch to `/kwic?word&lang&decade` with pagination and debounce.
+
+// TODO [HIGH LEVEL]: AI-assisted filter builder `useSuggestedFilters(seedWord/lang)` for Landing/Network.
+// TODO [LOW LEVEL]: Implement GET `/ai/suggest-filters?word&lang` returning filter JSON and rationale.
+
 export default useWordData;

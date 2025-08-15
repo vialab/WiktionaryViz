@@ -7,6 +7,8 @@ import os
 import signal
 
 from api_routes import phonology, word_data, descendants
+# TODO [HIGH LEVEL]: Add routers for AI suggestions, KWIC examples, user-corpus uploads, and GeoJSON utilities.
+# TODO [LOW LEVEL]: Implement modules `api_routes/ai_tools.py`, `api_routes/kwic.py`, `api_routes/user_corpus.py`, `api_routes/geojson.py` and include them.
 from constants import load_index
 
 # Helper: check and (re)build main index and stats if needed or requested
@@ -52,6 +54,7 @@ app.add_middleware(
 app.include_router(phonology.router)
 app.include_router(word_data.router)
 app.include_router(descendants.router)
+# TODO [LOW LEVEL]: app.include_router(ai_tools.router); app.include_router(kwic.router); app.include_router(user_corpus.router); app.include_router(geojson.router)
 
 @app.get("/")
 async def root() -> dict:

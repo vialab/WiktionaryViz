@@ -59,6 +59,12 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
 
   return (
     <div className="relative w-full flex items-center">
+  {/* TODO [HIGH LEVEL]: Storytelling mode with per-card captions and a play-through control. */}
+  {/* TODO [LOW LEVEL]: Accept `narration?: string` on NodeData and render below title with stepper controls. */}
+  {/* TODO [HIGH LEVEL]: Uncertainty/contested badges on cards and connectors. */}
+  {/* TODO [LOW LEVEL]: Use card.flags like `contested`, `uncertain_date` to vary border/connector styles and show badges. */}
+  {/* TODO [HIGH LEVEL]: Shareable link to current step (deep-link). */}
+  {/* TODO [LOW LEVEL]: Update URL hash `#step=<idx>` on focus change and read on mount to set initial focus. */}
       {/* Timeline orientation labels */}
       <div style={{position: 'absolute', top: 12, left: 24, zIndex: 20, fontWeight: 700, color: '#B79F58', fontSize: 18, letterSpacing: 1}}>Older</div>
       <div style={{position: 'absolute', top: 12, right: 24, zIndex: 20, fontWeight: 700, color: '#B79F58', fontSize: 18, letterSpacing: 1}}>Younger</div>

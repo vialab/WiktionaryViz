@@ -75,6 +75,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 <LayersControl position="topright">
+                    {/* TODO [HIGH LEVEL]: GeoJSON support for standardized geographic layers and overlays. */}
+                    {/* TODO [LOW LEVEL]: Add a file/URL loader for GeoJSON and render via GeoJSON component with style options. */}
                     {/* General Etymology Markers Layer */}
                     <LayersControl.Overlay checked name="Etymology Markers">
                         <MarkerClusterGroup>
@@ -87,6 +89,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                             <EtymologyLineagePath lineage={lineage} />
                         </LayerGroup>
                     </LayersControl.Overlay>
+                    {/* TODO [HIGH LEVEL]: Trade-route path types (land/sea) with arrows and timestamps to show diffusion. */}
+                    {/* TODO [LOW LEVEL]: Extend lineage nodes with route metadata and render dashed patterns and directional arrows. */}
+                    {/* TODO [HIGH LEVEL]: Filters (time slider, region, language family) to declutter map; uncertainty styling. */}
+                    {/* TODO [LOW LEVEL]: Add a control panel to filter markers by decade/region and desaturate uncertain items. */}
                 </LayersControl>
             </MapContainer>
         </section>

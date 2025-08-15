@@ -1,4 +1,4 @@
-export const fetchData = async (url: string, onSuccess: (data: any) => void) => {
+export const fetchData = async (url: string, onSuccess: (data: unknown) => void) => {
     const basePath = import.meta.env.BASE_URL || "";
     const fullUrl = `${basePath}${url}`;
 
@@ -14,3 +14,9 @@ export const fetchData = async (url: string, onSuccess: (data: any) => void) => 
         console.error(`Error fetching data from ${fullUrl}:`, error);
     }
 };
+
+// TODO [HIGH LEVEL]: Shareable state URLs (encode current app state into query/hash) and decode on load.
+// TODO [LOW LEVEL]: Implement `encodeStateToQuery(state)` and `decodeStateFromLocation(location)` utilities here.
+
+// TODO [HIGH LEVEL]: Data export helpers (CSV/JSON/PNG) for timelines/networks/maps.
+// TODO [LOW LEVEL]: Implement `exportAsCSV(rows)`, `exportAsJSON(obj)`, and a `downloadBlob(filename, blob)` helper.

@@ -47,6 +47,15 @@ export default function NetworkPage({ word1, word2, language1, language2 }: Netw
     // Use the custom D3 hook for rendering and simulation
     useD3NetworkGraph(svgRef, wrapperRef, nodes, links);
 
+    // TODO [HIGH LEVEL]: Progressive disclosure and pruning of weak/irrelevant links to reduce visual noise.
+    // TODO [LOW LEVEL]: Add a link-strength slider and a threshold when constructing `links`, plus a toggle for "major links only".
+
+    // TODO [HIGH LEVEL]: Shape/color encodings by category (morphology, sense, etymology) and a legend.
+    // TODO [LOW LEVEL]: Extend GraphNode with `category` and map to circle/triangle/square with a small legend overlay.
+
+    // TODO [HIGH LEVEL]: Compare mode highlighting for two inputs (e.g., distinct colors, intersection emphasis).
+    // TODO [LOW LEVEL]: Add node/edge styling rules based on originating queue item color and show overlap badges.
+
     // Fetch and build the etymology network graph incrementally
     useEffect(() => {
         if (queue.length === 0) return;
@@ -79,6 +88,7 @@ export default function NetworkPage({ word1, word2, language1, language2 }: Netw
             <h2 className="text-2xl font-semibold text-white absolute top-4 left-4 z-10">
                 Etymology Network: {word1} {word2 && `& ${word2}`}
             </h2>
+            {/* TODO [LOW LEVEL]: Add toolbar with search, strength slider, and toggle for cognates/doublets/derivations. */}
             <svg ref={svgRef} className="w-full h-full bg-gray-900 rounded-none border-none" />
         </div>
     );

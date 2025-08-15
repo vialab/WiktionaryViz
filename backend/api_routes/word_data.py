@@ -55,6 +55,12 @@ async def get_random_interest():
 
     return {"category": cat, "entry": random.choice(data)}
 
+# TODO [HIGH LEVEL]: Add POST /ai/suggest-filters to propose filters and patterns for exploration.
+# TODO [LOW LEVEL]: Accept seed word/lang and return filters with rationale and example matches.
+
+# TODO [HIGH LEVEL]: Add GET /kwic to return KWIC examples for a word/lang in a time window.
+# TODO [LOW LEVEL]: Query prebuilt examples or compute from corpora; support pagination and highlighting.
+
 # Helper: Get word-data or supplement with AI if missing
 async def get_word_data_or_ai(word, lang_code):
     key = f"{word.lower()}_{lang_code.lower()}"
@@ -112,7 +118,9 @@ async def ai_estimate_ipa(word, lang_code, expansion=None):
             ],
             max_tokens=20
         )
-        return completion.choices[0].message.content.strip()
+        result = completion.choices[0].message.content.strip()
+        # TODO [LOW LEVEL]: Normalize brackets to phonemic/phonetic form and validate with ft parser.
+        return result
     except Exception as e:
         return None
 

@@ -72,6 +72,10 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = ({ card, prevCard, dr
       {driftInfo}
       {card.tooltip && <div className="mt-2 text-xs text-[#B79F58]">{card.tooltip}</div>}
       {/* Add more metadata as needed */}
+  {/* TODO [HIGH LEVEL]: Show contested/alternate etymologies and dates side-by-side with visual cues. */}
+  {/* TODO [LOW LEVEL]: Accept an `alternates` array on NodeData and render as accordions with dotted styles. */}
+  {/* TODO [HIGH LEVEL]: KWIC examples and citations for the current step to support evidence-based storytelling. */}
+  {/* TODO [LOW LEVEL]: Add a button to fetch /kwic?word&lang&decade and render paginated examples. */}
     </div>
   );
 };

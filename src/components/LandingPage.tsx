@@ -43,6 +43,14 @@ export default function LandingPage({
     // Hook for interesting word suggestion
     const { interestingWord, category: wordCategory, loading: interestingLoading, refresh } = useInterestingWord();
 
+    // TODO [HIGH LEVEL]: Add cross-variant search (spelling/script/orthography variants) and regex/phonetic pattern entry on landing.
+    // Rationale: Participants 2, 7 want regex and cross-variant search for discovery and pedagogy.
+    // TODO [LOW LEVEL]: Add an optional advanced search panel with inputs for regex, IPA/phonetic tokens, and variant toggles.
+
+    // TODO [HIGH LEVEL]: AI-assisted starting points and filter building based on natural-language intent.
+    // Rationale: Participants 5, 6 requested AI to translate goals into filters and starting subsets.
+    // TODO [LOW LEVEL]: Add an input textarea for intent, call backend /ai/suggest-filters (to be added) and prefill selectors.
+
     return (
         <div className="max-w-lg mx-auto bg-[#1C1C1E] p-6 sm:p-8 rounded-lg shadow-xl text-center mt-10 overflow-y-auto">
             <h1 className="text-3xl font-bold text-[#D4AF37] mb-2">Welcome To WiktionaryViz</h1>
@@ -79,6 +87,9 @@ export default function LandingPage({
                 </div>
             )}
 
+            {/* TODO [HIGH LEVEL]: Comparison presets (e.g., tea vs chai, bread vs loaf) and side-by-side storylines. */}
+            {/* TODO [LOW LEVEL]: Provide quick-pick chips that set both word inputs and route to compare-aware visualizations. */}
+
             {explorationType && interestingWord && (
                 <InterestingWordSuggestion
                     interestingWord={interestingWord}
@@ -107,6 +118,9 @@ export default function LandingPage({
                     Start Visualization
                 </button>
             )}
+
+            {/* TODO [HIGH LEVEL]: Allow uploading user text/corpus to link into dataset (personalized exploration). */}
+            {/* TODO [LOW LEVEL]: Add a file upload and POST to /user-corpus to get extracted tokens/expressions for linking. */}
         </div>
     );
 }
