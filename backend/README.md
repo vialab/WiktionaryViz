@@ -220,6 +220,87 @@ docker compose down
 - Serve the backend behind HTTPS (reverse proxy like Nginx/Caddy or a managed platform) to avoid mixed-content when your frontend is on HTTPS.
 - Restrict CORS origins in `main.py` for production.
 
+### Cloudflare Tunnel (quick dev and stable named)
+
+You can expose the backend over HTTPS without managing a server.
+
+Quick dev tunnel (ephemeral URL):
+
+```bash
+docker compose up -d tunnel
+docker compose logs -f tunnel # copy the trycloudflare.com URL
+```
+
+Named tunnel (stable subdomain):
+
+1. Authenticate and create a tunnel on your machine (one-time):
+
+```bash
+cloudflared tunnel login
+cloudflared tunnel create wiktionaryviz-backend
+# Route a DNS name to the tunnel (replace with your hostname)
+cloudflared tunnel route dns wiktionaryviz-backend api.example.com
+```
+
+2. In Cloudflare dash, copy the "Run tunnel" token and set it in your environment:
+
+```bash
+export TUNNEL_TOKEN=... # or add to .env for compose
+```
+
+3. Start the named tunnel service:
+
+```bash
+docker compose up -d tunnel-named
+```
+
+Your backend should now be available at `https://api.example.com`.
+
+### Frontend build with API base (GitHub Pages)
+
+Build and deploy the frontend using your backend URL:
+
+```bash
+VITE_API_BASE=https://api.example.com npm run deploy
+```
+
+### GitHub Actions
+
+- Backend image build: `.github/workflows/backend-docker.yml`
+- Frontend deploy with `VITE_API_BASE` secret: `.github/workflows/frontend-deploy.yml`
+
+### Environment
+
+Key environment variables:
+
+- `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins. When set, credentials are enabled; when `*`, credentials are disabled.
+- `OPENAI_API_KEY` (optional): Enables AI IPA estimation when a pronunciation is missing.
+- `PORT` (default `8000`): Port to expose.
+- `TUNNEL_TOKEN` (for named tunnel): Token used by `tunnel-named` compose service.
+
+### Healthcheck
+
+The Docker Compose file includes a basic healthcheck that hits `/`:
+
+```yaml
+healthcheck:
+  test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/').read()"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+```
+
+### Troubleshooting
+
+- Mixed-content errors when called from GitHub Pages:
+  - Serve the backend over HTTPS (Cloudflare Tunnel or reverse proxy).
+
+- CORS blocked:
+  - Set `ALLOWED_ORIGINS=https://vialab.github.io` and restart the container.
+
+- Slow first requests:
+  - Index build may run on first start if missing; keep `backend/data` mounted as a volume so builds persist.
+
 ## 🏎️ How It Works (High-Level)
 
 1. On startup, `main.py` loads the **index** from `wiktionary_index.json`.

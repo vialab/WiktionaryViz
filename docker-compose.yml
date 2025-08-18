@@ -23,9 +23,18 @@ services:
       timeout: 5s
       retries: 3
 
+  # Quick dev tunnel (ephemeral URL on trycloudflare.com)
   tunnel:
     image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate --url http://backend:8000
+    command: ["tunnel", "--no-autoupdate", "--url", "http://backend:8000"]
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Named tunnel (stable subdomain) — requires TUNNEL_TOKEN
+  tunnel-named:
+    image: cloudflare/cloudflared:latest
+    command: ["tunnel", "--no-autoupdate", "run", "--token", "${TUNNEL_TOKEN}"]
     depends_on:
       - backend
     restart: unless-stopped
