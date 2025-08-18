@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiUrl } from '@/utils/apiBase';
 import { useTimelineData, NodeData } from './timeline/useTimelineData';
 import { EtymologyCarousel } from './timeline/EtymologyCarousel';
 import { MetadataPanel, type PhoneticDrift } from './timeline/MetadataPanel';
@@ -38,7 +39,7 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ word, language }) => {
             if (ipa1 && ipa2) {
                 try {
                     const res = await fetch(
-                        `http://localhost:8000/phonetic-drift-detailed?ipa1=${encodeURIComponent(ipa1)}&ipa2=${encodeURIComponent(ipa2)}`
+                        apiUrl(`/phonetic-drift-detailed?ipa1=${encodeURIComponent(ipa1)}&ipa2=${encodeURIComponent(ipa2)}`)
                     );
                     if (res.ok) {
                         const driftData = (await res.json()) as PhoneticDrift;

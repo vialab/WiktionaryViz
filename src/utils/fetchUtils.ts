@@ -1,4 +1,4 @@
-export const fetchData = async (url: string, onSuccess: (data: unknown) => void) => {
+export const fetchData = async <T = unknown>(url: string, onSuccess: (data: T) => void): Promise<void> => {
     const basePath = import.meta.env.BASE_URL || "";
     const fullUrl = `${basePath}${url}`;
 
@@ -8,8 +8,8 @@ export const fetchData = async (url: string, onSuccess: (data: unknown) => void)
             console.warn(`Fetch response not OK for ${fullUrl}:`, response);
             return;
         }
-        const data = url.endsWith('.csv') ? await response.text() : await response.json();
-        onSuccess(data);
+    const data = url.endsWith('.csv') ? await response.text() : await response.json();
+    onSuccess(data as T);
     } catch (error) {
         console.error(`Error fetching data from ${fullUrl}:`, error);
     }

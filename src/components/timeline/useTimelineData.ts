@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiUrl } from '@/utils/apiBase';
 
 export interface NodeData {
     lang: string; // Full language name (e.g., 'Indonesian') or expansion fallback
@@ -34,7 +35,7 @@ export function useTimelineData(word: string, language: string) {
             setError(null);
             setData([]);
             try {
-                const res = await fetch(`http://localhost:8000/ancestry-chain?word=${encodeURIComponent(word)}&lang_code=${encodeURIComponent(language)}`);
+                const res = await fetch(apiUrl(`/ancestry-chain?word=${encodeURIComponent(word)}&lang_code=${encodeURIComponent(language)}`));
                 if (!res.ok) throw new Error('Failed to fetch ancestry chain');
                 const result = await res.json();
                 let rootExpansion = '';

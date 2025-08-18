@@ -1,4 +1,5 @@
 import { getCountryFromLanguageCode } from "@/utils/languageUtils";
+import { apiUrl } from "@/utils/apiBase";
 import { getLanguage } from "@ladjs/country-language";
 import type { EtymologyNode } from '@/types/etymology';
 
@@ -372,7 +373,7 @@ export function extractEtymologyVariants(etymologyText: string): { lang: string;
 // Utility: fetches the IPA for a given word/lang from /word-data
 export const fetchIPAForWord = async (word: string, lang: string): Promise<string | null> => {
     try {
-        const res = await fetch(`http://localhost:8000/word-data?word=${encodeURIComponent(word)}&lang_code=${encodeURIComponent(lang)}`);
+    const res = await fetch(apiUrl(`/word-data?word=${encodeURIComponent(word)}&lang_code=${encodeURIComponent(lang)}`));
         if (!res.ok) return null;
         const data = await res.json();
         // Try to get IPA from sounds

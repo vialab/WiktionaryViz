@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-
-const BACKEND_URL = "http://localhost:8000";
+import { apiUrl } from "@/utils/apiBase";
 
 /**
  * Standalone async function to fetch word data.
@@ -13,7 +12,7 @@ export const fetchWordData = async (word: string, language: string) => {
 
     try {
         const response = await fetch(
-            `${BACKEND_URL}/word-data?word=${encodeURIComponent(word)}&lang_code=${encodeURIComponent(language)}`
+            apiUrl(`/word-data?word=${encodeURIComponent(word)}&lang_code=${encodeURIComponent(language)}`)
         );
 
         if (!response.ok) {
@@ -50,7 +49,7 @@ const useWordData = (word: string, language: string) => {
         const fetchWordData = async () => {
             try {
                 const response = await fetch(
-                    `${BACKEND_URL}/word-data?word=${encodeURIComponent(word)}&lang_code=${encodeURIComponent(language)}`
+                    apiUrl(`/word-data?word=${encodeURIComponent(word)}&lang_code=${encodeURIComponent(language)}`)
                 );
 
                 if (!response.ok) {

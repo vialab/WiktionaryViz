@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "@/utils/apiBase";
 
 export interface InterestingWord {
   word: string;
@@ -18,7 +19,7 @@ export function useInterestingWord() {
   const fetchInterestingWord = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/random-interesting-word");
+  const res = await fetch(apiUrl("/random-interesting-word"));
       const data = await res.json();
       if (data?.entry?.word && data?.entry?.lang_code) {
         setInterestingWord({

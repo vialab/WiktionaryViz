@@ -164,6 +164,62 @@ GET http://localhost:8000/word-data?word=tea&lang_code=en
 
 ---
 
+## 🐳 Docker (Recommended for portability)
+
+You can run the backend in a container. This keeps dependencies isolated and lets you ship the service easily.
+
+### Build and run with Docker directly
+
+1. Build the image
+
+  ```bash
+  docker build -t wiktionaryviz-backend ./backend
+  ```
+
+1. Run the container (mounting host data so large files stay outside the image)
+
+  ```bash
+  docker run --name wiktionaryviz-backend \
+    -p 8000:8000 \
+    -e OPENAI_API_KEY=$OPENAI_API_KEY \
+    -v "$(pwd)/backend/data:/app/data" \
+    wiktionaryviz-backend
+  ```
+
+The API will be available at:
+
+```http
+http://localhost:8000
+```
+
+On first start, the app will build the index if needed. Keep the large `wiktionary_data.jsonl` in `backend/data` on the host—the container reads it via the volume.
+
+### Orchestration with Docker Compose
+
+A `docker-compose.yml` is provided at the repo root:
+
+```bash
+docker compose up --build
+```
+
+This will:
+
+- Build the backend image from `backend/`
+- Publish port 8000
+- Mount `./backend/data` into `/app/data` inside the container
+- Pass through `OPENAI_API_KEY` if set
+
+Stop with:
+
+```bash
+docker compose down
+```
+
+### Notes for production
+
+- Serve the backend behind HTTPS (reverse proxy like Nginx/Caddy or a managed platform) to avoid mixed-content when your frontend is on HTTPS.
+- Restrict CORS origins in `main.py` for production.
+
 ## 🏎️ How It Works (High-Level)
 
 1. On startup, `main.py` loads the **index** from `wiktionary_index.json`.

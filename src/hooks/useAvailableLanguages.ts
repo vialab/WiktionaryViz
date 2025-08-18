@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiUrl } from "@/utils/apiBase";
 import { useDebounce } from "./useDebounce";
 
 /**
@@ -20,7 +21,7 @@ export function useAvailableLanguages(word: string) {
     }
     setLoading(true);
     setError(null);
-    fetch(`http://localhost:8000/available-languages?word=${encodeURIComponent(debouncedWord)}`)
+  fetch(apiUrl(`/available-languages?word=${encodeURIComponent(debouncedWord)}`))
       .then(res => res.json())
       .then(data => setLanguages(data.languages || []))
       .catch(() => setError("Failed to fetch languages."))

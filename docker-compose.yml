@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: wiktionaryviz-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PORT=8000
+      # Pass through OpenAI key if using AI estimation (optional)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Restrict CORS to your GitHub Pages origin in production
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    volumes:
+      # Mount local data directory into the container so large files stay on host
+      - ./backend/data:/app/data
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://backend:8000
+    depends_on:
+      - backend
+    restart: unless-stopped

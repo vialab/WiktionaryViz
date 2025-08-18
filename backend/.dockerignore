@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+
+# Virtual envs
+venv/
+.env
+
+# Node artifacts (not needed here)
+node_modules/
+
+# Data files - mount as a volume instead (they can be huge)
+data/
+
+# Git
+.git/
+.gitignore
