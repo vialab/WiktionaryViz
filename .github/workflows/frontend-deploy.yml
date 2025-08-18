@@ -35,6 +35,11 @@ jobs:
           VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
         run: npm run build
 
+      - name: Configure Git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Deploy to GitHub Pages (gh-pages branch)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
