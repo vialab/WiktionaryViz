@@ -44,4 +44,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          GIT_USER=github-actions[bot]
+          GIT_PASS=${{ secrets.GITHUB_TOKEN }}
           npm run deploy
