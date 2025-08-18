@@ -11,7 +11,6 @@ on:
       - '.github/workflows/frontend-deploy.yml'
   workflow_dispatch:
 
-# Ensure only one Pages deployment runs at a time
 concurrency:
   group: pages
   cancel-in-progress: true
