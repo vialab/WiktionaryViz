@@ -12,10 +12,10 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       # Restrict CORS to your GitHub Pages origin in production
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
-  # Data bootstrap: override to raw .jsonl or .gz if desired
-  - WIKTIONARY_DATA_URL=${WIKTIONARY_DATA_URL}
-  # Set to 1 to skip automatic download (if you mount data yourself)
-  - SKIP_DOWNLOAD=${SKIP_DOWNLOAD}
+      # Data bootstrap: override to raw .jsonl or .gz if desired
+      - WIKTIONARY_DATA_URL=${WIKTIONARY_DATA_URL}
+      # Set to 1 to skip automatic download (if you mount data yourself)
+      - SKIP_DOWNLOAD=${SKIP_DOWNLOAD}
     volumes:
       # Mount local data directory into the container so large files stay on host
       - ./backend/data:/app/data
