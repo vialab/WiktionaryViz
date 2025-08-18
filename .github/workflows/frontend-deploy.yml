@@ -44,6 +44,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          GIT_USER=github-actions[bot]
-          GIT_PASS=${{ secrets.GITHUB_TOKEN }}
-          npm run deploy
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          npx gh-pages -d dist -u "github-actions[bot] <github-actions[bot]@users.noreply.github.com>" --repo "https://x-access-token:${GITHUB_TOKEN}@github.com/vialab/WiktionaryViz.git"
