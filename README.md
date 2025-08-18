@@ -133,6 +133,8 @@ Environment variables used across the project:
 	- `OPENAI_API_KEY` (optional): Enables AI IPA estimation when needed.
 	- `PORT` (optional): Backend port (defaults to 8000).
 	- `TUNNEL_TOKEN` (named Cloudflare tunnel): Used by `tunnel-named` service.
+	- `WIKTIONARY_DATA_URL` (optional): URL to download the dataset on first run. Supports `.gz` or plain `.jsonl`. Defaults to Kaikki.org `.gz`.
+	- `SKIP_DOWNLOAD` (optional): Set to `1` to skip auto-download. Default `0`.
 
 ## Troubleshooting
 

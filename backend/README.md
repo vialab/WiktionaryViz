@@ -209,6 +209,20 @@ This will:
 - Mount `./backend/data` into `/app/data` inside the container
 - Pass through `OPENAI_API_KEY` if set
 
+#### Automatic dataset bootstrap
+
+On first start, if `/app/data/wiktionary_data.jsonl` is missing, the container will automatically download and prepare the dataset before starting the API.
+
+Controls (set in your shell or a `.env` file used by Compose):
+
+- `WIKTIONARY_DATA_URL` — Source URL for the dataset. Defaults to `https://kaikki.org/dictionary/raw-wiktextract-data.jsonl.gz`. Supports `.gz` (auto-unzipped) or plain `.jsonl`.
+- `SKIP_DOWNLOAD` — When set to `1`, skips the auto-download (useful if you mount your own data file). Default `0`.
+
+Notes:
+
+- The dataset is large (20GB+ uncompressed). Ensure you have sufficient disk space in `./backend/data` on the host.
+- The first run may take a long time while downloading and unzipping.
+
 Stop with:
 
 ```bash
@@ -242,13 +256,13 @@ cloudflared tunnel create wiktionaryviz-backend
 cloudflared tunnel route dns wiktionaryviz-backend api.example.com
 ```
 
-2. In Cloudflare dash, copy the "Run tunnel" token and set it in your environment:
+1. In Cloudflare dash, copy the "Run tunnel" token and set it in your environment:
 
 ```bash
 export TUNNEL_TOKEN=... # or add to .env for compose
 ```
 
-3. Start the named tunnel service:
+1. Start the named tunnel service:
 
 ```bash
 docker compose up -d tunnel-named
