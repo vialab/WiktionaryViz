@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.3](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.2...wiktionaryviz-v0.1.3) (2025-08-19)
+
+
+### Bug Fixes
+
+* **workflows:** update backend and frontend workflows to use actions/setup-node directly for improved clarity and maintainability ([9460909](https://github.com/vialab/WiktionaryViz/commit/9460909364a3111226907150e9984da013305b6c))
+
 ## [0.1.2](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.1...wiktionaryviz-v0.1.2) (2025-08-19)
 
 
