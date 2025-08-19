@@ -14,11 +14,13 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    timeout-minutes: 20
-    steps:
+      # Skip builds on the Release Please bump commit to avoid duplicate runs
+      if: "!contains(github.event.head_commit.message, 'chore(main): release')"
+      runs-on: ubuntu-latest
+      permissions:
+        contents: read
+      timeout-minutes: 20
+      steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -45,13 +47,3 @@ jobs:
           cache-to: type=gha,mode=max,scope=backend
           tags: |
             wiktionaryviz/backend:latest
-
-      - name: Cache image as artifact (optional)
-        if: ${{ false }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-image-tar
-          path: |
-            # Example to save: docker save wiktionaryviz/backend:latest -o backend.tar
-            # Implement saving in a prior step if desired
-            backend.tar

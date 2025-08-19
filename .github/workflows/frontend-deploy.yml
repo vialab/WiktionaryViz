@@ -19,6 +19,8 @@ concurrency:
 
 jobs:
   build-and-deploy:
+    # Skip deploys on the Release Please bump commit to avoid duplicate gh-pages publishes
+    if: "!contains(github.event.head_commit.message, 'chore(main): release')"
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -31,10 +33,20 @@ jobs:
           persist-credentials: false
 
       - name: Setup Node and install deps
-        uses: ./.github/actions/node-setup
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
           cache-dependency-path: package-lock.json
+
+      - name: Install deps (ci if lockfile)
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --prefer-offline --no-audit --progress=false
+          else
+            npm install --prefer-offline --no-audit --progress=false
+          fi
 
       - name: Build with API base
         env:
