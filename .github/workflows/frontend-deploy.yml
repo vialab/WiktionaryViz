@@ -21,7 +21,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-  contents: write
+      contents: write
     timeout-minutes: 20
     steps:
       - name: Checkout
