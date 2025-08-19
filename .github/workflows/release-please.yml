@@ -3,13 +3,15 @@ name: release-please
 on:
   push:
     branches: [ main ]
-    paths:
-      - '**/*.ts'
-      - '**/*.tsx'
+    # Avoid infinite loops: ignore files updated by Release Please
+    paths-ignore:
+      - 'CHANGELOG.md'
+      - 'backend/CHANGELOG.md'
+      - '.release-please-manifest.json'
       - 'package.json'
-      - 'backend/**'
-      - '.github/release-please-config.json'
-      - '.github/workflows/release-please.yml'
+      - 'package-lock.json'
+      - 'version.txt'
+      - 'backend/version.txt'
   workflow_dispatch:
 
 permissions:
@@ -19,6 +21,8 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    # Skip when the squash merge commit is the release commit to avoid re-opening PRs
+    if: "!contains(github.event.head_commit.message, 'chore(main): release')"
     steps:
       - name: Release Please
         uses: googleapis/release-please-action@v4
