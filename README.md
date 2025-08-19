@@ -1,14 +1,25 @@
 # [WiktionaryViz](https://vialab.github.io/WiktionaryViz/ "vialab.github.io/WiktionaryViz")
 
-An explorative visual analytics tool for linguistics based upon Wiktionary
+Interactive visual analytics for exploring etymology, phonology, descendants, and translations using Wiktionary data.
 
 [![Website](https://img.shields.io/website?label=vialab.github.io/WiktionaryViz&style=for-the-badge&url=https%3A%2F%2Fvialab.github.io/WiktionaryViz)](https://vialab.github.io/WiktionaryViz/)
 ![GitHub repo size](https://img.shields.io/github/repo-size/vialab/WiktionaryViz?style=for-the-badge)
 ![GitHub](https://img.shields.io/github/license/vialab/WiktionaryViz?style=for-the-badge)
 
+WiktionaryViz consists of a React + Vite frontend and a FastAPI backend that serves data from a large JSONL dump via an mmap-backed index for fast lookups.
+
+• Live demo: https://vialab.github.io/WiktionaryViz/
+
+## Prerequisites
+
+- Node.js 18+ and npm (or pnpm)
+- For backend via Docker: Docker + Docker Compose
+- For backend without Docker: Python 3.9+, pip
+- Data: a Wiktionary JSONL file (20GB+ uncompressed) placed in `backend/data/` (see Backend below)
+
 ## Quick Start
 
-1. Backend (Docker):
+1. Backend (Docker, recommended for dev):
 
 ```bash
 npm run backend:up
@@ -20,7 +31,7 @@ npm run backend:up
 npm run dev
 ```
 
-3. Optional Cloudflare dev tunnel (HTTPS):
+3. Optional Cloudflare dev tunnel (HTTPS for your backend):
 
 ```bash
 npm run tunnel:up
@@ -35,8 +46,7 @@ API=https://your-backend.example.com npm run deploy:api
 
 ## Development
 
-- Install Node.js 18+ and pnpm/npm.
-- Install deps:
+- Install Node.js and dependencies:
 
 ```bash
 npm install
@@ -48,13 +58,20 @@ npm install
 npm run dev
 ```
 
-- Start backend (Python FastAPI):
+- Start backend (Python FastAPI) without Docker (requires Python and pip):
 
 ```bash
+# one-time in another shell
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# then, from repo root
 npm run backend
 ```
 
-- To run both:
+- To run both concurrently:
 
 ```bash
 npm run dev:full
@@ -62,13 +79,22 @@ npm run dev:full
 
 ### Frontend → Backend connection
 
-- The frontend reads `API_BACKEND` to construct API requests. Create a `.env` file in the repo root (based on `.env.example`) and set the backend URL:
+- The frontend reads `API_BACKEND` at build/dev time. Create a `.env` in the repo root (based on `.env.example`) and set the backend URL:
 
 ```bash
 API_BACKEND=http://localhost:8000
 ```
 
-- For GitHub Pages, set `API_BACKEND` at build time to your public backend URL (e.g. `https://api.example.com`). Ensure your backend has CORS enabled for your GitHub Pages origin.
+- For GitHub Pages, set `API_BACKEND` at build time to your public backend URL (e.g., `https://api.example.com`). Ensure your backend has CORS enabled for your GitHub Pages origin.
+
+- Convenience scripts also accept `API` and forward it to `API_BACKEND`:
+
+```bash
+# Build only
+API=https://api.example.com npm run build:api
+# Deploy to GitHub Pages
+API=https://api.example.com npm run deploy:api
+```
 
 ### Dockerized backend
 
@@ -106,6 +132,21 @@ API=https://your-backend.example.com npm run build:api
 API=https://your-backend.example.com npm run deploy:api
 ```
 
+## Project structure
+
+```
+.
+├── src/                     # React + Vite frontend (D3, Leaflet, Tailwind)
+├── backend/                 # FastAPI backend
+│   ├── api_routes/          # API route modules
+│   ├── data/                # wiktionary_data.jsonl + generated indices/stats
+│   ├── services/            # PanPhon alignment, IO helpers
+│   └── requirements.txt
+├── docker-compose.yml       # Backend + optional Cloudflare tunnels
+├── vite.config.ts           # Frontend build config (base /WiktionaryViz/)
+└── package.json             # Scripts for dev/deploy
+```
+
 ## CI (GitHub Actions)
 
 - Backend Docker build: `.github/workflows/backend-docker.yml`
@@ -136,6 +177,19 @@ Environment variables used across the project:
 	- `WIKTIONARY_DATA_URL` (optional): URL to download the dataset on first run. Supports `.gz` or plain `.jsonl`. Defaults to Kaikki.org `.gz`.
 	- `SKIP_DOWNLOAD` (optional): Set to `1` to skip auto-download. Default `0`.
 
+## Backend API
+
+- FastAPI app runs on `http://localhost:8000` by default.
+- Interactive API docs: `http://localhost:8000/docs`
+- Common endpoints:
+	- `GET /word-data?word=tea&lang_code=en`
+	- `GET /available-languages?word=tea`
+	- `GET /random-interesting-word`
+	- `GET /ancestry-chain?word=tea&lang_code=en`
+	- `GET /phonetic-drift-detailed?ipa1=/tiː/&ipa2=/te/`
+	- `GET /descendant-tree?word=tea&lang_code=en`
+	- `GET /descendant-tree-from-root?word=proto-form&lang_code=la`
+
 ## Troubleshooting
 
 - Requests hitting GitHub Pages path (e.g., `/random-interesting-word`) instead of backend:
@@ -149,3 +203,15 @@ Environment variables used across the project:
 
 - No data or 404 for entries:
 	- Ensure `backend/data/wiktionary_data.jsonl` exists and allow time for index build on first run.
+
+## Contributing
+
+Issues and pull requests are welcome. Please:
+
+- Keep changes focused and documented.
+- Run `npm run lint` for frontend changes; follow existing code style.
+- When touching the backend, update docs for any new endpoints.
+
+## License
+
+MIT © Visualization for Information Analysis Lab. See [`LICENSE`](./LICENSE).

@@ -1,6 +1,6 @@
 # 📚 WiktionaryViz Backend API (FastAPI)
 
-A high-performance backend API for serving data from a large `wiktionary_data.jsonl` file (20GB+) using **FastAPI**, **mmap**, and a **precomputed index** for fast lookups.
+A high-performance backend API that serves data from a large `wiktionary_data.jsonl` (20GB+) using **FastAPI**, **mmap**, and a **precomputed index** for fast lookups.
 
 ---
 
@@ -17,8 +17,8 @@ A high-performance backend API for serving data from a large `wiktionary_data.js
 ## ✅ Prerequisites
 
 - Python 3.9+
-- FastAPI, Uvicorn, and tqdm installed (see below)
-- `wiktionary_data.jsonl` file (20GB+ JSONL file)
+- `pip` to install Python packages
+- `wiktionary_data.jsonl` (20GB+ JSONL file)
 
 ---
 
@@ -26,10 +26,16 @@ A high-performance backend API for serving data from a large `wiktionary_data.js
 
 ```txt
 /backend
-├── wiktionary_data.jsonl       # Your main dataset (20GB+)
-├── wiktionary_index.json       # Generated index mapping word/lang_code to byte offsets
-├── main.py                     # FastAPI app
-├── build_index.py              # Script to create the index from JSONL
+├── data/
+│   ├── wiktionary_data.jsonl       # Main dataset (20GB+)
+│   ├── wiktionary_index.json       # Generated index: {"word_lang": byte_offset}
+│   ├── longest_words.json          # Precomputed stats (built by build_index.py)
+│   ├── most_translations.json      # Precomputed stats (built by build_index.py)
+│   └── most_descendants.json       # Precomputed stats (built by build_index.py)
+├── api_routes/                     # API route modules
+├── services/                       # Utilities (alignment, IO)
+├── main.py                         # FastAPI app
+├── build_index.py                  # Index + stats builder
 ├── requirements.txt
 └── README.md
 ```
@@ -52,34 +58,27 @@ venv\Scripts\activate
 
 ---
 
-### 2. Install Dependencies
+### 2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-> `requirements.txt` includes:
+Key packages (see full pinned list in `requirements.txt`): FastAPI, Uvicorn, PanPhon, httpx, tqdm, python-dotenv, openai (optional).
+
+---
+
+### 3. Place your `wiktionary_data.jsonl`
+
+- Put the file in `backend/data/`:
 
 ```txt
-fastapi
-uvicorn
-tqdm
+/backend/data/wiktionary_data.jsonl
 ```
 
 ---
 
-### 3. Place Your `wiktionary_data.jsonl` File
-
-- Add your **full** `wiktionary_data.jsonl` file to the `/backend/` directory.
-- Example:
-
-```txt
-/backend/wiktionary_data.jsonl
-```
-
----
-
-### 4. Build the Index File (Run Once)
+### 4. Build the index file (run once)
 
 The index speeds up lookups by storing file positions for each `{word, lang_code}` combo.
 
@@ -91,14 +90,14 @@ python build_index.py
 
 This will:
 
-- Scan `wiktionary_data.jsonl`
-- Generate `wiktionary_index.json`
+- Scan `data/wiktionary_data.jsonl`
+- Generate `data/wiktionary_index.json` and precomputed stats files in `data/`
 
 Progress will be printed in batches (e.g. every 100,000 records).
 
 ---
 
-## 🖥️ Running the Server
+## 🖥️ Run the server
 
 Start the FastAPI server using Uvicorn:
 
@@ -108,9 +107,9 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 - Server will be available at:
 
-```http
-http://localhost:8000
-```
+Server will be available at: http://localhost:8000
+
+Interactive docs (OpenAPI): http://localhost:8000/docs
 
 ---
 
@@ -134,33 +133,47 @@ Response:
 
 ---
 
-### `/word-data`
+### `GET /word-data`
 
-Fetch all matching entries by `word` and `lang_code`.
+Fetch the entry by `word` and `lang_code`.
 
-```http
-GET http://localhost:8000/word-data?word=tea&lang_code=en
-```
+Example: `/word-data?word=tea&lang_code=en`
 
-#### Query Parameters
+Query params: `word` (string), `lang_code` (string, e.g., `en`)
 
-| Name        | Required | Description                     |
-| ----------- | -------- | ------------------------------- |
-| `word`      | ✅ Yes    | The word you're searching for   |
-| `lang_code` | ✅ Yes    | Language code (e.g. `en`, `fr`) |
+### `GET /available-languages`
 
-#### Example Response
+List language codes available for a given `word`.
 
-```json
-{
-  "word": "tea",
-  "lang": "English",
-  "lang_code": "en",
-  "translations": [...],
-  "etymology_templates": [...],
-  ...
-},
-```
+Example: `/available-languages?word=tea`
+
+### `GET /random-interesting-word`
+
+Returns a random entry from one of the precomputed categories: longest words, most translations, or most descendants.
+
+### `GET /ancestry-chain`
+
+Returns a linear ancestry chain for timeline visualization.
+
+Example: `/ancestry-chain?word=tea&lang_code=en`
+
+### `GET /phonetic-drift-detailed`
+
+Returns segment alignment and feature changes between two IPA strings.
+
+Example: `/phonetic-drift-detailed?ipa1=/tiː/&ipa2=/te/`
+
+### `GET /descendant-tree`
+
+Builds a descendant hierarchy starting from the given word.
+
+Example: `/descendant-tree?word=tea&lang_code=en`
+
+### `GET /descendant-tree-from-root`
+
+Builds a descendant hierarchy given a root form and language code.
+
+Example: `/descendant-tree-from-root?word=proto-form&lang_code=la`
 
 ---
 
@@ -176,7 +189,7 @@ You can run the backend in a container. This keeps dependencies isolated and let
   docker build -t wiktionaryviz-backend ./backend
   ```
 
-1. Run the container (mounting host data so large files stay outside the image)
+2. Run the container (mounting host data so large files stay outside the image)
 
   ```bash
   docker run --name wiktionaryviz-backend \
@@ -188,9 +201,7 @@ You can run the backend in a container. This keeps dependencies isolated and let
 
 The API will be available at:
 
-```http
 http://localhost:8000
-```
 
 On first start, the app will build the index if needed. Keep the large `wiktionary_data.jsonl` in `backend/data` on the host—the container reads it via the volume.
 
@@ -273,6 +284,14 @@ Your backend should now be available at `https://api.example.com`.
 ### Frontend build with API base (GitHub Pages)
 
 Build and deploy the frontend using your backend URL:
+
+Option A (convenience script):
+
+```bash
+API=https://api.example.com npm run deploy:api
+```
+
+Option B (set Vite env directly):
 
 ```bash
 API_BACKEND=https://api.example.com npm run deploy
