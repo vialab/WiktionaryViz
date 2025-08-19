@@ -25,7 +25,6 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        # TODO: Pin to a specific commit SHA
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
@@ -43,7 +42,6 @@ jobs:
         run: npm run build
 
       - name: Deploy to gh-pages branch
-        # TODO: Pin to a specific commit SHA
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
