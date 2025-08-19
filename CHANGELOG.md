@@ -2,6 +2,19 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.2](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.1...wiktionaryviz-v0.1.2) (2025-08-19)
+
+
+### Features
+
+* **github workflows:** rename build job to build-and-deploy and update deployment steps for GitHub Pages ([4d122f1](https://github.com/vialab/WiktionaryViz/commit/4d122f1dd7500437d541b243e3ccbaf76d9b0063))
+
+
+### Bug Fixes
+
+* **github workflows:** update permissions for GitHub Pages deployment to use contents: write ([4d122f1](https://github.com/vialab/WiktionaryViz/commit/4d122f1dd7500437d541b243e3ccbaf76d9b0063))
+* **index.html:** change favicon link to use %BASE_URL% for better path resolution in different environments ([4d122f1](https://github.com/vialab/WiktionaryViz/commit/4d122f1dd7500437d541b243e3ccbaf76d9b0063))
+
 ## [0.1.1](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.0...wiktionaryviz-v0.1.1) (2025-08-19)
 
 
