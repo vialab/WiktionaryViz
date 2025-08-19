@@ -62,13 +62,13 @@ npm run dev:full
 
 ### Frontend → Backend connection
 
-- The frontend reads `VITE_API_BASE` to construct API requests. Create a `.env` file in the repo root (based on `.env.example`) and set the backend URL:
+- The frontend reads `API_BACKEND` to construct API requests. Create a `.env` file in the repo root (based on `.env.example`) and set the backend URL:
 
 ```bash
-VITE_API_BASE=http://localhost:8000
+API_BACKEND=http://localhost:8000
 ```
 
-- For GitHub Pages, set `VITE_API_BASE` at build time to your public backend URL (e.g. `https://api.example.com`). Ensure your backend has CORS enabled for your GitHub Pages origin.
+- For GitHub Pages, set `API_BACKEND` at build time to your public backend URL (e.g. `https://api.example.com`). Ensure your backend has CORS enabled for your GitHub Pages origin.
 
 ### Dockerized backend
 
@@ -113,12 +113,12 @@ API=https://your-backend.example.com npm run deploy:api
 	- To push to a registry, add secrets and enable login in the workflow (Docker Hub or GHCR).
 
 - Frontend deploy: `.github/workflows/frontend-deploy.yml`
-	- Builds the frontend with `VITE_API_BASE` from the repository secret `VITE_API_BASE`.
+	- Builds the frontend with `API_BACKEND` from the repository secret `API_BACKEND`.
 	- Deploys with `gh-pages`.
 
 Recommended secrets:
 
-- `VITE_API_BASE` — public HTTPS URL of your backend for production builds.
+- `API_BACKEND` — public HTTPS URL of your backend for production builds.
 - (Optional) `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` or GHCR equivalents if you want to publish backend images.
 
 ## Configuration
@@ -126,7 +126,7 @@ Recommended secrets:
 Environment variables used across the project:
 
 - Frontend
-	- `VITE_API_BASE`: Base URL for backend API (e.g., `https://api.example.com`). Used at build time.
+	- `API_BACKEND`: Base URL for backend API (e.g., `https://api.example.com`). Used at build time.
 
 - Backend
 	- `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins (e.g., `https://vialab.github.io`).
@@ -139,7 +139,7 @@ Environment variables used across the project:
 ## Troubleshooting
 
 - Requests hitting GitHub Pages path (e.g., `/random-interesting-word`) instead of backend:
-	- Rebuild/deploy frontend with `VITE_API_BASE` set to your backend URL.
+	- Rebuild/deploy frontend with `API_BACKEND` set to your backend URL.
 
 - Mixed content blocked (HTTPS page calling HTTP backend):
 	- Use HTTPS backend (Cloudflare tunnel or your own TLS).

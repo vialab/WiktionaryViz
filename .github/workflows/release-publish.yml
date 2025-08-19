@@ -65,7 +65,7 @@ jobs:
 
       - name: Build site with API base
         env:
-          VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
+          API_BACKEND: ${{ secrets.API_BACKEND }}
         run: npm run build
 
       - name: Deploy to gh-pages branch

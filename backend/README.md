@@ -275,13 +275,13 @@ Your backend should now be available at `https://api.example.com`.
 Build and deploy the frontend using your backend URL:
 
 ```bash
-VITE_API_BASE=https://api.example.com npm run deploy
+API_BACKEND=https://api.example.com npm run deploy
 ```
 
 ### GitHub Actions
 
 - Backend image build: `.github/workflows/backend-docker.yml`
-- Frontend deploy with `VITE_API_BASE` secret: `.github/workflows/frontend-deploy.yml`
+- Frontend deploy with `API_BACKEND` secret: `.github/workflows/frontend-deploy.yml`
 
 ### Environment
 

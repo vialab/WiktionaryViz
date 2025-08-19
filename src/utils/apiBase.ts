@@ -1,9 +1,9 @@
 // Centralized API base URL for backend requests
-// Configure via Vite env: VITE_API_BASE=https://your-backend.example.com
+// Configure via Vite env: API_BACKEND=https://your-backend.example.com
 // Access Vite env safely without using `any`
-type ViteEnv = { VITE_API_BASE?: string };
+type ViteEnv = { API_BACKEND?: string };
 const viteEnv: ViteEnv = (typeof import.meta !== 'undefined' && (import.meta as unknown as { env?: ViteEnv }).env) || {};
-const rawBase = viteEnv.VITE_API_BASE;
+const rawBase = viteEnv.API_BACKEND;
 export const API_BASE = (rawBase && rawBase.trim().length > 0) ? rawBase : "http://localhost:8000";
 
 export const apiUrl = (path: string) => {
