@@ -9,11 +9,12 @@ on:
       - 'index.html'
       - 'vite.config.ts'
       - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/frontend-deploy.yml'
   workflow_dispatch:
 
 concurrency:
-  group: pages
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -21,17 +22,22 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pages: write
+      id-token: write
+    timeout-minutes: 20
     steps:
       - name: Checkout
+        # TODO: Pin to a specific commit SHA
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
 
-      - name: Use Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node and install deps
+        uses: ./.github/actions/node-setup
         with:
           node-version: '20'
-
-      - name: Install deps
-        run: npm install
+          cache-dependency-path: package-lock.json
 
       - name: Build with API base
         env:
@@ -39,6 +45,7 @@ jobs:
         run: npm run build
 
       - name: Deploy to gh-pages branch
+        # TODO: Pin to a specific commit SHA
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
