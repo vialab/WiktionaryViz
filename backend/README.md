@@ -18,7 +18,7 @@ A high-performance backend API that serves data from a large `wiktionary_data.js
 
 - Python 3.9+
 - `pip` to install Python packages
-- `wiktionary_data.jsonl` (20GB+ JSONL file)
+- `wiktionary_data.jsonl` (20GB+ JSONL file) if running without Docker (the Docker image can auto-download it)
 
 ---
 
@@ -68,13 +68,15 @@ Key packages (see full pinned list in `requirements.txt`): FastAPI, Uvicorn, Pan
 
 ---
 
-### 3. Place your `wiktionary_data.jsonl`
+### 3. Dataset location
 
-- Put the file in `backend/data/`:
+- If running without Docker, place the file in `backend/data/`:
 
-```txt
-/backend/data/wiktionary_data.jsonl
-```
+  ```txt
+  /backend/data/wiktionary_data.jsonl
+  ```
+
+- If running with Docker, the image defaults to storing data in `/app/data` and can auto-download the dataset on first start. See the Docker section below for environment controls.
 
 ---
 
@@ -181,33 +183,9 @@ Example: `/descendant-tree-from-root?word=proto-form&lang_code=la`
 
 You can run the backend in a container. This keeps dependencies isolated and lets you ship the service easily.
 
-### Build and run with Docker directly
+### Run with Docker Compose
 
-1. Build the image
-
-  ```bash
-  docker build -t wiktionaryviz-backend ./backend
-  ```
-
-2. Run the container (mounting host data so large files stay outside the image)
-
-  ```bash
-  docker run --name wiktionaryviz-backend \
-    -p 8000:8000 \
-    -e OPENAI_API_KEY=$OPENAI_API_KEY \
-    -v "$(pwd)/backend/data:/app/data" \
-    wiktionaryviz-backend
-  ```
-
-The API will be available at:
-
-http://localhost:8000
-
-On first start, the app will build the index if needed. Keep the large `wiktionary_data.jsonl` in `backend/data` on the host—the container reads it via the volume.
-
-### Orchestration with Docker Compose
-
-A `docker-compose.yml` is provided at the repo root:
+A `docker-compose.yml` is provided at the repo root. From the repo root:
 
 ```bash
 docker compose up --build
@@ -217,10 +195,10 @@ This will:
 
 - Build the backend image from `backend/`
 - Publish port 8000
-- Mount `./backend/data` into `/app/data` inside the container
-- Pass through `OPENAI_API_KEY` if set
+- Use the image’s internal `/app/data` directory (no host bind mount by default)
+- Auto-download the dataset if missing (controlled by env vars below)
 
-#### Automatic dataset bootstrap
+#### Automatic dataset bootstrap (entrypoint)
 
 On first start, if `/app/data/wiktionary_data.jsonl` is missing, the container will automatically download and prepare the dataset before starting the API.
 
@@ -231,7 +209,7 @@ Controls (set in your shell or a `.env` file used by Compose):
 
 Notes:
 
-- The dataset is large (20GB+ uncompressed). Ensure you have sufficient disk space in `./backend/data` on the host.
+- The dataset is large (20GB+ uncompressed). Ensure you have sufficient disk space allocated to Docker.
 - The first run may take a long time while downloading and unzipping.
 
 Stop with:
@@ -245,41 +223,16 @@ docker compose down
 - Serve the backend behind HTTPS (reverse proxy like Nginx/Caddy or a managed platform) to avoid mixed-content when your frontend is on HTTPS.
 - Restrict CORS origins in `main.py` for production.
 
-### Cloudflare Tunnel (quick dev and stable named)
+### Cloudflare Tunnel (dev-only)
 
-You can expose the backend over HTTPS without managing a server.
+You can expose the backend over HTTPS quickly for development. The Compose file includes a dev-only tunnel service behind a profile.
 
 Quick dev tunnel (ephemeral URL):
 
 ```bash
-docker compose up -d tunnel
+docker compose --profile dev up -d tunnel
 docker compose logs -f tunnel # copy the trycloudflare.com URL
 ```
-
-Named tunnel (stable subdomain):
-
-1. Authenticate and create a tunnel on your machine (one-time):
-
-```bash
-cloudflared tunnel login
-cloudflared tunnel create wiktionaryviz-backend
-# Route a DNS name to the tunnel (replace with your hostname)
-cloudflared tunnel route dns wiktionaryviz-backend api.example.com
-```
-
-1. In Cloudflare dash, copy the "Run tunnel" token and set it in your environment:
-
-```bash
-export TUNNEL_TOKEN=... # or add to .env for compose
-```
-
-1. Start the named tunnel service:
-
-```bash
-docker compose up -d tunnel-named
-```
-
-Your backend should now be available at `https://api.example.com`.
 
 ### Frontend build with API base (GitHub Pages)
 
@@ -309,7 +262,7 @@ Key environment variables:
 - `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins. When set, credentials are enabled; when `*`, credentials are disabled.
 - `OPENAI_API_KEY` (optional): Enables AI IPA estimation when a pronunciation is missing.
 - `PORT` (default `8000`): Port to expose.
-- `TUNNEL_TOKEN` (for named tunnel): Token used by `tunnel-named` compose service.
+  
 
 ### Healthcheck
 
@@ -332,7 +285,7 @@ healthcheck:
   - Set `ALLOWED_ORIGINS=https://vialab.github.io` and restart the container.
 
 - Slow first requests:
-  - Index build may run on first start if missing; keep `backend/data` mounted as a volume so builds persist.
+  - Download and index build may run on first start if missing. Consider a named volume in Compose for persistence.
 
 ## 🏎️ How It Works (High-Level)
 

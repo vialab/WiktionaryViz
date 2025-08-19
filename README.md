@@ -15,7 +15,7 @@ WiktionaryViz consists of a React + Vite frontend and a FastAPI backend that ser
 - Node.js 18+ and npm (or pnpm)
 - For backend via Docker: Docker + Docker Compose
 - For backend without Docker: Python 3.9+, pip
-- Data: a Wiktionary JSONL file (20GB+ uncompressed) placed in `backend/data/` (see Backend below)
+- Data: the backend will auto-download the Wiktionary JSONL (20GB+ uncompressed) on first run by default.
 
 ## Quick Start
 
@@ -34,8 +34,9 @@ npm run dev
 3. Optional Cloudflare dev tunnel (HTTPS for your backend):
 
 ```bash
-npm run tunnel:up
-npm run tunnel:logs # copy the trycloudflare.com URL
+# Start the dev-only tunnel service (compose profile: dev)
+docker compose --profile dev up -d tunnel
+docker compose logs -f tunnel # copy the trycloudflare.com URL
 ```
 
 4. Deploy frontend (GitHub Pages) pointing to your backend:
@@ -104,7 +105,9 @@ API=https://api.example.com npm run deploy:api
 docker compose up --build
 ```
 
-This mounts `./backend/data` into the container. Place `wiktionary_data.jsonl` there; the app will generate or reuse the index.
+By default, the container manages its own data in `/app/data` and will auto-download the dataset if missing (see env vars below). Data persists across container recreation via a named volume declared in `docker-compose.yml`.
+
+To remove persisted data, delete the `wiktionary-data` Docker volume.
 
 ## Scripts (dev vs prod)
 
@@ -118,8 +121,8 @@ npm run backend:down
 - Quick Cloudflare tunnel for dev (ephemeral URL):
 
 ```bash
-npm run tunnel:up
-npm run tunnel:logs # copy the trycloudflare.com URL
+docker compose --profile dev up -d tunnel
+docker compose logs -f tunnel # copy the trycloudflare.com URL
 ```
 
 - Build/deploy frontend with a specific backend API URL:
@@ -134,7 +137,7 @@ API=https://your-backend.example.com npm run deploy:api
 
 ## Project structure
 
-```
+```text
 .
 ├── src/                     # React + Vite frontend (D3, Leaflet, Tailwind)
 ├── backend/                 # FastAPI backend
@@ -142,7 +145,7 @@ API=https://your-backend.example.com npm run deploy:api
 │   ├── data/                # wiktionary_data.jsonl + generated indices/stats
 │   ├── services/            # PanPhon alignment, IO helpers
 │   └── requirements.txt
-├── docker-compose.yml       # Backend + optional Cloudflare tunnels
+├── docker-compose.yml       # Backend + dev-only Cloudflare tunnel
 ├── vite.config.ts           # Frontend build config (base /WiktionaryViz/)
 └── package.json             # Scripts for dev/deploy
 ```
@@ -152,15 +155,6 @@ API=https://your-backend.example.com npm run deploy:api
 - Backend Docker build: `.github/workflows/backend-docker.yml`
 	- Builds the backend image on pushes to `main` when backend files change.
 	- To push to a registry, add secrets and enable login in the workflow (Docker Hub or GHCR).
-
-- Frontend deploy: `.github/workflows/frontend-deploy.yml`
-	- Builds the frontend with `API_BACKEND` from the repository secret `API_BACKEND`.
-	- Deploys with `gh-pages`.
-
-Recommended secrets:
-
-- `API_BACKEND` — public HTTPS URL of your backend for production builds.
-- (Optional) `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` or GHCR equivalents if you want to publish backend images.
 
 ## Configuration
 
@@ -173,7 +167,6 @@ Environment variables used across the project:
 	- `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins (e.g., `https://vialab.github.io`).
 	- `OPENAI_API_KEY` (optional): Enables AI IPA estimation when needed.
 	- `PORT` (optional): Backend port (defaults to 8000).
-	- `TUNNEL_TOKEN` (named Cloudflare tunnel): Used by `tunnel-named` service.
 	- `WIKTIONARY_DATA_URL` (optional): URL to download the dataset on first run. Supports `.gz` or plain `.jsonl`. Defaults to Kaikki.org `.gz`.
 	- `SKIP_DOWNLOAD` (optional): Set to `1` to skip auto-download. Default `0`.
 
@@ -202,7 +195,7 @@ Environment variables used across the project:
 	- Set `ALLOWED_ORIGINS=https://vialab.github.io` and restart backend.
 
 - No data or 404 for entries:
-	- Ensure `backend/data/wiktionary_data.jsonl` exists and allow time for index build on first run.
+	- If running locally without Docker, ensure `backend/data/wiktionary_data.jsonl` exists. In Docker, allow time for download and index build on first run.
 
 ## Contributing
 
