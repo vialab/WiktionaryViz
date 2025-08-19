@@ -44,15 +44,11 @@ jobs:
             wiktionaryviz/backend:latest
 
   pages:
-    name: Build and deploy GitHub Pages
+    name: Build and deploy to gh-pages
     needs: backend-docker
     runs-on: ubuntu-latest
     permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      contents: write
     steps:
       - name: Checkout @ release tag
         uses: actions/checkout@v4
@@ -72,11 +68,10 @@ jobs:
           VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
         run: npm run build
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages branch
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: ./dist
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          branch: gh-pages
+          folder: dist
+          clean: true
+          commit-message: Deploy frontend (release) – ${{ github.event.release.tag_name }} / ${{ github.sha }}
