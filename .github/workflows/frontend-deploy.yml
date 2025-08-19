@@ -9,29 +9,44 @@ on:
       - 'index.html'
       - 'vite.config.ts'
       - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/frontend-deploy.yml'
   workflow_dispatch:
 
 concurrency:
-  group: pages
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-and-deploy:
+    # Skip deploys on the Release Please bump commit to avoid duplicate gh-pages publishes
+    if: "!contains(github.event.head_commit.message, 'chore(main): release')"
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
 
-      - name: Use Node.js
+      - name: Setup Node and install deps
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Install deps
-        run: npm install
+      - name: Install deps (ci if lockfile)
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --prefer-offline --no-audit --progress=false
+          else
+            npm install --prefer-offline --no-audit --progress=false
+          fi
 
       - name: Build with API base
         env:

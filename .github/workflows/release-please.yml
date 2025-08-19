@@ -19,11 +19,16 @@ permissions:
   pull-requests: write
   issues: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
     # Skip when the squash merge commit is the release commit to avoid re-opening PRs
     if: "!contains(github.event.head_commit.message, 'chore(main): release')"
+    timeout-minutes: 10
     steps:
       - name: Release Please
         uses: googleapis/release-please-action@v4
