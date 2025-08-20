@@ -15,6 +15,7 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import "react-leaflet-markercluster/styles";
 import TranslationMarkers, { TranslationMarker } from './geospatial/TranslationMarkers';
+import CountriesLayer from './geospatial/CountriesLayer';
 import EtymologyLineagePath from './geospatial/EtymologyLineagePath';
 import type { EtymologyNode } from '@/types/etymology';
 import type { Translation } from '@/utils/mapUtils';
@@ -77,7 +78,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                         <TileLayer
                             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                            subdomains={['a','b','c','d']}
+                            subdomains={['a', 'b', 'c', 'd']}
                             maxZoom={20}
                         />
                     </LayersControl.BaseLayer>
@@ -89,6 +90,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                     </LayersControl.BaseLayer>
                     {/* TODO [HIGH LEVEL]: GeoJSON support for standardized geographic layers and overlays. */}
                     {/* TODO [LOW LEVEL]: Add a file/URL loader for GeoJSON and render via GeoJSON component with style options. */}
+                    {/* Countries hover highlight layer */}
+                    <LayersControl.Overlay checked name="Countries (hover)">
+                        <LayerGroup>
+                            <CountriesLayer />
+                        </LayerGroup>
+                    </LayersControl.Overlay>
                     {/* General Etymology Markers Layer */}
                     <LayersControl.Overlay checked name="Etymology Markers">
                         <MarkerClusterGroup>
