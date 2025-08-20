@@ -69,12 +69,24 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                 minZoom={2}
                 scrollWheelZoom={false}
                 className="w-full h-full"
+                style={{ background: '#0b0f1a' }}
             >
-                <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
                 <LayersControl position="topright">
+                    {/* Base Layers */}
+                    <LayersControl.BaseLayer checked name="Dark (CartoDB)">
+                        <TileLayer
+                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                            subdomains={['a','b','c','d']}
+                            maxZoom={20}
+                        />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer name="Light (OSM)">
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                    </LayersControl.BaseLayer>
                     {/* TODO [HIGH LEVEL]: GeoJSON support for standardized geographic layers and overlays. */}
                     {/* TODO [LOW LEVEL]: Add a file/URL loader for GeoJSON and render via GeoJSON component with style options. */}
                     {/* General Etymology Markers Layer */}
