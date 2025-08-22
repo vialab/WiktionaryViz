@@ -1,1 +1,1 @@
-declare module 'react-leaflet-markercluster/styles';
+declare module 'react-leaflet-markercluster/styles'

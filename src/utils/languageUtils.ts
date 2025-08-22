@@ -1,13 +1,13 @@
-import * as countryLanguage from '@ladjs/country-language';
+import * as countryLanguage from '@ladjs/country-language'
 
 export const getCountryFromLanguageCode = (code: string): Promise<any> => {
-    return new Promise((resolve, reject) => {
-        countryLanguage.getLanguage(code, (err: any, language: any) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(language.countries[0]);
-            }
-        });
-    });
-};
+  return new Promise((resolve, reject) => {
+    countryLanguage.getLanguage(code, (err: any, language: any) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(language.countries[0])
+      }
+    })
+  })
+}

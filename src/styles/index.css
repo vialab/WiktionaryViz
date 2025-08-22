@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 header {
   position: fixed;
@@ -8,17 +8,16 @@ header {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 /* Reset default body margin and padding */
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
@@ -39,7 +38,9 @@ body {
 
 /* Highlighted lineage countries */
 .country-highlighted {
-  transition: fill-opacity 0.3s ease, stroke-width 0.3s ease;
+  transition:
+    fill-opacity 0.3s ease,
+    stroke-width 0.3s ease;
   outline: none;
 }
 
@@ -54,9 +55,15 @@ body {
 }
 
 @keyframes pulse-focused {
-  0% { filter: drop-shadow(0 0 0px rgba(56,189,248,0.0)); }
-  50% { filter: drop-shadow(0 0 6px rgba(56,189,248,0.9)); }
-  100% { filter: drop-shadow(0 0 0px rgba(56,189,248,0.0)); }
+  0% {
+    filter: drop-shadow(0 0 0px rgba(56, 189, 248, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.9));
+  }
+  100% {
+    filter: drop-shadow(0 0 0px rgba(56, 189, 248, 0));
+  }
 }
 
 /* Active node pulse (smaller faster glow) */
@@ -65,9 +72,15 @@ body {
 }
 
 @keyframes node-pulse-glow {
-  0% { box-shadow: 0 0 0 0 rgba(251,191,36,0.0); }
-  40% { box-shadow: 0 0 6px 2px rgba(251,191,36,0.85); }
-  100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+  }
+  40% {
+    box-shadow: 0 0 6px 2px rgba(251, 191, 36, 0.85);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+  }
 }
 
 /* Optional: Clean up arrow icon container */

@@ -1,16 +1,16 @@
-import { FC, memo } from 'react';
-import { Marker, Popup } from 'react-leaflet';
+import { FC, memo } from 'react'
+import { Marker, Popup } from 'react-leaflet'
 
 /**
  * Props for TranslationMarkers component.
  */
 export interface TranslationMarker {
-  position: [number, number];
-  popupText: string;
+  position: [number, number]
+  popupText: string
 }
 
 export interface TranslationMarkersProps {
-  markers: TranslationMarker[];
+  markers: TranslationMarker[]
 }
 
 /**
@@ -24,8 +24,8 @@ const TranslationMarkers: FC<TranslationMarkersProps> = memo(({ markers }) => (
         position={marker.position}
         interactive={true}
         eventHandlers={{
-          click: (e) => {
-            e.target.openPopup();
+          click: e => {
+            e.target.openPopup()
           },
         }}
       >
@@ -35,6 +35,6 @@ const TranslationMarkers: FC<TranslationMarkersProps> = memo(({ markers }) => (
       </Marker>
     ))}
   </>
-));
+))
 
-export default TranslationMarkers;
+export default TranslationMarkers

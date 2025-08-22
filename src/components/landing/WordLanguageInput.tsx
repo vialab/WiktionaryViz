@@ -1,15 +1,15 @@
-import React from "react";
+import React from 'react'
 
 interface WordLanguageInputProps {
-  word: string;
-  onWordChange: (word: string) => void;
-  language: string;
-  onLanguageChange: (lang: string) => void;
-  availableLanguages: string[];
-  loading: boolean;
-  label?: string;
-  inputBaseStyles?: string;
-  placeholder?: string;
+  word: string
+  onWordChange: (word: string) => void
+  language: string
+  onLanguageChange: (lang: string) => void
+  availableLanguages: string[]
+  loading: boolean
+  label?: string
+  inputBaseStyles?: string
+  placeholder?: string
 }
 
 /**
@@ -23,8 +23,8 @@ const WordLanguageInput: React.FC<WordLanguageInputProps> = ({
   availableLanguages,
   loading,
   label,
-  inputBaseStyles = "",
-  placeholder = "Enter a word",
+  inputBaseStyles = '',
+  placeholder = 'Enter a word',
 }) => (
   <div className="space-y-2">
     {label && <label className="block text-[#F5F5F5] font-medium">{label}</label>}
@@ -35,8 +35,8 @@ const WordLanguageInput: React.FC<WordLanguageInputProps> = ({
       onChange={e => onWordChange(e.target.value)}
       className={inputBaseStyles}
     />
-    {word && (
-      loading ? (
+    {word &&
+      (loading ? (
         <p className="text-[#B79F58]">Loading languages...</p>
       ) : (
         <select
@@ -46,12 +46,13 @@ const WordLanguageInput: React.FC<WordLanguageInputProps> = ({
         >
           <option value="">Select a language</option>
           {availableLanguages.map(lang => (
-            <option key={lang} value={lang}>{lang}</option>
+            <option key={lang} value={lang}>
+              {lang}
+            </option>
           ))}
         </select>
-      )
-    )}
+      ))}
   </div>
-);
+)
 
-export default WordLanguageInput;
+export default WordLanguageInput

@@ -1,0 +1,10 @@
+# Build outputs
+node_modules
+.dist
+/dist
+
+# Generated artifacts
+coverage
+
+# Data / large JSON (leave unformatted if desired)
+backend/data

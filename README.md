@@ -1,4 +1,4 @@
-# [WiktionaryViz](https://vialab.github.io/WiktionaryViz/ "vialab.github.io/WiktionaryViz")
+# [WiktionaryViz](https://vialab.github.io/WiktionaryViz/ 'vialab.github.io/WiktionaryViz')
 
 Interactive visual analytics for exploring etymology, phonology, descendants, and translations using Wiktionary data.
 
@@ -153,49 +153,49 @@ API=https://your-backend.example.com npm run deploy:api
 ## CI (GitHub Actions)
 
 - Backend Docker build: `.github/workflows/backend-docker.yml`
-	- Builds the backend image on pushes to `main` when backend files change.
-	- To push to a registry, add secrets and enable login in the workflow (Docker Hub or GHCR).
+  - Builds the backend image on pushes to `main` when backend files change.
+  - To push to a registry, add secrets and enable login in the workflow (Docker Hub or GHCR).
 
 ## Configuration
 
 Environment variables used across the project:
 
 - Frontend
-	- `API_BACKEND`: Base URL for backend API (e.g., `https://api.example.com`). Used at build time.
+  - `API_BACKEND`: Base URL for backend API (e.g., `https://api.example.com`). Used at build time.
 
 - Backend
-	- `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins (e.g., `https://vialab.github.io`).
-	- `OPENAI_API_KEY` (optional): Enables AI IPA estimation when needed.
-	- `PORT` (optional): Backend port (defaults to 8000).
-	- `WIKTIONARY_DATA_URL` (optional): URL to download the dataset on first run. Supports `.gz` or plain `.jsonl`. Defaults to Kaikki.org `.gz`.
-	- `SKIP_DOWNLOAD` (optional): Set to `1` to skip auto-download. Default `0`.
+  - `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins (e.g., `https://vialab.github.io`).
+  - `OPENAI_API_KEY` (optional): Enables AI IPA estimation when needed.
+  - `PORT` (optional): Backend port (defaults to 8000).
+  - `WIKTIONARY_DATA_URL` (optional): URL to download the dataset on first run. Supports `.gz` or plain `.jsonl`. Defaults to Kaikki.org `.gz`.
+  - `SKIP_DOWNLOAD` (optional): Set to `1` to skip auto-download. Default `0`.
 
 ## Backend API
 
 - FastAPI app runs on `http://localhost:8000` by default.
 - Interactive API docs: `http://localhost:8000/docs`
 - Common endpoints:
-	- `GET /word-data?word=tea&lang_code=en`
-	- `GET /available-languages?word=tea`
-	- `GET /random-interesting-word`
-	- `GET /ancestry-chain?word=tea&lang_code=en`
-	- `GET /phonetic-drift-detailed?ipa1=/tiː/&ipa2=/te/`
-	- `GET /descendant-tree?word=tea&lang_code=en`
-	- `GET /descendant-tree-from-root?word=proto-form&lang_code=la`
+  - `GET /word-data?word=tea&lang_code=en`
+  - `GET /available-languages?word=tea`
+  - `GET /random-interesting-word`
+  - `GET /ancestry-chain?word=tea&lang_code=en`
+  - `GET /phonetic-drift-detailed?ipa1=/tiː/&ipa2=/te/`
+  - `GET /descendant-tree?word=tea&lang_code=en`
+  - `GET /descendant-tree-from-root?word=proto-form&lang_code=la`
 
 ## Troubleshooting
 
 - Requests hitting GitHub Pages path (e.g., `/random-interesting-word`) instead of backend:
-	- Rebuild/deploy frontend with `API_BACKEND` set to your backend URL.
+  - Rebuild/deploy frontend with `API_BACKEND` set to your backend URL.
 
 - Mixed content blocked (HTTPS page calling HTTP backend):
-	- Use HTTPS backend (Cloudflare tunnel or your own TLS).
+  - Use HTTPS backend (Cloudflare tunnel or your own TLS).
 
 - CORS errors:
-	- Set `ALLOWED_ORIGINS=https://vialab.github.io` and restart backend.
+  - Set `ALLOWED_ORIGINS=https://vialab.github.io` and restart backend.
 
 - No data or 404 for entries:
-	- If running locally without Docker, ensure `backend/data/wiktionary_data.jsonl` exists. In Docker, allow time for download and index build on first run.
+  - If running locally without Docker, ensure `backend/data/wiktionary_data.jsonl` exists. In Docker, allow time for download and index build on first run.
 
 ## Contributing
 

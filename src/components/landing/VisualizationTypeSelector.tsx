@@ -1,9 +1,9 @@
-import React from "react";
+import React from 'react'
 
 interface VisualizationTypeSelectorProps {
-  value: string | null;
-  onChange: (value: string) => void;
-  options?: string[];
+  value: string | null
+  onChange: (value: string) => void
+  options?: string[]
 }
 
 /**
@@ -12,7 +12,7 @@ interface VisualizationTypeSelectorProps {
 const VisualizationTypeSelector: React.FC<VisualizationTypeSelectorProps> = ({
   value,
   onChange,
-  options = ["geospatial", "network", "timeline"],
+  options = ['geospatial', 'network', 'timeline'],
 }) => (
   <ul className="mt-3 grid grid-cols-1 gap-3 text-left">
     {options.map(option => (
@@ -34,6 +34,6 @@ const VisualizationTypeSelector: React.FC<VisualizationTypeSelectorProps> = ({
       </li>
     ))}
   </ul>
-);
+)
 
-export default VisualizationTypeSelector;
+export default VisualizationTypeSelector

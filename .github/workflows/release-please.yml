@@ -2,7 +2,7 @@ name: release-please
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     # Avoid infinite loops: ignore files updated by Release Please
     paths-ignore:
       - 'CHANGELOG.md'
@@ -36,4 +36,3 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           config-file: .github/release-please-config.json
           manifest-file: .release-please-manifest.json
-        

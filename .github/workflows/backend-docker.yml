@@ -2,7 +2,7 @@ name: backend-docker
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'backend/**'
       - '.github/workflows/backend-docker.yml'
@@ -14,13 +14,13 @@ concurrency:
 
 jobs:
   build:
-      # Skip builds on the Release Please bump commit to avoid duplicate runs
-      if: "!contains(github.event.head_commit.message, 'chore(main): release')"
-      runs-on: ubuntu-latest
-      permissions:
-        contents: read
-      timeout-minutes: 20
-      steps:
+    # Skip builds on the Release Please bump commit to avoid duplicate runs
+    if: "!contains(github.event.head_commit.message, 'chore(main): release')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 20
+    steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:

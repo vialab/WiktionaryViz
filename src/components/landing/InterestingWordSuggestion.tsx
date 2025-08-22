@@ -1,13 +1,13 @@
-import React from "react";
-import { RotateCcw } from "lucide-react";
-import { InterestingWord } from "@/hooks/useInterestingWord";
+import React from 'react'
+import { RotateCcw } from 'lucide-react'
+import { InterestingWord } from '@/hooks/useInterestingWord'
 
 interface InterestingWordSuggestionProps {
-  interestingWord: InterestingWord | null;
-  category: string;
-  loading: boolean;
-  onRefresh: () => void;
-  onSelect: (word: string) => void;
+  interestingWord: InterestingWord | null
+  category: string
+  loading: boolean
+  onRefresh: () => void
+  onSelect: (word: string) => void
 }
 
 /**
@@ -20,7 +20,7 @@ const InterestingWordSuggestion: React.FC<InterestingWordSuggestionProps> = ({
   onRefresh,
   onSelect,
 }) => {
-  if (!interestingWord) return null;
+  if (!interestingWord) return null
   return (
     <div className="mt-6 bg-[#252525FF] p-4 rounded-md text-[#F5F5F5] relative">
       <button
@@ -43,7 +43,7 @@ const InterestingWordSuggestion: React.FC<InterestingWordSuggestionProps> = ({
       </button>
       <p className="text-xs mt-2 italic text-[#B79F58]">{interestingWord.reason}</p>
     </div>
-  );
-};
+  )
+}
 
-export default InterestingWordSuggestion;
+export default InterestingWordSuggestion

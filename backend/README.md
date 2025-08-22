@@ -262,7 +262,6 @@ Key environment variables:
 - `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins. When set, credentials are enabled; when `*`, credentials are disabled.
 - `OPENAI_API_KEY` (optional): Enables AI IPA estimation when a pronunciation is missing.
 - `PORT` (default `8000`): Port to expose.
-  
 
 ### Healthcheck
 
@@ -270,7 +269,13 @@ The Docker Compose file includes a basic healthcheck that hits `/`:
 
 ```yaml
 healthcheck:
-  test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/').read()"]
+  test:
+    [
+      'CMD',
+      'python',
+      '-c',
+      "import urllib.request as u; u.urlopen('http://localhost:8000/').read()",
+    ]
   interval: 30s
   timeout: 5s
   retries: 3

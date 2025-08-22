@@ -1,12 +1,17 @@
-import React, { FC, memo } from 'react';
-import { Polyline, Marker, CircleMarker, Popup } from 'react-leaflet';
-import { normalizePosition, createArrowIcon, calculateBearing, calculateMercatorMidpoint } from '@/utils/mapUtils';
-import type { EtymologyNode } from '@/types/etymology';
+import React, { FC, memo } from 'react'
+import { Polyline, Marker, CircleMarker, Popup } from 'react-leaflet'
+import {
+  normalizePosition,
+  createArrowIcon,
+  calculateBearing,
+  calculateMercatorMidpoint,
+} from '@/utils/mapUtils'
+import type { EtymologyNode } from '@/types/etymology'
 
 export interface EtymologyLineagePathProps {
-  lineage: EtymologyNode | null;
+  lineage: EtymologyNode | null
   /** Index (0-based) of current timeline focus; controls partial rendering. */
-  currentIndex?: number;
+  currentIndex?: number
 }
 
 /**
@@ -22,18 +27,18 @@ export interface EtymologyLineagePathProps {
  *  - [ ] Expose callback (e.g., onNodeClick) to sync user clicks on nodes with timeline position.
  */
 const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, currentIndex }) => {
-  if (!lineage) return null;
-  const elements: React.ReactNode[] = [];
-  let node: EtymologyNode | null = lineage;
-  let idx = 0;
-  const active = typeof currentIndex === 'number' ? currentIndex : undefined;
+  if (!lineage) return null
+  const elements: React.ReactNode[] = []
+  let node: EtymologyNode | null = lineage
+  let idx = 0
+  const active = typeof currentIndex === 'number' ? currentIndex : undefined
 
   while (node) {
-    const { word, lang_code, romanization, position, expansion } = node;
+    const { word, lang_code, romanization, position, expansion } = node
     if (position) {
-      const center = normalizePosition(position);
-      const isActive = active === idx;
-      const visible = active === undefined || idx <= active; // only show nodes up to active
+      const center = normalizePosition(position)
+      const isActive = active === idx
+      const visible = active === undefined || idx <= active // only show nodes up to active
       if (visible) {
         elements.push(
           <CircleMarker
@@ -53,35 +58,32 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, cur
                 {romanization && ` - ${romanization}`}
               </div>
             </Popup>
-          </CircleMarker>
-        );
+          </CircleMarker>,
+        )
       }
       // Draw edge to next if within active range
       if (visible && node.next && node.next.position && (active === undefined || idx < active)) {
-        const start = center;
-        const end = normalizePosition(node.next.position);
+        const start = center
+        const end = normalizePosition(node.next.position)
         elements.push(
-          <Polyline
-            key={`polyline-${word}-${node.next.word}`}
-            positions={[start, end]}
-          />
-        );
-        const midpoint = calculateMercatorMidpoint(start, end);
-        const angle = calculateBearing(start, end);
+          <Polyline key={`polyline-${word}-${node.next.word}`} positions={[start, end]} />,
+        )
+        const midpoint = calculateMercatorMidpoint(start, end)
+        const angle = calculateBearing(start, end)
         elements.push(
           <Marker
             key={`arrow-${word}-${node.next.word}`}
             position={midpoint}
             icon={createArrowIcon(angle)}
             interactive={false}
-          />
-        );
+          />,
+        )
       }
     }
-    node = node.next;
-    idx++;
+    node = node.next
+    idx++
   }
-  return <>{elements}</>;
-});
+  return <>{elements}</>
+})
 
-export default EtymologyLineagePath;
+export default EtymologyLineagePath
