@@ -45,7 +45,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, cur
             weight={isActive ? 2 : 1}
             opacity={1}
             fillOpacity={isActive ? 0.9 : 0.7}
-            className={isActive ? 'etymology-node-active' : 'etymology-node'}
+            className={isActive ? 'etymology-node-active node-pulse' : 'etymology-node'}
           >
             <Popup>
               <div>

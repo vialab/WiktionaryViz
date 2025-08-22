@@ -7,10 +7,29 @@ interface TimelineScrubberProps {
   lineage: EtymologyNode | null;
   currentIndex?: number;
   onChange: (index: number | undefined) => void;
+  // Playback additions
+  isPlaying?: boolean;
+  onTogglePlay?: () => void;
+  speed?: number; // ms per step
+  onSpeedChange?: (ms: number) => void;
+  loop?: boolean;
+  onToggleLoop?: () => void;
+  onReset?: () => void; // full reset (stop + show full)
 }
 
 // Simple horizontal scrubber with markers for each node.
-const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ lineage, currentIndex, onChange }) => {
+const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
+  lineage,
+  currentIndex,
+  onChange,
+  isPlaying = false,
+  onTogglePlay,
+  speed = 800,
+  onSpeedChange,
+  loop = true,
+  onToggleLoop,
+  onReset,
+}) => {
   const nodes = useMemo(() => flattenLineage(lineage), [lineage]);
   const maxIndex = nodes.length ? nodes.length - 1 : 0;
   const map = useMap();
@@ -24,7 +43,9 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ lineage, currentInd
     onChange(Number.isNaN(value) ? undefined : value);
   };
 
-  const handleReset = () => onChange(undefined);
+  const handleReset = () => {
+    if (onReset) onReset(); else onChange(undefined);
+  };
 
   // Do not early-return before hooks (lint compliance); handle empty case in render.
 
@@ -68,11 +89,41 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ lineage, currentInd
       onClick={stop}
       ref={containerRef}
     >
-      <div className="flex items-center justify-between text-slate-300">
-        <span className="font-medium text-slate-200">Lineage Timeline</span>
-        <button onClick={handleReset} className="text-slate-400 hover:text-slate-200 transition" title="Show full lineage">
-          Full
-        </button>
+      <div className="flex items-center justify-between text-slate-300 gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onTogglePlay}
+            className="px-2 py-1 rounded bg-slate-700/60 hover:bg-slate-600 text-slate-200 text-xs font-medium border border-slate-500/50"
+            title={isPlaying ? 'Pause playback' : 'Play lineage'}
+          >
+            {isPlaying ? 'Pause' : 'Play'}
+          </button>
+          <label className="flex items-center gap-1 text-[11px] text-slate-400">
+            Speed
+            <select
+              value={speed}
+              onChange={(e) => onSpeedChange?.(parseInt(e.target.value, 10))}
+              className="bg-slate-700/60 border border-slate-500/50 rounded px-1 py-0.5 text-slate-200 text-xs focus:outline-none"
+            >
+              <option value={1200}>Slow</option>
+              <option value={800}>Normal</option>
+              <option value={450}>Fast</option>
+              <option value={220}>Ultra</option>
+            </select>
+          </label>
+          <button
+            onClick={onToggleLoop}
+            className={`px-2 py-1 rounded text-xs font-medium border ${loop ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300' : 'bg-slate-700/60 border-slate-500/50 text-slate-300 hover:bg-slate-600'}`}
+            title={loop ? 'Loop enabled (click to disable)' : 'Loop disabled (click to enable)'}
+          >
+            Loop
+          </button>
+        </div>
+        <div className="flex items-center gap-3 ml-auto">
+          <button onClick={handleReset} className="text-slate-400 hover:text-slate-200 transition" title="Show full lineage">
+            Full
+          </button>
+        </div>
       </div>
       <div className="flex items-center gap-3">
         <div className="flex-1 relative select-none" ref={trackRef}
@@ -87,7 +138,15 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ lineage, currentInd
         >
           {/* Custom track */}
           <div className="h-2 w-full rounded-full bg-slate-600/40 overflow-hidden">
-            <div className="h-full bg-cyan-400/70" style={{ width: `${((currentIndex ?? maxIndex) / (maxIndex || 1)) * 100}%` }} />
+            {(() => {
+              const progress = ((currentIndex ?? maxIndex) / (maxIndex || 1)) * 100;
+              interface ExtendedStyle extends React.CSSProperties { ['--play-speed']?: string; }
+              const style: ExtendedStyle = {
+                width: `${progress}%`,
+                ['--play-speed']: `${speed}ms`
+              };
+              return <div className={`h-full bg-cyan-400/70 ${isPlaying ? 'transition-[width] duration-[var(--play-speed)] linear' : ''}`} style={style} />;
+            })()}
           </div>
           {/* Ticks */}
           <div className="absolute left-0 top-full mt-1 h-4 w-full pointer-events-none pr-px">

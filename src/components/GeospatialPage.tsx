@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
     MapContainer,
     TileLayer,
@@ -7,7 +7,7 @@ import {
 } from 'react-leaflet';
 import useWordData from '@/hooks/useWordData';
 import useLanguoidData from '@/hooks/useLanguoidData';
-import { processTranslations, processEtymologyLineage } from '@/utils/mapUtils';
+import { processTranslations, processEtymologyLineage, flattenLineage } from '@/utils/mapUtils';
 import 'leaflet-defaulticon-compatibility';
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -18,7 +18,7 @@ import TranslationMarkers, { TranslationMarker } from './geospatial/TranslationM
 import CountriesLayer from './geospatial/CountriesLayer';
 import LineageCountryHighlights from './geospatial/LineageCountryHighlights';
 import EtymologyLineagePath from './geospatial/EtymologyLineagePath';
-import TimelineScrubber from './geospatial/TimelineScrubber';
+import TimelineScrubber from './geospatial/TimelineScrubber.tsx';
 import ExportGeoJSONButton from './geospatial/ExportGeoJSONButton';
 import type { EtymologyNode } from '@/types/etymology';
 import type { Translation } from '@/utils/mapUtils';
@@ -51,6 +51,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     const [markers, setMarkers] = useState<TranslationMarker[]>([]);
     const [lineage, setLineage] = useState<EtymologyNode | null>(null);
     const [currentIndex, setCurrentIndex] = useState<number | undefined>(undefined);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [playSpeed, setPlaySpeed] = useState<number>(800); // ms per step
+    const [loop, setLoop] = useState<boolean>(true);
+    const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
+    const hasAdjustedZoomRef = useRef(false);
     // const [highlightedCountries, setHighlightedCountries] = useState<string[]>([]); // replaced by LineageCountryHighlights overlay
     // TODO (Timeline Scrubber & Playback State):
     //  - [ ] Add currentIndex state (number) representing focused lineage node for timeline.
@@ -75,9 +80,70 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
             ).then(root => {
                 setLineage(root);
                 setCurrentIndex(undefined);
+                setIsPlaying(false); // reset playback on new lineage
             });
         }
     }, [wordData, languoidData]);
+
+    // Playback effect: auto-advance currentIndex while playing.
+    useEffect(() => {
+        if (!isPlaying || !lineage) return;
+        const nodes = flattenLineage(lineage);
+        if (!nodes.length) return;
+        const maxIndex = nodes.length - 1;
+        // If starting from undefined (full), jump to 0.
+        if (currentIndex === undefined) {
+            setCurrentIndex(0);
+            return; // next effect run will schedule interval
+        }
+        const id = window.setInterval(() => {
+            setCurrentIndex(prev => {
+                if (prev === undefined) return 0;
+                if (prev < maxIndex) return prev + 1;
+                if (loop) return 0; // wrap
+                // stop at end if not looping
+                clearInterval(id);
+                setIsPlaying(false);
+                return prev;
+            });
+        }, playSpeed);
+        return () => clearInterval(id);
+    }, [isPlaying, playSpeed, lineage, loop, currentIndex]);
+
+    // Auto-pan map to active node when currentIndex changes (single initial zoom-in).
+    useEffect(() => {
+        if (!mapInstance || currentIndex === undefined || !lineage) return;
+        const nodes = flattenLineage(lineage);
+        if (currentIndex < 0 || currentIndex >= nodes.length) return;
+        const node = nodes[currentIndex];
+        const pos = node.position;
+        if (pos && pos[0] != null && pos[1] != null) {
+            try {
+                const baseZoom = mapInstance.getZoom();
+                const minZoomForDetail = 3.2; // Enough to see a single country but keep context
+                if (!hasAdjustedZoomRef.current && baseZoom < minZoomForDetail) {
+                    hasAdjustedZoomRef.current = true;
+                    mapInstance.flyTo([pos[0], pos[1]], minZoomForDetail, { duration: 0.9 });
+                } else {
+                    // Just pan; keep current zoom so entire country remains visible
+                    mapInstance.panTo([pos[0], pos[1]], { animate: true, duration: 0.9 });
+                }
+            } catch {
+                // ignore
+            }
+        }
+    }, [currentIndex, lineage, mapInstance]);
+
+    // Stop playback if lineage removed or user selects Full (undefined).
+    useEffect(() => {
+        if (currentIndex === undefined && isPlaying) {
+            setIsPlaying(false);
+        }
+        if (currentIndex === undefined) {
+            // Allow a fresh zoom-in next time playback begins
+            hasAdjustedZoomRef.current = false;
+        }
+    }, [currentIndex, isPlaying]);
 
     return (
         <section id="geospatial" className="w-full h-screen bg-gray-900 text-white">
@@ -88,6 +154,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                 scrollWheelZoom={false}
                 className="relative w-full h-full"
                 style={{ background: '#0b0f1a' }}
+                ref={(instance) => { if (instance) setMapInstance(instance); }}
             >
                 {/* Export current map data as GeoJSON */}
                 <ExportGeoJSONButton markers={markers} lineage={lineage} />
@@ -114,7 +181,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                         <LayerGroup>
                             <CountriesLayer />
                             {/* Persistent lineage country highlight overlay (non-interactive) */}
-                            <LineageCountryHighlights lineage={lineage} />
+                            <LineageCountryHighlights lineage={lineage} currentIndex={currentIndex} />
                         </LayerGroup>
                     </LayersControl.Overlay>
                     {/* General Etymology Markers Layer */}
@@ -135,7 +202,18 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                     {/* TODO [HIGH LEVEL]: Filters (time slider, region, language family) to declutter map; uncertainty styling. */}
                     {/* TODO [LOW LEVEL]: Add a control panel to filter markers by decade/region and desaturate uncertain items. */}
                 </LayersControl>
-                <TimelineScrubber lineage={lineage} currentIndex={currentIndex} onChange={setCurrentIndex} />
+                <TimelineScrubber
+                    lineage={lineage}
+                    currentIndex={currentIndex}
+                    onChange={setCurrentIndex}
+                    isPlaying={isPlaying}
+                    onTogglePlay={() => setIsPlaying(p => !p)}
+                    speed={playSpeed}
+                    onSpeedChange={setPlaySpeed}
+                    loop={loop}
+                    onToggleLoop={() => setLoop(l => !l)}
+                    onReset={() => { setCurrentIndex(undefined); setIsPlaying(false); }}
+                />
             </MapContainer>
         </section>
     );

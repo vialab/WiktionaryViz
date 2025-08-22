@@ -10,6 +10,7 @@ interface Props {
   lineage: EtymologyNode | null;
   path?: string; // geojson path
   tooltip?: boolean;
+  currentIndex?: number; // active node index for focused country pulse
 }
 
 // Persistent highlight style (no hover reset logic here)
@@ -72,18 +73,21 @@ function computeBBox(geom: Geometry): [number, number, number, number] | undefin
   return undefined;
 }
 
-const LineageCountryHighlights: FC<Props> = ({ lineage, path = '/countries.geojson', tooltip = true }) => {
+const LineageCountryHighlights: FC<Props> = ({ lineage, path = '/countries.geojson', tooltip = true, currentIndex }) => {
   const data = useCountriesGeoJSON(path);
-  const lineagePoints = useMemo(() => flattenLineage(lineage).map(n => n.position).filter(Boolean) as [number, number][], [lineage]);
+  const lineageNodes = useMemo(() => flattenLineage(lineage), [lineage]);
+  const lineagePoints = useMemo(() => lineageNodes.map(n => n.position).filter(Boolean) as [number, number][], [lineageNodes]);
+  const activePoint = useMemo(() => (typeof currentIndex === 'number' && currentIndex >=0 && currentIndex < lineageNodes.length ? lineageNodes[currentIndex].position : null), [currentIndex, lineageNodes]);
 
-  const filtered: FeatureCollection<Geometry, CountryProps> | null = useMemo(() => {
-    if (!data || !lineagePoints.length) return null;
+  const { filtered, activeIds } = useMemo((): { filtered: FeatureCollection<Geometry, CountryProps> | null; activeIds: Set<string> } => {
+    if (!data || !lineagePoints.length) return { filtered: null, activeIds: new Set() };
     // Pre-index with bbox for faster rejection
     const indexed: IndexedFeature[] = data.features
       .filter(f => f.geometry && (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon'))
       .map(f => ({ feature: f as Feature<Geometry, CountryProps>, bbox: computeBBox(f.geometry as Geometry) }));
 
     const matched = new Set<Feature<Geometry, CountryProps>>();
+    const focused = new Set<Feature<Geometry, CountryProps>>();
     for (const [lat, lng] of lineagePoints) { // lineage positions stored as [lat, lng]
       const pointLng = lng;
       const pointLat = lat;
@@ -103,8 +107,22 @@ const LineageCountryHighlights: FC<Props> = ({ lineage, path = '/countries.geojs
         if (inside) matched.add(feature);
       }
     }
-    return { ...data, features: Array.from(matched) };
-  }, [data, lineagePoints]);
+    if (activePoint) {
+      const [alat, alng] = activePoint as [number, number];
+      for (const { feature, bbox } of indexed) {
+        if (bbox) {
+          const [minX, minY, maxX, maxY] = bbox;
+          if (alng < minX || alng > maxX || alat < minY || alat > maxY) continue;
+        }
+        const geom = feature.geometry as Geometry;
+        let inside = false;
+        if (geom.type === 'Polygon') inside = polygonContains(alng, alat, geom.coordinates as unknown as number[][][]);
+        else if (geom.type === 'MultiPolygon') inside = multiPolygonContains(alng, alat, geom.coordinates as unknown as number[][][][]);
+        if (inside) focused.add(feature);
+      }
+    }
+  return { filtered: { ...data, features: Array.from(matched) }, activeIds: new Set(Array.from(focused).map(f => (f.properties as CountryProps | undefined)?.ISO_A3 || (f.id as string) || '') ) };
+  }, [data, lineagePoints, activePoint]);
 
   const onEach = (feature: Feature<Geometry, CountryProps>, layer: L.Layer) => {
     if (!tooltip) return;
@@ -120,7 +138,15 @@ const LineageCountryHighlights: FC<Props> = ({ lineage, path = '/countries.geojs
     <Pane name="lineage-countries" style={{ zIndex: 560, pointerEvents: 'none' }}>
       <GeoJSON
         data={filtered as FeatureCollection<Geometry, CountryProps>}
-        style={() => lineageHighlightStyle}
+        style={(feat) => {
+          const base = lineageHighlightStyle;
+          const id = (feat?.properties as CountryProps | undefined)?.ISO_A3 || feat?.id as string || '';
+          const focused = activeIds?.has(id);
+          return {
+            ...base,
+            className: base.className + (focused ? ' country-focused' : '')
+          } as L.PathOptions;
+        }}
         onEachFeature={onEach}
         pane="lineage-countries"
       />
