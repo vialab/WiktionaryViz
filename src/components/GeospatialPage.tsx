@@ -17,6 +17,7 @@ import "react-leaflet-markercluster/styles";
 import TranslationMarkers, { TranslationMarker } from './geospatial/TranslationMarkers';
 import CountriesLayer from './geospatial/CountriesLayer';
 import EtymologyLineagePath from './geospatial/EtymologyLineagePath';
+import ExportGeoJSONButton from './geospatial/ExportGeoJSONButton';
 import type { EtymologyNode } from '@/types/etymology';
 import type { Translation } from '@/utils/mapUtils';
 
@@ -69,9 +70,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                 zoom={2}
                 minZoom={2}
                 scrollWheelZoom={false}
-                className="w-full h-full"
+                className="relative w-full h-full"
                 style={{ background: '#0b0f1a' }}
             >
+                {/* Export current map data as GeoJSON */}
+                <ExportGeoJSONButton markers={markers} lineage={lineage} />
                 <LayersControl position="topright">
                     {/* Base Layers */}
                     <LayersControl.BaseLayer checked name="Dark (CartoDB)">
@@ -88,7 +91,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
                     </LayersControl.BaseLayer>
-                    {/* TODO [HIGH LEVEL]: GeoJSON support for standardized geographic layers and overlays. */}
+                    {/* GeoJSON export button added; future: standardized dynamic layer ingestion. */}
                     {/* TODO [LOW LEVEL]: Add a file/URL loader for GeoJSON and render via GeoJSON component with style options. */}
                     {/* Countries hover highlight layer */}
                     <LayersControl.Overlay checked name="Countries (hover)">
