@@ -19,7 +19,7 @@ async def get_word_data(word: str = Query(...), lang_code: str = Query(...)):
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
             mm.seek(index[key])  # Use the integer offset directly
             line = mm.readline().decode("utf-8").strip()
-            print(f"[DEBUG] Raw line for word='{word}', lang_code='{lang_code}': {line}")
+            # print(f"[DEBUG] Raw line for word='{word}', lang_code='{lang_code}': {line}")
             mm.close()
             data = json.loads(line)
             return JSONResponse(content=data)
@@ -101,7 +101,7 @@ async def ai_estimate_ipa(word, lang_code, expansion=None):
             "If the pronunciation is unknown, make your best linguistic guess based on phonological reasoning and related forms."
         )
 
-    print(f"[DEBUG] AI estimation prompt: {prompt}")
+    # print(f"[DEBUG] AI estimation prompt: {prompt}")
 
     try:
         completion = await client.chat.completions.create(
@@ -159,7 +159,7 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
     # Only estimate IPA if no real IPA found
     if not ipa:
         expansion = node.get("expansion")
-        print(f"[DEBUG] No real IPA for root, estimating with AI for word={word}, lang_code={lang_code}, expansion={expansion}")
+        # print(f"[DEBUG] No real IPA for root, estimating with AI for word={word}, lang_code={lang_code}, expansion={expansion}")
         ipa = await ai_estimate_ipa(word, lang_code, expansion)
         node["ai_estimated_ipa"] = ipa
     else:
@@ -202,7 +202,7 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
             # Only estimate IPA if no real IPA found
             if not ancestor_ipa:
                 expansion = ancestor.get("expansion")
-                print(f"[DEBUG] No real IPA for ancestor {w}, estimating with AI, expansion={expansion}")
+                # print(f"[DEBUG] No real IPA for ancestor {w}, estimating with AI, expansion={expansion}")
                 ancestor_ipa = await ai_estimate_ipa(w, lang, expansion)
                 ancestor["ai_estimated_ipa"] = ancestor_ipa
             else:
