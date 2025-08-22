@@ -4,6 +4,16 @@ import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import L from 'leaflet';
 import useCountriesGeoJSON, { CountryProps } from '@/hooks/useCountriesGeoJSON';
 
+/**
+ * TODO (Geo Etymology Phase 1 - Country Highlighting)
+ *  - [ ] Replace selectedIsoA3 with highlightedIsoA3?: string[] and focusedIsoA3?: string[] (current timeline node).
+ *  - [ ] Maintain backwards compatibility during migration (treat selectedIsoA3 as focused array length 1).
+ *  - [ ] Add highlightedStyle & focusedStyle (pulse / stronger stroke) below; keep existing hoverStyle.
+ *  - [ ] Use memoized Sets for style lookups instead of per-feature conditionals with arrays.
+ *  - [ ] Expose imperative ref API (e.g., flashCountry(code)) to briefly animate a country when timeline index changes.
+ *  - [ ] On mouseout, reapply correct highlighted/focused style rather than always resetting to default.
+ *  - [ ] Add CSS class hooks: country-highlighted, country-focused for animation via Tailwind or custom CSS.
+ */
 type Props = {
     /** Optional: path to the countries GeoJSON in public/ */
     path?: string; // default '/countries.geojson'
@@ -38,6 +48,10 @@ const selectedStyle: L.PathOptions = {
     fillColor: '#0ea5e9',
     fillOpacity: 0.25,
 };
+
+// TODO: Introduce highlightedStyle (all lineage countries) & focusedStyle (current step on timeline)
+// const highlightedStyle: L.PathOptions = { ...defaultStyle, color: '#0ea5e9', weight: 1.5, fillOpacity: 0.12, className: 'country-path country-highlighted' };
+// const focusedStyle: L.PathOptions = { ...hoverStyle, weight: 4, className: 'country-path country-focused' };
 
 const CountriesLayer: FC<Props> = ({ path = '/countries.geojson', selectedIsoA3 }) => {
     const data = useCountriesGeoJSON(path);
@@ -76,6 +90,8 @@ const CountriesLayer: FC<Props> = ({ path = '/countries.geojson', selectedIsoA3 
         if (!feature) return defaultStyle;
         const iso3 = feature.properties?.ISO_A3 ?? feature.properties?.iso_a3 ?? feature.properties?.ISO3;
         if (selectedIsoA3 && iso3 === selectedIsoA3) return selectedStyle;
+    // FUTURE: if (focusedSet.has(iso3)) return focusedStyle;
+    // FUTURE: if (highlightedSet.has(iso3)) return highlightedStyle;
         return defaultStyle;
     };
 
@@ -110,6 +126,7 @@ const CountriesLayer: FC<Props> = ({ path = '/countries.geojson', selectedIsoA3 
             mouseout: (e: L.LeafletEvent) => {
                 const gj = geoJsonRef.current;
                 if (gj) {
+                    // TODO: Instead of unconditional reset, reapply highlighted/focused style when sets are introduced.
                     gj.resetStyle(e.target as L.Layer);
                 }
                 const el = (e.target as L.Path).getElement?.() as SVGElement | undefined;

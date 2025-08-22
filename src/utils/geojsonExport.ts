@@ -69,6 +69,8 @@ export function buildGeoJSON(
 
     const lineageArr = flattenLineage(lineageRoot);
     if (lineageArr.length) {
+    // TODO (Export Enhancement): include countries array & era metadata when added to EtymologyNode.
+    // TODO: optionally restrict lineagePath to currentIndex (animated export) if timeline scrubbing is active.
         if (lineagePoints && lineageArr.some(n => n.position)) {
             lineageArr.forEach((n, idx) => {
                 if (!n.position) return; // skip nodes without coordinates

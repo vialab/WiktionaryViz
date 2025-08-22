@@ -41,6 +41,9 @@ interface LanguoidData {
     name: string;
 }
 
+// TODO (Country Derivation): Provide helper mapLanguageToCountries(lang_code) returning ISO_A3 codes
+// by intersecting languoid.country_ids with a country metadata lookup (to be added) for highlight sets.
+
 /**
  * Converts an ISO 639-1 language code to ISO 639-3.
  * @param {string} iso639_1 - The ISO 639-1 code.
@@ -334,6 +337,7 @@ export const processEtymologyLineage = async (
             position: [sourceCoords.lat, sourceCoords.lng],
             next: currentNode,
             expansion: expansion
+            // TODO: countries: mapLanguageToCountries(sourceLang) (when implemented)
         };
 
         currentNode = newNode;
@@ -457,3 +461,8 @@ export const calculateMercatorMidpoint = (coord1: [number, number], coord2: [num
     const middleLng = (lng1 + lng2) / 2;
     return [middleLat, middleLng];
 };
+
+// TODO (Timeline Helpers):
+//  - add flattenLineage(root: EtymologyNode|null) exported here for reuse (currently duplicated in geojsonExport).
+//  - add getLineageArrayWithIndices(root) to precompute arrays for timeline scrubber.
+//  - add computeLineageCountrySets(root) to build highlighted / ordered focused arrays.

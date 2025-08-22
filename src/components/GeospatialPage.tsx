@@ -48,6 +48,15 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     const languoidData = useLanguoidData();
     const [markers, setMarkers] = useState<TranslationMarker[]>([]);
     const [lineage, setLineage] = useState<EtymologyNode | null>(null);
+    // TODO (Timeline Scrubber & Playback State):
+    //  - [ ] Add currentIndex state (number) representing focused lineage node for timeline.
+    //  - [ ] Add playing state + playback speed (ms per step) & timer ref for auto-advance.
+    //  - [ ] When currentIndex changes, pan/fly map to node coordinates (if available) & update focused countries in CountriesLayer.
+    //  - [ ] Derive highlightedCountries (Set) from full lineage once computed; derive focusedCountries from currentIndex.
+    //  - [ ] Pass highlighted/focused arrays to <CountriesLayer /> (after its API update).
+    //  - [ ] Provide callback to <EtymologyLineagePath /> for node click -> setCurrentIndex.
+    //  - [ ] Render <EtymologyTimelineScrubber /> fixed at bottom: ticks, drag, play/pause.
+    //  - [ ] Handle word/language change: reset index, stop playback, clear timers.
 
     useEffect(() => {
         if (Array.isArray(wordData?.translations) && languoidData.length) {
@@ -111,6 +120,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                             <EtymologyLineagePath lineage={lineage} />
                         </LayerGroup>
                     </LayersControl.Overlay>
+                    {/* TODO (Timeline UI): After implementing, mount timeline scrubber outside LayersControl for fixed positioning. */}
                     {/* TODO [HIGH LEVEL]: Trade-route path types (land/sea) with arrows and timestamps to show diffusion. */}
                     {/* TODO [LOW LEVEL]: Extend lineage nodes with route metadata and render dashed patterns and directional arrows. */}
                     {/* TODO [HIGH LEVEL]: Filters (time slider, region, language family) to declutter map; uncertainty styling. */}

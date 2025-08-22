@@ -10,6 +10,14 @@ export interface EtymologyLineagePathProps {
 /**
  * Renders the etymology lineage as a sequence of CircleMarkers, Polylines, and arrow Markers.
  * Memoized for performance.
+ *
+ * TODO (Timeline & Highlight Integration):
+ *  - [ ] Accept props for currentIndex / onIndexChange when timeline playback is introduced.
+ *  - [ ] Optionally draw partial path up to currentIndex for progressive reveal animation.
+ *  - [ ] Provide a flattenLineage utility externally instead of while-loop duplication (reuse in exporter & timeline scrubber).
+ *  - [ ] Add data-country / data-index attributes on markers for debugging and potential DOM-driven highlighting.
+ *  - [ ] Style the 'active' CircleMarker differently (e.g., brighter fill, pulse) based on currentIndex.
+ *  - [ ] Expose callback (e.g., onNodeClick) to sync user clicks on nodes with timeline position.
  */
 const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage }) => {
   if (!lineage) return null;
