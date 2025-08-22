@@ -2,6 +2,8 @@ import { getCountryFromLanguageCode } from "@/utils/languageUtils";
 import { apiUrl } from "@/utils/apiBase";
 import { getLanguage } from "@ladjs/country-language";
 import type { EtymologyNode } from '@/types/etymology';
+import countriesIso from 'i18n-iso-countries';
+// Locale registration skipped (default English names sufficient for alpha2->alpha3 conversion)
 
 /** 
  * Represents a translation entry. 
@@ -43,6 +45,40 @@ interface LanguoidData {
 
 // TODO (Country Derivation): Provide helper mapLanguageToCountries(lang_code) returning ISO_A3 codes
 // by intersecting languoid.country_ids with a country metadata lookup (to be added) for highlight sets.
+/**
+ * Attempts to derive ISO_A3 country codes for a language code using languoidData country_ids (A2 codes).
+ * Falls back to a best-guess from @ladjs/country-language first country result.
+ */
+export const mapLanguageToCountries = async (langCode: string, languoidData: LanguoidData[]): Promise<string[]> => {
+    const codes: Set<string> = new Set();
+    if (!langCode) return [];
+    // Normalize potential proto suffix
+    const normalized = langCode.replace(/-pro$/, '');
+    // Direct lookup by iso639P3code (convert if needed not handled here; upstream ensures ISO639-3 when possible)
+    const rows = languoidData.filter(r => r.iso639P3code?.toLowerCase() === normalized.toLowerCase());
+    for (const r of rows) {
+        if (r.country_ids) {
+            r.country_ids.split(/\s+/).forEach(a2 => {
+                const a2u = a2.trim().toUpperCase();
+                if (a2u.length === 2) {
+                    const a3 = countriesIso.alpha2ToAlpha3(a2u);
+                    if (a3) codes.add(a3);
+                }
+            });
+        }
+    }
+    if (codes.size === 0) {
+        // Fallback: try country-language package mapping
+        try {
+            const fallbackCountry = await getCountryFromLanguageCode(normalized) as { code_2?: string } | null;
+            if (fallbackCountry?.code_2) {
+                const a3 = countriesIso.alpha2ToAlpha3(fallbackCountry.code_2.toUpperCase());
+                if (a3) codes.add(a3);
+            }
+        } catch { /* ignore */ }
+    }
+    return Array.from(codes);
+};
 
 /**
  * Converts an ISO 639-1 language code to ISO 639-3.
@@ -274,13 +310,15 @@ export const processEtymologyLineage = async (
 
     const position = await getCoordinatesForLanguage(targetLang, languoidData);
 
+    const targetCountries = await mapLanguageToCountries(targetLang, languoidData);
     let currentNode: EtymologyNode | null = {
         word: targetWord,
         lang_code: targetLang,
         romanization: null,
         position: position ? [position.lat, position.lng] : null,
         next: null,
-        expansion: targetWord // Use the word itself as the initial expansion
+        expansion: targetWord, // Use the word itself as the initial expansion
+        countries: targetCountries
     };
 
     console.log("Current node:", currentNode);
@@ -330,14 +368,15 @@ export const processEtymologyLineage = async (
             continue;
         }
 
+        const countries = await mapLanguageToCountries(sourceLang, languoidData);
         const newNode: EtymologyNode = {
             word: sourceWord,
             lang_code: sourceLang,
             romanization: sourceRomanization,
             position: [sourceCoords.lat, sourceCoords.lng],
             next: currentNode,
-            expansion: expansion
-            // TODO: countries: mapLanguageToCountries(sourceLang) (when implemented)
+            expansion: expansion,
+            countries
         };
 
         currentNode = newNode;
@@ -354,7 +393,7 @@ export function extractEtymologyVariants(etymologyText: string): { lang: string;
     const variants: { lang: string; word: string }[] = [];
     if (!etymologyText) return variants;
     // Regex to match: from <Language> <word>[,| and| or] <word2> ...
-    const regex = /from ([A-Z][a-zA-Z ]+?) ([^,.;()\[\]]+)(?:, ([^,.;()\[\]]+))*/g;
+    const regex = /from ([A-Z][a-zA-Z ]+?) ([^,.;()\[\]]+)(?:, ([^,.;()\[\]]+))*/g; // eslint-disable-line no-useless-escape
     let match;
     while ((match = regex.exec(etymologyText)) !== null) {
         const lang = match[1].trim();
@@ -466,3 +505,15 @@ export const calculateMercatorMidpoint = (coord1: [number, number], coord2: [num
 //  - add flattenLineage(root: EtymologyNode|null) exported here for reuse (currently duplicated in geojsonExport).
 //  - add getLineageArrayWithIndices(root) to precompute arrays for timeline scrubber.
 //  - add computeLineageCountrySets(root) to build highlighted / ordered focused arrays.
+export const flattenLineage = (root: EtymologyNode | null): EtymologyNode[] => {
+    const arr: EtymologyNode[] = [];
+    let cur = root;
+    while (cur) { arr.push(cur); cur = cur.next; }
+    return arr;
+};
+
+export const collectHighlightedCountries = (root: EtymologyNode | null): string[] => {
+    const set = new Set<string>();
+    flattenLineage(root).forEach(n => n.countries?.forEach(c => set.add(c)));
+    return Array.from(set);
+};

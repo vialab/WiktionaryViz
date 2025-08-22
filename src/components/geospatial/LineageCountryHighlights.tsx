@@ -1,0 +1,131 @@
+import { FC, useMemo } from 'react';
+import { GeoJSON, Pane } from 'react-leaflet';
+import type { FeatureCollection, Geometry, Feature } from 'geojson';
+import L from 'leaflet';
+import useCountriesGeoJSON, { CountryProps } from '@/hooks/useCountriesGeoJSON';
+import type { EtymologyNode } from '@/types/etymology';
+import { flattenLineage } from '@/utils/mapUtils';
+
+interface Props {
+  lineage: EtymologyNode | null;
+  path?: string; // geojson path
+  tooltip?: boolean;
+}
+
+// Persistent highlight style (no hover reset logic here)
+const lineageHighlightStyle: L.PathOptions = {
+  color: '#38bdf8',
+  weight: 2.5,
+  opacity: 1,
+  fillColor: '#0ea5e9',
+  fillOpacity: 0.22,
+  className: 'country-path lineage-country'
+};
+
+// --- Robust point-in-polygon helpers (GeoJSON uses [lng, lat]) ---
+// Ray casting on a single linear ring; coordinates: [lng, lat]
+function ringContains(lng: number, lat: number, ring: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [x1, y1] = ring[j];
+    const [x2, y2] = ring[i];
+    const intersects = ((y1 > lat) !== (y2 > lat)) && (lng < (x2 - x1) * (lat - y1) / (y2 - y1 + 1e-15) + x1);
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function polygonContains(lng: number, lat: number, rings: number[][][]): boolean {
+  if (!rings.length) return false;
+  if (!ringContains(lng, lat, rings[0])) return false; // outside outer ring
+  // If inside any hole => exclude
+  for (let i = 1; i < rings.length; i++) {
+    if (ringContains(lng, lat, rings[i])) return false;
+  }
+  return true;
+}
+
+function multiPolygonContains(lng: number, lat: number, polygons: number[][][][]): boolean {
+  return polygons.some(p => polygonContains(lng, lat, p));
+}
+
+interface IndexedFeature { feature: Feature<Geometry, CountryProps>; bbox?: [number, number, number, number]; }
+
+function computeBBox(geom: Geometry): [number, number, number, number] | undefined {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const scan = (coords: unknown): void => {
+    if (!Array.isArray(coords) || coords.length === 0) return;
+    if (typeof coords[0] === 'number') {
+      const tuple = coords as [number, number];
+      const x = tuple[0];
+      const y = tuple[1];
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+      return;
+    }
+    for (const c of coords as unknown[]) scan(c);
+  };
+  if (geom.type === 'Polygon' || geom.type === 'MultiPolygon') {
+    scan(geom.coordinates);
+    return [minX, minY, maxX, maxY];
+  }
+  return undefined;
+}
+
+const LineageCountryHighlights: FC<Props> = ({ lineage, path = '/countries.geojson', tooltip = true }) => {
+  const data = useCountriesGeoJSON(path);
+  const lineagePoints = useMemo(() => flattenLineage(lineage).map(n => n.position).filter(Boolean) as [number, number][], [lineage]);
+
+  const filtered: FeatureCollection<Geometry, CountryProps> | null = useMemo(() => {
+    if (!data || !lineagePoints.length) return null;
+    // Pre-index with bbox for faster rejection
+    const indexed: IndexedFeature[] = data.features
+      .filter(f => f.geometry && (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon'))
+      .map(f => ({ feature: f as Feature<Geometry, CountryProps>, bbox: computeBBox(f.geometry as Geometry) }));
+
+    const matched = new Set<Feature<Geometry, CountryProps>>();
+    for (const [lat, lng] of lineagePoints) { // lineage positions stored as [lat, lng]
+      const pointLng = lng;
+      const pointLat = lat;
+      for (const { feature, bbox } of indexed) {
+        if (matched.has(feature)) continue; // already included
+        if (bbox) {
+          const [minX, minY, maxX, maxY] = bbox; // bbox in [lngMin, latMin, lngMax, latMax]
+            if (pointLng < minX || pointLng > maxX || pointLat < minY || pointLat > maxY) continue;
+        }
+        const geom = feature.geometry as Geometry;
+        let inside = false;
+        if (geom.type === 'Polygon') {
+          inside = polygonContains(pointLng, pointLat, geom.coordinates as unknown as number[][][]);
+        } else if (geom.type === 'MultiPolygon') {
+          inside = multiPolygonContains(pointLng, pointLat, geom.coordinates as unknown as number[][][][]);
+        }
+        if (inside) matched.add(feature);
+      }
+    }
+    return { ...data, features: Array.from(matched) };
+  }, [data, lineagePoints]);
+
+  const onEach = (feature: Feature<Geometry, CountryProps>, layer: L.Layer) => {
+    if (!tooltip) return;
+    const props = feature.properties || {};
+    const name = (props.NAME_EN || props.NAME || props.ADMIN || props.SOVEREIGNT || 'Country') as string;
+    const l = layer as L.Layer & { bindTooltip?: (c: L.Content, o?: L.TooltipOptions) => unknown };
+    l.bindTooltip?.(name, { direction: 'auto', sticky: true });
+  };
+
+  if (!filtered || !filtered.features.length) return null;
+
+  return (
+    <Pane name="lineage-countries" style={{ zIndex: 560, pointerEvents: 'none' }}>
+      <GeoJSON
+        data={filtered as FeatureCollection<Geometry, CountryProps>}
+        style={() => lineageHighlightStyle}
+        onEachFeature={onEach}
+        pane="lineage-countries"
+      />
+    </Pane>
+  );
+};
+
+export default LineageCountryHighlights;

@@ -16,6 +16,7 @@ import MarkerClusterGroup from "react-leaflet-markercluster";
 import "react-leaflet-markercluster/styles";
 import TranslationMarkers, { TranslationMarker } from './geospatial/TranslationMarkers';
 import CountriesLayer from './geospatial/CountriesLayer';
+import LineageCountryHighlights from './geospatial/LineageCountryHighlights';
 import EtymologyLineagePath from './geospatial/EtymologyLineagePath';
 import ExportGeoJSONButton from './geospatial/ExportGeoJSONButton';
 import type { EtymologyNode } from '@/types/etymology';
@@ -48,6 +49,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     const languoidData = useLanguoidData();
     const [markers, setMarkers] = useState<TranslationMarker[]>([]);
     const [lineage, setLineage] = useState<EtymologyNode | null>(null);
+    // const [highlightedCountries, setHighlightedCountries] = useState<string[]>([]); // replaced by LineageCountryHighlights overlay
     // TODO (Timeline Scrubber & Playback State):
     //  - [ ] Add currentIndex state (number) representing focused lineage node for timeline.
     //  - [ ] Add playing state + playback speed (ms per step) & timer ref for auto-advance.
@@ -68,7 +70,9 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                 languoidData,
                 wordData.word,
                 wordData.lang_code
-            ).then(setLineage);
+            ).then(root => {
+                setLineage(root);
+            });
         }
     }, [wordData, languoidData]);
 
@@ -106,6 +110,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                     <LayersControl.Overlay checked name="Countries (hover)">
                         <LayerGroup>
                             <CountriesLayer />
+                            {/* Persistent lineage country highlight overlay (non-interactive) */}
+                            <LineageCountryHighlights lineage={lineage} />
                         </LayerGroup>
                     </LayersControl.Overlay>
                     {/* General Etymology Markers Layer */}

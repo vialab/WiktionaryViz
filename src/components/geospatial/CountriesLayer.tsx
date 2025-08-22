@@ -15,9 +15,8 @@ import useCountriesGeoJSON, { CountryProps } from '@/hooks/useCountriesGeoJSON';
  *  - [ ] Add CSS class hooks: country-highlighted, country-focused for animation via Tailwind or custom CSS.
  */
 type Props = {
-    /** Optional: path to the countries GeoJSON in public/ */
-    path?: string; // default '/countries.geojson'
-    /** Optional: ISO_A3 code to keep highlighted (e.g., after click). */
+    path?: string;
+    /** Legacy single selected country (treated as focused). */
     selectedIsoA3?: string;
 };
 
@@ -48,6 +47,8 @@ const selectedStyle: L.PathOptions = {
     fillColor: '#0ea5e9',
     fillOpacity: 0.25,
 };
+
+// Highlighting moved to LineageCountryHighlights overlay component.
 
 // TODO: Introduce highlightedStyle (all lineage countries) & focusedStyle (current step on timeline)
 // const highlightedStyle: L.PathOptions = { ...defaultStyle, color: '#0ea5e9', weight: 1.5, fillOpacity: 0.12, className: 'country-path country-highlighted' };
@@ -88,10 +89,8 @@ const CountriesLayer: FC<Props> = ({ path = '/countries.geojson', selectedIsoA3 
 
     const style = (feature?: Feature<Geometry, CountryProps>): L.PathOptions => {
         if (!feature) return defaultStyle;
-        const iso3 = feature.properties?.ISO_A3 ?? feature.properties?.iso_a3 ?? feature.properties?.ISO3;
-        if (selectedIsoA3 && iso3 === selectedIsoA3) return selectedStyle;
-    // FUTURE: if (focusedSet.has(iso3)) return focusedStyle;
-    // FUTURE: if (highlightedSet.has(iso3)) return highlightedStyle;
+        const iso3 = (feature.properties?.ISO_A3 ?? feature.properties?.iso_a3 ?? feature.properties?.ISO3)?.toUpperCase();
+        if (selectedIsoA3 && iso3 === selectedIsoA3.toUpperCase()) return selectedStyle;
         return defaultStyle;
     };
 
@@ -125,10 +124,7 @@ const CountriesLayer: FC<Props> = ({ path = '/countries.geojson', selectedIsoA3 
             },
             mouseout: (e: L.LeafletEvent) => {
                 const gj = geoJsonRef.current;
-                if (gj) {
-                    // TODO: Instead of unconditional reset, reapply highlighted/focused style when sets are introduced.
-                    gj.resetStyle(e.target as L.Layer);
-                }
+                if (gj) gj.resetStyle(e.target as L.Layer);
                 const el = (e.target as L.Path).getElement?.() as SVGElement | undefined;
                 if (el) {
                     el.style.cursor = 'auto';

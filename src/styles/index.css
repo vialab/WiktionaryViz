@@ -37,6 +37,28 @@ body {
   filter: drop-shadow(0 0 2px rgba(34, 211, 238, 0.6));
 }
 
+/* Highlighted lineage countries */
+.country-highlighted {
+  transition: fill-opacity 0.3s ease, stroke-width 0.3s ease;
+  outline: none;
+}
+
+/* Overlay polygon style for lineage highlight layer */
+.lineage-country {
+  mix-blend-mode: screen;
+}
+
+/* Future focused animation placeholder */
+.country-focused {
+  animation: pulse-focused 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse-focused {
+  0% { filter: drop-shadow(0 0 0px rgba(56,189,248,0.0)); }
+  50% { filter: drop-shadow(0 0 6px rgba(56,189,248,0.9)); }
+  100% { filter: drop-shadow(0 0 0px rgba(56,189,248,0.0)); }
+}
+
 /* Optional: Clean up arrow icon container */
 .arrow-icon {
   background: none;
