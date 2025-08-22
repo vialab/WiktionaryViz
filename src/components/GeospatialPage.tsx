@@ -18,6 +18,7 @@ import TranslationMarkers, { TranslationMarker } from './geospatial/TranslationM
 import CountriesLayer from './geospatial/CountriesLayer';
 import LineageCountryHighlights from './geospatial/LineageCountryHighlights';
 import EtymologyLineagePath from './geospatial/EtymologyLineagePath';
+import TimelineScrubber from './geospatial/TimelineScrubber';
 import ExportGeoJSONButton from './geospatial/ExportGeoJSONButton';
 import type { EtymologyNode } from '@/types/etymology';
 import type { Translation } from '@/utils/mapUtils';
@@ -49,6 +50,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     const languoidData = useLanguoidData();
     const [markers, setMarkers] = useState<TranslationMarker[]>([]);
     const [lineage, setLineage] = useState<EtymologyNode | null>(null);
+    const [currentIndex, setCurrentIndex] = useState<number | undefined>(undefined);
     // const [highlightedCountries, setHighlightedCountries] = useState<string[]>([]); // replaced by LineageCountryHighlights overlay
     // TODO (Timeline Scrubber & Playback State):
     //  - [ ] Add currentIndex state (number) representing focused lineage node for timeline.
@@ -72,6 +74,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                 wordData.lang_code
             ).then(root => {
                 setLineage(root);
+                setCurrentIndex(undefined);
             });
         }
     }, [wordData, languoidData]);
@@ -123,7 +126,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                     {/* Etymology Lineage Path Layer */}
                     <LayersControl.Overlay name="Etymology Lineage Path">
                         <LayerGroup>
-                            <EtymologyLineagePath lineage={lineage} />
+                            <EtymologyLineagePath lineage={lineage} currentIndex={currentIndex} />
                         </LayerGroup>
                     </LayersControl.Overlay>
                     {/* TODO (Timeline UI): After implementing, mount timeline scrubber outside LayersControl for fixed positioning. */}
@@ -132,6 +135,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                     {/* TODO [HIGH LEVEL]: Filters (time slider, region, language family) to declutter map; uncertainty styling. */}
                     {/* TODO [LOW LEVEL]: Add a control panel to filter markers by decade/region and desaturate uncertain items. */}
                 </LayersControl>
+                <TimelineScrubber lineage={lineage} currentIndex={currentIndex} onChange={setCurrentIndex} />
             </MapContainer>
         </section>
     );

@@ -5,6 +5,8 @@ import type { EtymologyNode } from '@/types/etymology';
 
 export interface EtymologyLineagePathProps {
   lineage: EtymologyNode | null;
+  /** Index (0-based) of current timeline focus; controls partial rendering. */
+  currentIndex?: number;
 }
 
 /**
@@ -19,81 +21,65 @@ export interface EtymologyLineagePathProps {
  *  - [ ] Style the 'active' CircleMarker differently (e.g., brighter fill, pulse) based on currentIndex.
  *  - [ ] Expose callback (e.g., onNodeClick) to sync user clicks on nodes with timeline position.
  */
-const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage }) => {
+const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, currentIndex }) => {
   if (!lineage) return null;
   const elements: React.ReactNode[] = [];
-  let currentNode = lineage;
+  let node: EtymologyNode | null = lineage;
+  let idx = 0;
+  const active = typeof currentIndex === 'number' ? currentIndex : undefined;
 
-  while (currentNode && currentNode.next) {
-    const { word, lang_code, romanization, position } = currentNode;
-    const nextNode = currentNode.next;
-    const start = normalizePosition(position);
-    const end = normalizePosition(nextNode.position);
-
-    // Add CircleMarker for current node
-    elements.push(
-      <CircleMarker
-        key={`circle-${word}-${lang_code}`}
-        center={start}
-        radius={8}
-        fillColor="#3388ff"
-        color="#3388ff"
-        weight={1}
-        opacity={1}
-        fillOpacity={0.7}
-      >
-        <Popup>
-          <div>
-            {currentNode.expansion}
-            {romanization && ` - ${romanization}`}
-          </div>
-        </Popup>
-      </CircleMarker>
-    );
-
-    // Add Polyline + Arrow Marker
-    elements.push(
-      <Polyline
-        key={`polyline-${word}-${nextNode.word}`}
-        positions={[start, end]}
-      />
-    );
-    const midpoint = calculateMercatorMidpoint(start, end);
-    const angle = calculateBearing(start, end);
-    elements.push(
-      <Marker
-        key={`arrow-${word}-${nextNode.word}`}
-        position={midpoint}
-        icon={createArrowIcon(angle)}
-        interactive={false}
-      />
-    );
-    currentNode = nextNode;
-  }
-
-  // Add CircleMarker for last node (tail of the lineage)
-  if (currentNode && currentNode.position) {
-    const { word, lang_code, romanization, position } = currentNode;
-    const last = normalizePosition(position);
-    elements.push(
-      <CircleMarker
-        key={`circle-${word}-${lang_code}`}
-        center={last}
-        radius={8}
-        fillColor="#3388ff"
-        color="#3388ff"
-        weight={1}
-        opacity={1}
-        fillOpacity={0.7}
-      >
-        <Popup>
-          <div>
-            {word}
-            {romanization && ` - ${romanization}`}
-          </div>
-        </Popup>
-      </CircleMarker>
-    );
+  while (node) {
+    const { word, lang_code, romanization, position, expansion } = node;
+    if (position) {
+      const center = normalizePosition(position);
+      const isActive = active === idx;
+      const visible = active === undefined || idx <= active; // only show nodes up to active
+      if (visible) {
+        elements.push(
+          <CircleMarker
+            key={`circle-${word}-${lang_code}`}
+            center={center}
+            radius={isActive ? 10 : 7}
+            fillColor={isActive ? '#fbbf24' : '#3388ff'}
+            color={isActive ? '#f59e0b' : '#3388ff'}
+            weight={isActive ? 2 : 1}
+            opacity={1}
+            fillOpacity={isActive ? 0.9 : 0.7}
+            className={isActive ? 'etymology-node-active' : 'etymology-node'}
+          >
+            <Popup>
+              <div>
+                {expansion || word}
+                {romanization && ` - ${romanization}`}
+              </div>
+            </Popup>
+          </CircleMarker>
+        );
+      }
+      // Draw edge to next if within active range
+      if (visible && node.next && node.next.position && (active === undefined || idx < active)) {
+        const start = center;
+        const end = normalizePosition(node.next.position);
+        elements.push(
+          <Polyline
+            key={`polyline-${word}-${node.next.word}`}
+            positions={[start, end]}
+          />
+        );
+        const midpoint = calculateMercatorMidpoint(start, end);
+        const angle = calculateBearing(start, end);
+        elements.push(
+          <Marker
+            key={`arrow-${word}-${node.next.word}`}
+            position={midpoint}
+            icon={createArrowIcon(angle)}
+            interactive={false}
+          />
+        );
+      }
+    }
+    node = node.next;
+    idx++;
   }
   return <>{elements}</>;
 });
