@@ -2,6 +2,20 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.4](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.3...wiktionaryviz-v0.1.4) (2025-08-22)
+
+
+### Features
+
+* added geojson country layers ([19f7dc1](https://github.com/vialab/WiktionaryViz/commit/19f7dc1df0dbe3a65944d4bd8ab7101e18dc7d9e))
+* **geospatial:** add CountriesLayer component and integrate it into GeospatialPage for enhanced geographic visualization ([e0a0d57](https://github.com/vialab/WiktionaryViz/commit/e0a0d576d3224cc4270da4c18debc6eed2438c5b))
+* **geospatial:** add ExportGeoJSONButton component and functionality to export map data as GeoJSON ([1aec145](https://github.com/vialab/WiktionaryViz/commit/1aec1458e4ea607ff841049db0dbc98c09564195))
+* **geospatial:** add LineageCountryHighlights component for persistent country highlighting and refactor CountriesLayer to utilize it ([9bfa5e2](https://github.com/vialab/WiktionaryViz/commit/9bfa5e277ec4d38fece28caa44a19bba5061d5f2))
+* **geospatial:** add TimelineScrubber component and integrate it into GeospatialPage for improved lineage navigation and interaction ([9584a29](https://github.com/vialab/WiktionaryViz/commit/9584a292fd98ed67702a880413b585ce1192f470))
+* **geospatial:** add TODOs for timeline scrubber, playback state, and country highlighting to enhance future functionality ([ba57c39](https://github.com/vialab/WiktionaryViz/commit/ba57c39bf98e34f1bf5f090c11527f95ce8c2a36))
+* **GeospatialPage:** enhance map layers with dark and light base layers for improved user experience and visual options ([0e5b9ae](https://github.com/vialab/WiktionaryViz/commit/0e5b9ae0bffc7c6dc66f36e257a4390db575592f))
+* **GeospatialPage:** implement playback functionality with controls for lineage visualization and enhance country highlight effects with active node pulsation ([e16f571](https://github.com/vialab/WiktionaryViz/commit/e16f571f84b89444ace9e9bd99aba621346d5f3d))
+
 ## [0.1.3](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.2...wiktionaryviz-v0.1.3) (2025-08-19)
 
 
