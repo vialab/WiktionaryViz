@@ -8,3 +8,8 @@ coverage
 
 # Data / large JSON (leave unformatted if desired)
 backend/data
+
+
+CHANGELOG.md
+
+backend/backend/CHANGELOG.md
