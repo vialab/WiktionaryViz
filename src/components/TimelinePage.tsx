@@ -69,12 +69,58 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ word, language }) => {
   if (!data.length) return <div>No etymology found.</div>
 
   return (
-    <div className="p-4 relative w-full max-w-4xl mx-auto">
-      <EtymologyCarousel cards={data} onFocusChange={setFocusIdx} />
-      <MetadataPanel card={currentCard} prevCard={prevCard} drift={drift ?? undefined} />
-      {/* TODO [LOW LEVEL]: Add toolbar to save/share current timeline state with annotations and comparison to another word. */}
+    <div className="relative w-full">
+      {/* Floating legend (doesn't affect main centering) */}
+      <aside className="hidden md:flex flex-col gap-3 fixed top-28 left-8 w-[220px] z-30">
+        <div className="text-[#B79F58] text-[0.65rem] tracking-wide uppercase font-semibold pl-1">
+          Phonetic Data Source
+        </div>
+        <div className="flex flex-col gap-3 bg-[#181818] px-4 py-4 rounded-xl border border-[#2f2f2f] shadow-inner">
+          <LegendSwatch color="#22c55e" label="Human IPA" description="Complete" />
+          <LegendSwatch color="#f59e42" label="Hybrid" description="Phonemic + AI" />
+          <LegendSwatch color="#ef4444" label="AI Inferred" description="No human IPA" />
+        </div>
+      </aside>
+      {/* Main centered content with left padding space for legend at md+ */}
+      <div className="mx-auto max-w-6xl px-4 lg:px-8 md:pl-[260px]">
+        <div className="flex flex-col gap-0 min-h-[560px]">
+          <div className="rounded-t-2xl bg-[#181818] border border-b-0 border-[#2f2f2f] px-2 sm:px-4 pt-4 pb-2 relative z-10">
+            <EtymologyCarousel cards={data} onFocusChange={setFocusIdx} edgePadding={70} />
+          </div>
+          <div className="rounded-b-2xl bg-[#252525] border border-t-0 border-[#2f2f2f] shadow-xl flex-1">
+            {currentCard ? (
+              <MetadataPanel
+                card={currentCard}
+                prevCard={prevCard}
+                drift={drift ?? undefined}
+              />
+            ) : (
+              <div className="p-8 text-center text-[#B79F58] text-sm">Select a node to view metadata.</div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
 
 export default TimelinePage
+
+// Inline legend swatch component (kept local to avoid extra file churn)
+const LegendSwatch: React.FC<{ color: string; label: string; description: string }> = ({
+  color,
+  label,
+  description,
+}) => (
+  <div className="flex items-center gap-2 text-[#F5F5F5]">
+    <span
+      className="inline-block rounded-md border border-[#3a3a3a]"
+      style={{ width: 18, height: 18, boxShadow: `0 0 0 3px ${color} inset`, background: '#252525' }}
+      title={`${label} – ${description}`}
+    />
+    <div className="leading-tight">
+      <div className="font-semibold" style={{ color }}>{label}</div>
+      <div className="text-[0.65rem] md:text-[0.7rem] text-[#B79F58] uppercase tracking-wide">{description}</div>
+    </div>
+  </div>
+)

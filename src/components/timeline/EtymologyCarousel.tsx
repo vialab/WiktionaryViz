@@ -3,21 +3,28 @@ import { motion } from 'framer-motion'
 import clsx from 'clsx'
 import { NodeData } from './useTimelineData'
 
-const CARD_WIDTH = 260
+const CARD_WIDTH = 300
 const CARD_GAP = 32
 
 interface EtymologyCarouselProps {
   cards: NodeData[]
   onFocusChange: (index: number) => void
+  edgePadding?: number // optional override to reduce internal left/right whitespace
 }
 
-export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onFocusChange }) => {
+export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({
+  cards,
+  onFocusChange,
+  edgePadding,
+}) => {
   // Reverse the cards so the furthest ancestor is first
   const reversedCards = [...cards].reverse()
   const [focusIdx, setFocusIdx] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   // Padding to keep focused card centered at edges
-  const EDGE_PADDING = (CARD_WIDTH + CARD_GAP) * 1.5
+  // Responsive edge padding so timeline doesn't force super-wide parent.
+  // Allow override to tighten spacing when embedded beside a legend.
+  const EDGE_PADDING = edgePadding ?? Math.min((CARD_WIDTH + CARD_GAP) * 0.85, 180)
 
   // Helper for drift bar color (red intensity for higher drift)
   function driftBarColor(drift: number) {
@@ -75,13 +82,14 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
       <div
         style={{
           position: 'absolute',
-          top: 12,
+          top: 8,
           left: 24,
           zIndex: 20,
           fontWeight: 700,
           color: '#B79F58',
-          fontSize: 18,
-          letterSpacing: 1,
+          fontSize: 20,
+          letterSpacing: 1.5,
+          textShadow: '0 1px 2px rgba(0,0,0,0.6)',
         }}
       >
         Older
@@ -89,13 +97,14 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
       <div
         style={{
           position: 'absolute',
-          top: 12,
+          top: 8,
           right: 24,
           zIndex: 20,
           fontWeight: 700,
           color: '#B79F58',
-          fontSize: 18,
-          letterSpacing: 1,
+          fontSize: 20,
+          letterSpacing: 1.5,
+          textShadow: '0 1px 2px rgba(0,0,0,0.6)',
         }}
       >
         Younger
@@ -113,7 +122,7 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
       {/* Carousel */}
       <div
         ref={containerRef}
-        className="flex overflow-x-auto snap-x py-8 scrollbar-hidden cursor-grab w-full bg-[#181818] rounded-xl"
+        className="flex overflow-x-auto snap-x py-8 scrollbar-hidden cursor-grab w-full bg-transparent"
         style={{
           scrollSnapType: 'x proximity',
           WebkitOverflowScrolling: 'touch',
@@ -197,13 +206,17 @@ export const EtymologyCarousel: React.FC<EtymologyCarouselProps> = ({ cards, onF
               <div style={badgeStyle}>Δ = {driftDisplay}</div>
               <div className="p-6 flex flex-col items-center">
                 {/* Title: word */}
-                <div className="text-2xl font-bold">{card.word}</div>
+                <div className="text-3xl font-extrabold tracking-wide leading-snug drop-shadow-sm">
+                  {card.word}
+                </div>
                 {/* Subtitle: IPA */}
-                <div className="text-sm italic text-[#B79F58] mb-1">
+                <div className="text-base italic text-[#B79F58] mb-1 leading-tight">
                   {card.pronunciation || 'N/A'}
                 </div>
                 {/* Subsubtitle: Language name */}
-                <div className="text-xs text-[#B79F58] mb-2">{card.lang}</div>
+                <div className="text-sm text-[#B79F58] mb-2 font-medium tracking-wide">
+                  {card.lang}
+                </div>
               </div>
               {/* Drift bar below card */}
               <div style={driftBarStyle} />

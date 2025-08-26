@@ -137,7 +137,6 @@ body {
   border-radius: 4px;
 }
 
-/* Removed unsupported @utility directive (tailwind jit variant). Re-implement via plugin if needed. */
-/* scrollbar-hidden utility placeholder
+/* Scrollbar hidden utility */
+.scrollbar-hidden { scrollbar-width: none; }
 .scrollbar-hidden::-webkit-scrollbar { display: none; }
-*/
