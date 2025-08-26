@@ -1,11 +1,6 @@
 import React, { FC, memo, useEffect, useRef, useState } from 'react'
 import { Polyline, Marker, CircleMarker, Tooltip, useMap } from 'react-leaflet'
-import {
-  normalizePosition,
-  createArrowIcon,
-  calculateBearing,
-  calculateMercatorMidpoint,
-} from '@/utils/mapUtils'
+import { normalizePosition, createArrowIcon, calculateBearing } from '@/utils/mapUtils'
 import type { EtymologyNode } from '@/types/etymology'
 
 export interface EtymologyLineagePathProps {
@@ -35,38 +30,47 @@ export interface EtymologyLineagePathProps {
  *  - [ ] Optionally use requestAnimationFrame for smoother growth animation rather than CSS-only for long great-circle paths.
  */
 // Internal component to animate a single segment (active edge)
-const AnimatedSegment: FC<{ start: [number, number]; end: [number, number]; growMs: number; angle: number; midpoint: [number, number] }> = ({ start, end, growMs, angle, midpoint }) => {
+const AnimatedSegment: FC<{ start: [number, number]; end: [number, number]; growMs: number; angle: number }> = ({ start, end, growMs, angle }) => {
   const polyRef = useRef<L.Polyline | null>(null)
+  const markerRef = useRef<L.Marker | null>(null)
   const map = useMap()
-  const [showArrow, setShowArrow] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
     const poly = polyRef.current
     if (!poly) return
     try {
-      // Compute approximate pixel length via projected points
       const latLngs = poly.getLatLngs() as L.LatLng[]
       if (latLngs.length < 2) return
       const p0 = map.project(latLngs[0])
       const p1 = map.project(latLngs[1])
       const dist = p0.distanceTo(p1)
       const pathEl = poly.getElement() as SVGPathElement | null
-      if (pathEl) {
-        pathEl.style.strokeDasharray = `${dist}`
-        pathEl.style.strokeDashoffset = `${dist}`
-        pathEl.style.setProperty('--seg-len', `${dist}`)
-        pathEl.style.setProperty('--grow-ms', `${growMs}ms`)
-        // Trigger reflow then animate
-        void pathEl.getBoundingClientRect()
-        pathEl.classList.add('etymology-segment-animating')
-        // Show arrow shortly after animation begins (e.g., 25% of duration) for "travelling" effect
-        const appearDelay = Math.max(120, Math.min(growMs * 0.25, 400))
-        const t = window.setTimeout(() => setShowArrow(true), appearDelay)
-        return () => window.clearTimeout(t)
+      if (!pathEl) return
+      pathEl.style.strokeDasharray = `${dist}`
+      pathEl.style.strokeDashoffset = `${dist}`
+      pathEl.style.setProperty('--seg-len', `${dist}`)
+      pathEl.style.setProperty('--grow-ms', `${growMs}ms`)
+      void pathEl.getBoundingClientRect()
+      pathEl.classList.add('etymology-segment-animating')
+      setMounted(true)
+      const startTime = performance.now()
+      const animate = (now: number) => {
+        const progress = Math.min(1, (now - startTime) / growMs)
+        // Linear interpolation in lat/lng space
+        const lat = start[0] + (end[0] - start[0]) * progress
+        const lng = start[1] + (end[1] - start[1]) * progress
+        if (markerRef.current) {
+          markerRef.current.setLatLng([lat, lng])
+        }
+        if (progress < 1) requestAnimationFrame(animate)
       }
+      requestAnimationFrame(animate)
     } catch {
       // ignore
     }
-  }, [growMs, map])
+  }, [growMs, map, start, end])
+
   return (
     <>
       <Polyline
@@ -76,11 +80,13 @@ const AnimatedSegment: FC<{ start: [number, number]; end: [number, number]; grow
           polyRef.current = ref as unknown as L.Polyline | null
         }}
       />
-      {showArrow && (
+      {mounted && (
         <Marker
-          key={`arrow-anim-${midpoint[0]}-${midpoint[1]}-${angle}`}
-          position={midpoint}
-          icon={createArrowIcon(angle, { size: 26, color: '#60a5fa', outline: '#082f49', outlineWidth: 2 })}
+          ref={ref => {
+            markerRef.current = ref as unknown as L.Marker | null
+          }}
+          position={start}
+          icon={createArrowIcon(angle, { size: 28, color: '#60a5fa', outline: '#082f49', outlineWidth: 2 })}
           interactive={false}
         />
       )}
@@ -137,24 +143,24 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, cur
         const edgeActive = active !== undefined && nextIndex === active // edge leading to active node animates
         const alreadyPast = active === undefined || nextIndex < active
         // Precompute for whichever branch uses them
-        const midpoint = calculateMercatorMidpoint(start, end)
-        const angle = calculateBearing(start, end)
+  const angle = calculateBearing(start, end)
         if (alreadyPast) {
           // Static drawn segment
           elements.push(
-            <>
-              <Polyline
-                key={`polyline-static-${word}-${node.next.word}`}
-                positions={[start, end]}
-                pathOptions={{ className: 'etymology-segment-static' }}
-              />
-              <Marker
-                key={`arrow-static-${word}-${node.next.word}`}
-                position={midpoint}
-                icon={createArrowIcon(angle, { size: 26, color: '#60a5fa', outline: '#082f49', outlineWidth: 2 })}
-                interactive={false}
-              />
-            </>,
+            <Polyline
+              key={`polyline-static-${word}-${node.next.word}`}
+              positions={[start, end]}
+              pathOptions={{ className: 'etymology-segment-static' }}
+            />,
+          )
+          // Arrow at end of completed segment
+          elements.push(
+            <Marker
+              key={`arrow-static-${word}-${node.next.word}`}
+              position={end}
+              icon={createArrowIcon(angle, { size: 22, color: '#3b82f6', outline: '#082f49', outlineWidth: 2 })}
+              interactive={false}
+            />,
           )
         } else if (edgeActive) {
           elements.push(
@@ -164,7 +170,6 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, cur
               end={end}
               growMs={Math.min(900, 400 + Math.hypot(start[0] - end[0], start[1] - end[1]) * 60)}
               angle={angle}
-              midpoint={midpoint}
             />,
           )
         } else {
