@@ -2,6 +2,16 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.5](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.4...wiktionaryviz-v0.1.5) (2025-08-26)
+
+
+### Features
+
+* **EtymologyLineagePath:** enhance animation by adding dynamic arrow rotation to mitigate distortion during long segments ([592ed68](https://github.com/vialab/WiktionaryViz/commit/592ed685b3a12464ab6548fc87541fdf665eadca))
+* **EtymologyLineagePath:** implement animated segments for lineage paths to enhance visual representation and user experience ([65f30ab](https://github.com/vialab/WiktionaryViz/commit/65f30ab250ac862b5478d5b99ab346e937744c8b))
+* **geospatial:** enhance playback features and tooltip automation for improved user experience and accessibility ([84bc980](https://github.com/vialab/WiktionaryViz/commit/84bc98072f0c9c66073b5752a97eef010ed1e306))
+* **GeospatialPage, EtymologyLineagePath:** implement playback with dwell pause and show all popups at end of playback for enhanced user experience ([7a5e2ce](https://github.com/vialab/WiktionaryViz/commit/7a5e2cea39e36d1eedeca9b02605dfb3671fcfec))
+
 ## [0.1.4](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.3...wiktionaryviz-v0.1.4) (2025-08-22)
 
 
