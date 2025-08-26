@@ -30,6 +30,12 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
   onToggleLoop,
   onReset,
 }) => {
+  // TODO (Playback Pause Enhancement): Add a configurable inter-step pause (e.g., base speed for line growth + pause duration) so each node lingers briefly before advancing.
+  // TODO (Auto Tooltips): During playback, automatically open the Leaflet popup (or a custom tooltip overlay) for the active node when the pause begins; close it when advancing.
+  // TODO (Hide Previous Tooltip): Ensure previously opened popup closes before showing the next to avoid stacking, unless at final reveal stage.
+  // TODO (Final Summary Tooltips): After playback reaches the end (and not looping), optionally open all node tooltips simultaneously (or present a summary panel) to satisfy "show all tooltips at end" requirement.
+  // TODO (API Extension): Expose callbacks (onStepShow / onStepHide / onComplete) so parent (GeospatialPage) can orchestrate tooltip state and final reveal.
+  // TODO (Accessibility): Announce active node change via aria-live region for screen readers during autoplay.
   const nodes = useMemo(() => flattenLineage(lineage), [lineage])
   const maxIndex = nodes.length ? nodes.length - 1 : 0
   const map = useMap()

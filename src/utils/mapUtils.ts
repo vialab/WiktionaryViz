@@ -474,21 +474,26 @@ export const normalizePosition = (
 }
 
 /**
- * Creates a Leaflet arrow icon with the given rotation angle.
+ * Creates a Leaflet arrow icon rotated to the supplied bearing angle.
+ * Now supports sizing & color customization for improved legibility.
+ *
+ * NOTE: Previously a fixed 10x10 CSS triangle; enlarged & outlined for clarity.
  */
-export const createArrowIcon = (angle: number) => {
+export const createArrowIcon = (
+  angle: number,
+  options: { size?: number; color?: string; outline?: string; outlineWidth?: number; opacity?: number } = {},
+) => {
+  const { size = 22, color = '#3b82f6', outline = '#0f172a', outlineWidth = 1.6, opacity = 0.95 } = options
+  // Using an inline SVG for sharper scaling and optional outline.
+  // Coordinate system: 0 0 100 100 -> arrow pointing "up"; we rotate to bearing.
+  const svg = `<svg width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+      <path d="M50 4 L10 92 L50 72 L90 92 Z" fill="${color}" stroke="${outline}" stroke-width="${outlineWidth}" stroke-linejoin="round" />
+    </svg>`
   return window.L.divIcon({
     className: 'arrow-icon',
-    html: `<div style="
-            transform: rotate(${angle}deg);
-            width: 0;
-            height: 0;
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-bottom: 10px solid #2158A5FF; 
-        "></div>`,
-    iconSize: [10, 10],
-    iconAnchor: [5, 5],
+    html: `<div style="transform: rotate(${angle}deg); opacity:${opacity}; filter: drop-shadow(0 0 2px rgba(0,0,0,0.4));">${svg}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   })
 }
 

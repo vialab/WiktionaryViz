@@ -61,6 +61,13 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   //  - [ ] Provide callback to <EtymologyLineagePath /> for node click -> setCurrentIndex.
   //  - [ ] Render <EtymologyTimelineScrubber /> fixed at bottom: ticks, drag, play/pause.
   //  - [ ] Handle word/language change: reset index, stop playback, clear timers.
+  // TODO (Playback Pause & Tooltip Lifecycle):
+  //  - [ ] Introduce two-phase step timing: (a) animate path growth / transition, (b) dwell pause for reading.
+  //  - [ ] On dwell start: open active node popup (store ref or programmatically open via leaflet instance).
+  //  - [ ] Before advancing: close previously opened popup unless final stage.
+  //  - [ ] On completion (non-loop): open ALL node popups (iterate layers) OR synthesize a consolidated tooltip panel.
+  //  - [ ] Provide a user toggle (e.g., "Show all popups at end") in scrubber controls.
+  //  - [ ] If user scrubs manually, cancel current pause timer and close transient popup.
 
   useEffect(() => {
     if (Array.isArray(wordData?.translations) && languoidData.length) {

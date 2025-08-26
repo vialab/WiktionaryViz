@@ -25,6 +25,16 @@ export interface EtymologyLineagePathProps {
  *  - [ ] Add data-country / data-index attributes on markers for debugging and potential DOM-driven highlighting.
  *  - [ ] Style the 'active' CircleMarker differently (e.g., brighter fill, pulse) based on currentIndex.
  *  - [ ] Expose callback (e.g., onNodeClick) to sync user clicks on nodes with timeline position.
+ *
+ * TODO (Popup / Tooltip Automation):
+ *  - [ ] Accept a prop (activePopupIndex) and programmatically open/close the corresponding Popup (use refs or Leaflet instance).
+ *  - [ ] Provide imperative handle (forwardRef) exposing openPopupForIndex / closeAllPopups to support playback control in GeospatialPage.
+ *  - [ ] Support a mode to leave all popups open after completion for final overview.
+ *
+ * TODO (Animation Phasing):
+ *  - [ ] Split rendering into two layers: (a) already-complete segments, (b) currently animating segment with stroke-dasharray animation.
+ *  - [ ] Provide per-segment duration + dwell pause prop to coordinate with TimelineScrubber.
+ *  - [ ] Optionally use requestAnimationFrame for smoother growth animation rather than CSS-only for long great-circle paths.
  */
 const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, currentIndex }) => {
   if (!lineage) return null
@@ -70,11 +80,12 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, cur
         )
         const midpoint = calculateMercatorMidpoint(start, end)
         const angle = calculateBearing(start, end)
+        // Larger, higher-contrast arrow icon for improved route order visibility.
         elements.push(
           <Marker
             key={`arrow-${word}-${node.next.word}`}
             position={midpoint}
-            icon={createArrowIcon(angle)}
+            icon={createArrowIcon(angle, { size: 26, color: '#60a5fa', outline: '#082f49', outlineWidth: 2 })}
             interactive={false}
           />,
         )
