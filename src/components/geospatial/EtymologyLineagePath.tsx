@@ -55,14 +55,25 @@ const AnimatedSegment: FC<{ start: [number, number]; end: [number, number]; grow
       pathEl.classList.add('etymology-segment-animating')
       setMounted(true)
       const startTime = performance.now()
+      let lastLatLng: [number, number] = [...start]
       const animate = (now: number) => {
         const progress = Math.min(1, (now - startTime) / growMs)
-        // Linear interpolation in lat/lng space
+        // Linear interpolation in lat/lng; acceptable for visualization (not exact great-circle).
         const lat = start[0] + (end[0] - start[0]) * progress
         const lng = start[1] + (end[1] - start[1]) * progress
         if (markerRef.current) {
           markerRef.current.setLatLng([lat, lng])
+          // Dynamically rotate arrow to local bearing to mitigate long-segment distortion.
+          try {
+            const localBearing = calculateBearing(lastLatLng, [lat, lng])
+            const iconEl = markerRef.current.getElement()
+            const inner = iconEl?.firstElementChild as HTMLElement | null
+            if (inner) inner.style.transform = `rotate(${localBearing}deg)`
+          } catch {
+            // ignore rotation errors
+          }
         }
+        lastLatLng = [lat, lng]
         if (progress < 1) requestAnimationFrame(animate)
       }
       requestAnimationFrame(animate)
@@ -80,13 +91,14 @@ const AnimatedSegment: FC<{ start: [number, number]; end: [number, number]; grow
           polyRef.current = ref as unknown as L.Polyline | null
         }}
       />
-      {mounted && (
+    {mounted && (
         <Marker
           ref={ref => {
             markerRef.current = ref as unknown as L.Marker | null
           }}
           position={start}
-          icon={createArrowIcon(angle, { size: 28, color: '#60a5fa', outline: '#082f49', outlineWidth: 2 })}
+      // Initial angle; will be updated frame-by-frame.
+      icon={createArrowIcon(angle, { size: 28, color: '#60a5fa', outline: '#082f49', outlineWidth: 2 })}
           interactive={false}
         />
       )}
