@@ -20,18 +20,14 @@ export interface EtymologyLineagePathProps {
  * Renders the etymology lineage as a sequence of CircleMarkers, Polylines, and arrow Markers.
  * Memoized for performance.
  *
- * TODO (Timeline & Highlight Integration):
- *  - [ ] Accept props for currentIndex / onIndexChange when timeline playback is introduced.
- *  - [ ] Optionally draw partial path up to currentIndex for progressive reveal animation.
- *  - [ ] Provide a flattenLineage utility externally instead of while-loop duplication (reuse in exporter & timeline scrubber).
- *  - [ ] Add data-country / data-index attributes on markers for debugging and potential DOM-driven highlighting.
- *  - [ ] Style the 'active' CircleMarker differently (e.g., brighter fill, pulse) based on currentIndex.
- *  - [ ] Expose callback (e.g., onNodeClick) to sync user clicks on nodes with timeline position.
+* TODO (Timeline & Highlight Integration):
+*  - [ ] Provide a flattenLineage utility externally instead of while-loop duplication (reuse in exporter & timeline scrubber).
+*  - [ ] Add data-country / data-index attributes on markers for debugging and potential DOM-driven highlighting.
+*  - [ ] Expose callback (e.g., onNodeClick) to sync user clicks on nodes with timeline position.
  *
- * TODO (Popup / Tooltip Automation):
- *  - [ ] Accept a prop (activePopupIndex) and programmatically open/close the corresponding Popup (use refs or Leaflet instance).
- *  - [ ] Provide imperative handle (forwardRef) exposing openPopupForIndex / closeAllPopups to support playback control in GeospatialPage.
- *  - [ ] Support a mode to leave all popups open after completion for final overview.
+* TODO (Popup / Tooltip Automation):
+*  - [ ] Provide imperative handle (forwardRef) exposing openPopupForIndex / closeAllTooltips to support playback control in GeospatialPage.
+*  - [ ] (Already done) Mode to leave all tooltips open after completion.
  *
  * TODO (Animation Phasing):
  *  - [ ] Split rendering into two layers: (a) already-complete segments, (b) currently animating segment with stroke-dasharray animation.

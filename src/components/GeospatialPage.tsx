@@ -56,21 +56,15 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   const playbackTimerRef = useRef<number | null>(null)
   // const [highlightedCountries, setHighlightedCountries] = useState<string[]>([]); // replaced by LineageCountryHighlights overlay
   // TODO (Timeline Scrubber & Playback State):
-  //  - [ ] Add currentIndex state (number) representing focused lineage node for timeline.
-  //  - [ ] Add playing state + playback speed (ms per step) & timer ref for auto-advance.
-  //  - [ ] When currentIndex changes, pan/fly map to node coordinates (if available) & update focused countries in CountriesLayer.
   //  - [ ] Derive highlightedCountries (Set) from full lineage once computed; derive focusedCountries from currentIndex.
   //  - [ ] Pass highlighted/focused arrays to <CountriesLayer /> (after its API update).
   //  - [ ] Provide callback to <EtymologyLineagePath /> for node click -> setCurrentIndex.
-  //  - [ ] Render <EtymologyTimelineScrubber /> fixed at bottom: ticks, drag, play/pause.
-  //  - [ ] Handle word/language change: reset index, stop playback, clear timers.
+  //  - [ ] Render <EtymologyTimelineScrubber /> fixed at bottom: ticks, drag, play/pause (currently inside map; relocate outside LayersControl).
+  //  - [ ] Handle word/language change: reset index, stop playback, clear timers (partially handled; review edge cases).
   // TODO (Playback Pause & Tooltip Lifecycle):
-  //  - [ ] Introduce two-phase step timing: (a) animate path growth / transition, (b) dwell pause for reading.
-  //  - [ ] On dwell start: open active node popup (store ref or programmatically open via leaflet instance).
-  //  - [ ] Before advancing: close previously opened popup unless final stage.
-  //  - [ ] On completion (non-loop): open ALL node popups (iterate layers) OR synthesize a consolidated tooltip panel.
-  //  - [ ] Provide a user toggle (e.g., "Show all popups at end") in scrubber controls.
-  //  - [ ] If user scrubs manually, cancel current pause timer and close transient popup.
+  //  - [ ] Introduce distinct animation vs dwell durations (currently combined into playSpeed + dwell).
+  //  - [ ] Provide a user toggle (e.g., "Show all tooltips at end").
+  //  - [ ] If user scrubs manually, explicitly cancel pending dwell (interval cancellation partly covers this; verify behavior).
 
   useEffect(() => {
     if (Array.isArray(wordData?.translations) && languoidData.length) {
