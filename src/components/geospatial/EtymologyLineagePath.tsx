@@ -1,5 +1,5 @@
 import React, { FC, memo } from 'react'
-import { Polyline, Marker, CircleMarker, Popup } from 'react-leaflet'
+import { Polyline, Marker, CircleMarker, Tooltip } from 'react-leaflet'
 import {
   normalizePosition,
   createArrowIcon,
@@ -12,6 +12,8 @@ export interface EtymologyLineagePathProps {
   lineage: EtymologyNode | null
   /** Index (0-based) of current timeline focus; controls partial rendering. */
   currentIndex?: number
+  /** When true, force display of all popups (end-of-playback overview). */
+  showAllPopups?: boolean
 }
 
 /**
@@ -36,8 +38,7 @@ export interface EtymologyLineagePathProps {
  *  - [ ] Provide per-segment duration + dwell pause prop to coordinate with TimelineScrubber.
  *  - [ ] Optionally use requestAnimationFrame for smoother growth animation rather than CSS-only for long great-circle paths.
  */
-const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, currentIndex }) => {
-  if (!lineage) return null
+const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, currentIndex, showAllPopups }) => {
   const elements: React.ReactNode[] = []
   let node: EtymologyNode | null = lineage
   let idx = 0
@@ -51,7 +52,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, cur
       const visible = active === undefined || idx <= active // only show nodes up to active
       if (visible) {
         elements.push(
-          <CircleMarker
+            <CircleMarker
             key={`circle-${word}-${lang_code}`}
             center={center}
             radius={isActive ? 10 : 7}
@@ -62,12 +63,19 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, cur
             fillOpacity={isActive ? 0.9 : 0.7}
             className={isActive ? 'etymology-node-active node-pulse' : 'etymology-node'}
           >
-            <Popup>
-              <div>
-                {expansion || word}
-                {romanization && ` - ${romanization}`}
-              </div>
-            </Popup>
+      {(showAllPopups || isActive) && (
+              <Tooltip
+        permanent={showAllPopups || isActive}
+                direction="top"
+                offset={[0, -6]}
+                className={showAllPopups ? 'etymology-tooltip-final' : 'etymology-tooltip-active'}
+              >
+                <div className="leading-tight">
+                  <strong>{expansion || word}</strong>
+                  {romanization && <span className="ml-1 text-xs opacity-80">{romanization}</span>}
+                </div>
+              </Tooltip>
+            )}
           </CircleMarker>,
         )
       }
@@ -94,6 +102,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, cur
     node = node.next
     idx++
   }
+  if (!lineage) return null
   return <>{elements}</>
 })
 

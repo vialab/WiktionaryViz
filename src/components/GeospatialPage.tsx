@@ -49,8 +49,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   const [isPlaying, setIsPlaying] = useState(false)
   const [playSpeed, setPlaySpeed] = useState<number>(800) // ms per step
   const [loop, setLoop] = useState<boolean>(true)
+  const [showAllPopups, setShowAllPopups] = useState(false)
+  const dwellDurationRef = useRef<number>(1200) // ms pause after each transition for reading (extended for readability)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
   const hasAdjustedZoomRef = useRef(false)
+  const playbackTimerRef = useRef<number | null>(null)
   // const [highlightedCountries, setHighlightedCountries] = useState<string[]>([]); // replaced by LineageCountryHighlights overlay
   // TODO (Timeline Scrubber & Playback State):
   //  - [ ] Add currentIndex state (number) representing focused lineage node for timeline.
@@ -83,33 +86,65 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
         setLineage(root)
         setCurrentIndex(undefined)
         setIsPlaying(false) // reset playback on new lineage
+        setShowAllPopups(false)
       })
     }
   }, [wordData, languoidData])
 
-  // Playback effect: auto-advance currentIndex while playing.
+  // Playback effect (optimized with dwell pause and popup lifecycle).
   useEffect(() => {
     if (!isPlaying || !lineage) return
     const nodes = flattenLineage(lineage)
     if (!nodes.length) return
     const maxIndex = nodes.length - 1
-    // If starting from undefined (full), jump to 0.
-    if (currentIndex === undefined) {
-      setCurrentIndex(0)
-      return // next effect run will schedule interval
+
+    // Clear any existing timer before scheduling a new sequence.
+    if (playbackTimerRef.current) {
+      clearTimeout(playbackTimerRef.current)
+      playbackTimerRef.current = null
     }
-    const id = window.setInterval(() => {
-      setCurrentIndex(prev => {
-        if (prev === undefined) return 0
-        if (prev < maxIndex) return prev + 1
-        if (loop) return 0 // wrap
-        // stop at end if not looping
-        clearInterval(id)
-        setIsPlaying(false)
-        return prev
-      })
-    }, playSpeed)
-    return () => clearInterval(id)
+
+    // If starting fresh (full view), reset and begin at 0.
+    const startIndex = currentIndex === undefined ? 0 : currentIndex
+    // Begin new run -> ensure we hide the final all-popups state.
+    setShowAllPopups(false)
+
+    const transitionMs = playSpeed // (potential future: separate growth vs fade)
+    const dwellMs = dwellDurationRef.current
+    const stepTotal = transitionMs + dwellMs
+
+    let cancelled = false
+
+    const schedule = (idx: number) => {
+      if (cancelled) return
+      setCurrentIndex(idx)
+      // Schedule next advance after combined transition + dwell.
+      playbackTimerRef.current = window.setTimeout(() => {
+        if (cancelled) return
+        if (idx < maxIndex) {
+          schedule(idx + 1)
+        } else {
+          // Reached end
+          if (loop) {
+            schedule(0)
+          } else {
+            // Show all popups and stop playback (keep final index so last marker is included).
+            setShowAllPopups(true)
+            setIsPlaying(false)
+          }
+        }
+      }, stepTotal)
+    }
+
+    schedule(startIndex)
+
+    return () => {
+      cancelled = true
+      if (playbackTimerRef.current) {
+        clearTimeout(playbackTimerRef.current)
+        playbackTimerRef.current = null
+      }
+    }
   }, [isPlaying, playSpeed, lineage, loop, currentIndex])
 
   // Auto-pan map to active node when currentIndex changes (single initial zoom-in).
@@ -146,6 +181,13 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
       hasAdjustedZoomRef.current = false
     }
   }, [currentIndex, isPlaying])
+
+  // Stop timers on unmount
+  useEffect(() => {
+    return () => {
+      if (playbackTimerRef.current) clearTimeout(playbackTimerRef.current)
+    }
+  }, [])
 
   return (
     <section id="geospatial" className="w-full h-screen bg-gray-900 text-white">
@@ -197,7 +239,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           {/* Etymology Lineage Path Layer */}
           <LayersControl.Overlay name="Etymology Lineage Path">
             <LayerGroup>
-              <EtymologyLineagePath lineage={lineage} currentIndex={currentIndex} />
+              <EtymologyLineagePath
+                lineage={lineage}
+                currentIndex={currentIndex}
+                showAllPopups={showAllPopups}
+              />
             </LayerGroup>
           </LayersControl.Overlay>
           {/* TODO (Timeline UI): After implementing, mount timeline scrubber outside LayersControl for fixed positioning. */}
@@ -219,6 +265,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           onReset={() => {
             setCurrentIndex(undefined)
             setIsPlaying(false)
+            setShowAllPopups(false)
           }}
         />
       </MapContainer>
