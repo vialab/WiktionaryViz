@@ -1,5 +1,5 @@
-import React, { FC, memo } from 'react'
-import { Polyline, Marker, CircleMarker, Tooltip } from 'react-leaflet'
+import React, { FC, memo, useEffect, useRef, useState } from 'react'
+import { Polyline, Marker, CircleMarker, Tooltip, useMap } from 'react-leaflet'
 import {
   normalizePosition,
   createArrowIcon,
@@ -34,6 +34,60 @@ export interface EtymologyLineagePathProps {
  *  - [ ] Provide per-segment duration + dwell pause prop to coordinate with TimelineScrubber.
  *  - [ ] Optionally use requestAnimationFrame for smoother growth animation rather than CSS-only for long great-circle paths.
  */
+// Internal component to animate a single segment (active edge)
+const AnimatedSegment: FC<{ start: [number, number]; end: [number, number]; growMs: number; angle: number; midpoint: [number, number] }> = ({ start, end, growMs, angle, midpoint }) => {
+  const polyRef = useRef<L.Polyline | null>(null)
+  const map = useMap()
+  const [showArrow, setShowArrow] = useState(false)
+  useEffect(() => {
+    const poly = polyRef.current
+    if (!poly) return
+    try {
+      // Compute approximate pixel length via projected points
+      const latLngs = poly.getLatLngs() as L.LatLng[]
+      if (latLngs.length < 2) return
+      const p0 = map.project(latLngs[0])
+      const p1 = map.project(latLngs[1])
+      const dist = p0.distanceTo(p1)
+      const pathEl = poly.getElement() as SVGPathElement | null
+      if (pathEl) {
+        pathEl.style.strokeDasharray = `${dist}`
+        pathEl.style.strokeDashoffset = `${dist}`
+        pathEl.style.setProperty('--seg-len', `${dist}`)
+        pathEl.style.setProperty('--grow-ms', `${growMs}ms`)
+        // Trigger reflow then animate
+        void pathEl.getBoundingClientRect()
+        pathEl.classList.add('etymology-segment-animating')
+        // Show arrow shortly after animation begins (e.g., 25% of duration) for "travelling" effect
+        const appearDelay = Math.max(120, Math.min(growMs * 0.25, 400))
+        const t = window.setTimeout(() => setShowArrow(true), appearDelay)
+        return () => window.clearTimeout(t)
+      }
+    } catch {
+      // ignore
+    }
+  }, [growMs, map])
+  return (
+    <>
+      <Polyline
+        positions={[start, end]}
+        pathOptions={{ className: 'etymology-segment etymology-segment-animating' }}
+        ref={ref => {
+          polyRef.current = ref as unknown as L.Polyline | null
+        }}
+      />
+      {showArrow && (
+        <Marker
+          key={`arrow-anim-${midpoint[0]}-${midpoint[1]}-${angle}`}
+          position={midpoint}
+          icon={createArrowIcon(angle, { size: 26, color: '#60a5fa', outline: '#082f49', outlineWidth: 2 })}
+          interactive={false}
+        />
+      )}
+    </>
+  )
+}
+
 const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, currentIndex, showAllPopups }) => {
   const elements: React.ReactNode[] = []
   let node: EtymologyNode | null = lineage
@@ -76,23 +130,46 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(({ lineage, cur
         )
       }
       // Draw edge to next if within active range
-      if (visible && node.next && node.next.position && (active === undefined || idx < active)) {
+      if (node.next && node.next.position) {
         const start = center
         const end = normalizePosition(node.next.position)
-        elements.push(
-          <Polyline key={`polyline-${word}-${node.next.word}`} positions={[start, end]} />,
-        )
+        const nextIndex = idx + 1
+        const edgeActive = active !== undefined && nextIndex === active // edge leading to active node animates
+        const alreadyPast = active === undefined || nextIndex < active
+        // Precompute for whichever branch uses them
         const midpoint = calculateMercatorMidpoint(start, end)
         const angle = calculateBearing(start, end)
-        // Larger, higher-contrast arrow icon for improved route order visibility.
-        elements.push(
-          <Marker
-            key={`arrow-${word}-${node.next.word}`}
-            position={midpoint}
-            icon={createArrowIcon(angle, { size: 26, color: '#60a5fa', outline: '#082f49', outlineWidth: 2 })}
-            interactive={false}
-          />,
-        )
+        if (alreadyPast) {
+          // Static drawn segment
+          elements.push(
+            <>
+              <Polyline
+                key={`polyline-static-${word}-${node.next.word}`}
+                positions={[start, end]}
+                pathOptions={{ className: 'etymology-segment-static' }}
+              />
+              <Marker
+                key={`arrow-static-${word}-${node.next.word}`}
+                position={midpoint}
+                icon={createArrowIcon(angle, { size: 26, color: '#60a5fa', outline: '#082f49', outlineWidth: 2 })}
+                interactive={false}
+              />
+            </>,
+          )
+        } else if (edgeActive) {
+          elements.push(
+            <AnimatedSegment
+              key={`polyline-anim-${word}-${node.next.word}`}
+              start={start}
+              end={end}
+              growMs={Math.min(900, 400 + Math.hypot(start[0] - end[0], start[1] - end[1]) * 60)}
+              angle={angle}
+              midpoint={midpoint}
+            />,
+          )
+        } else {
+          // Future segment (not yet visible) => no line & no arrow
+        }
       }
     }
     node = node.next
