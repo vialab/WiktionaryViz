@@ -2,6 +2,14 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.6](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.5...wiktionaryviz-v0.1.6) (2025-08-26)
+
+
+### Features
+
+* **timeline:** enhance TimelinePage with a floating legend and improve EtymologyCarousel and MetadataPanel for better UI and UX ([9df5744](https://github.com/vialab/WiktionaryViz/commit/9df574449d007d6498288a6273015203bc2bbcef))
+* **TimelinePage:** add interactive legend info panel to enhance user experience and provide phonetic data clarity ([a96270a](https://github.com/vialab/WiktionaryViz/commit/a96270a3862cbcf3779dbc09c9aa236b84b1d59c))
+
 ## [0.1.5](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.4...wiktionaryviz-v0.1.5) (2025-08-26)
 
 
