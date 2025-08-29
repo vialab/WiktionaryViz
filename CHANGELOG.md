@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.7](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.6...wiktionaryviz-v0.1.7) (2025-08-29)
+
+
+### Bug Fixes
+
+* **package.json, vite.config.ts:** update API_BACKEND variable usage for consistency and add environment variable definition in Vite config ([481bdc6](https://github.com/vialab/WiktionaryViz/commit/481bdc69ff51f4bde64c96d7f17613454038f4d5))
+
 ## [0.1.6](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.5...wiktionaryviz-v0.1.6) (2025-08-26)
 
 
