@@ -13,14 +13,14 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
-    "deploy:api": "API_BACKEND=$API npm run deploy",
+    "deploy:api": "API_BACKEND=$API_BACKEND npm run deploy",
     "backend": "cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000",
     "dev:full": "concurrently \"npm run backend\" \"npm run dev\"",
     "backend:up": "docker compose up --build -d",
     "backend:down": "docker compose down",
     "tunnel:up": "docker compose up -d tunnel",
     "tunnel:logs": "docker compose logs -f tunnel",
-    "build:api": "API_BACKEND=$API npm run build"
+    "build:api": "API_BACKEND=$API_BACKEND npm run build"
   },
   "dependencies": {
     "@ladjs/country-language": "^1.0.3",

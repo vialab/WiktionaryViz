@@ -11,4 +11,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  
+  define: {
+    'import.meta.env.API_BACKEND': JSON.stringify(process.env.API_BACKEND || ''),
+  },
 })
