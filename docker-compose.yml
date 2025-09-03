@@ -1,23 +1,20 @@
 services:
   backend:
+    image: ghcr.io/vialab/wiktionaryviz-backend:latest
     build:
       context: ./backend
+    pull_policy: always
     container_name: wiktionaryviz-backend
     ports:
       - '8000:8000'
     environment:
       - PYTHONUNBUFFERED=1
       - PORT=8000
-      # Pass through OpenAI key if using AI estimation (optional)
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      # Restrict CORS to your GitHub Pages origin in production
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
-      # Data bootstrap: override to raw .jsonl or .gz if desired
       - WIKTIONARY_DATA_URL=${WIKTIONARY_DATA_URL}
-      # Set to 1 to skip automatic download (if you mount data yourself)
       - SKIP_DOWNLOAD=${SKIP_DOWNLOAD}
     volumes:
-      # Persist backend data (JSONL + generated indices/stats) across container recreations
       - wiktionary-data:/app/data
     command: ['uvicorn', 'main:app', '--host', '0.0.0.0', '--port', '8000']
     restart: unless-stopped
@@ -32,17 +29,6 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-
-  # Quick dev tunnel (ephemeral URL on trycloudflare.com)
-  tunnel:
-    # Only enabled in dev profile to avoid accidental use in prod
-    profiles:
-      - dev
-    image: cloudflare/cloudflared:latest
-    command: ['tunnel', '--no-autoupdate', '--url', 'http://backend:8000']
-    depends_on:
-      - backend
-    restart: unless-stopped
 
 volumes:
   wiktionary-data:
