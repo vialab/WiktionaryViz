@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/vialab/WiktionaryViz/compare/v0.1.1...v0.1.2) (2025-09-03)
+
+
+### Features
+
+* **ci:** update GitHub Actions workflow to build and push Docker image to GHCR with improved permissions and timeout settings ([edc67aa](https://github.com/vialab/WiktionaryViz/commit/edc67aa302d3e7efd422898757709bc1f097d715))
+
 ## [0.1.1](https://github.com/vialab/WiktionaryViz/compare/v0.1.0...v0.1.1) (2025-08-19)
 
 
