@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.8](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.7...wiktionaryviz-v0.1.8) (2025-09-03)
+
+
+### Features
+
+* **ci:** update GitHub Actions workflow to build and push Docker image to GHCR with improved permissions and timeout settings ([edc67aa](https://github.com/vialab/WiktionaryViz/commit/edc67aa302d3e7efd422898757709bc1f097d715))
+
 ## [0.1.7](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.6...wiktionaryviz-v0.1.7) (2025-08-29)
 
 
