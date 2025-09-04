@@ -18,8 +18,6 @@
     "dev:full": "concurrently \"npm run backend\" \"npm run dev\"",
     "backend:up": "docker compose up --build -d",
     "backend:down": "docker compose down",
-    "tunnel:up": "docker compose up -d tunnel",
-    "tunnel:logs": "docker compose logs -f tunnel",
     "build:api": "API_BACKEND=$API_BACKEND npm run build"
   },
   "dependencies": {

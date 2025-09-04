@@ -6,7 +6,6 @@ on:
     # Avoid infinite loops: ignore files updated by Release Please
     paths-ignore:
       - 'CHANGELOG.md'
-      - 'backend/CHANGELOG.md'
       - '.release-please-manifest.json'
       - 'package.json'
       - 'package-lock.json'
