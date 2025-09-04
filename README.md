@@ -2,7 +2,7 @@
 
 # WiktionaryViz
 
-An interactive linguistic visual analytics tool over large-scale Wiktionary data: exploring language and word evolution.
+An interactive linguistic visual analytics tool for exploring language and word evolution over large-scale Wiktionary (Wiktextract) data.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-online-brightgreen?&logoColor=white&style=for-the-badge)](https://vialab.github.io/WiktionaryViz/)
 
@@ -10,31 +10,32 @@ An interactive linguistic visual analytics tool over large-scale Wiktionary data
 
 </div>
 
-> Status: Active early development (0.x). Backward‑incompatible changes may occur. Several backend endpoints are presently stubs / incomplete; see Roadmap & API notes below.
+> Status: Early 0.x development. Public APIs and data formats may change without notice.
 
 ### Disclaimer
-This repository is an academic / exploratory tool; accuracy of descendant or etymology chains depends on source data quality. Always corroborate results with primary linguistic sources for scholarly work.
+
+This is an academic research / exploratory tool. Visualization accuracy depends on source data quality.
 
 ---
 
 ## Table of Contents
 
 1. Overview
-2. Core Features (Current)
-3. Roadmap (Planned / Incomplete)
+2. Features (Current)
+3. Roadmap (Planned)
 4. Architecture & Data Flow
-5. Tech Stack
-6. Data Source & Indexing
-7. Quick Start
-8. Detailed Local Development
-9. Environment Variables
-10. Docker & Container Usage
-11. API Reference (Current State)
-12. Frontend Build & Deployment (GitHub Pages)
-13. CI / Release Automation
-14. Performance Notes
+5. Prerequisites
+6. Tech Stack
+7. Data Source & Indexing
+8. Quick Start
+9. Local Development
+10. Environment Variables
+11. Docker Usage
+12. API Reference
+13. Frontend Build & Deployment
+14. CI / Release Automation
 15. Troubleshooting
-16. Contributing Guidelines
+16. Contributing
 17. License & Attribution
 18. Security / Responsible Use
 
@@ -42,306 +43,235 @@ This repository is an academic / exploratory tool; accuracy of descendant or ety
 
 ## 1. Overview
 
-WiktionaryViz is a full‑stack exploratory tool for investigating lexical evolution and relationships across languages. It consumes a large Wiktextract JSONL dump (20GB+ uncompressed) and provides interactive visualizations: timelines of ancestry, descendant trees, geographic distributions, and phonetic drift inspection using articulatory feature distances.
+WiktionaryViz lets you explore lexical evolution: ancestry timelines, descendant trees, geographic distributions, and phonetic drift (feature-based IPA alignment). It streams from a large Wiktextract JSONL dump (20GB+ uncompressed) via byte‑offset indexing for near O(1) random access.
 
-The design emphasizes:
-* Zero/low preprocessing beyond an offset index for near O(1) random access into a memory‑mapped JSONL file.
-* Progressive visual exploration (lineage, radial trees, geospatial views, temporal ancestry chain).
-* Reproducible, containerized backend + static frontend deployable on GitHub Pages plus a hosted API.
+Design principles:
 
-## 4. Prerequisites
-
-- Node.js 18+ (npm or pnpm)
-- Python 3.9+ (if running backend locally without Docker)
-- Docker + Docker Compose (recommended for backend)
-- ~40GB free disk (download + uncompressed + indices overhead)
-
+* Minimal preprocessing (just an index + small derived stats files)
+* Progressive disclosure visualizations (timeline, radial, network, map)
+* Reproducible containerized backend + static frontend deployable to GitHub Pages
 
 ## 4. Architecture & Data Flow
 
-High-level pipeline:
-1. Data Acquisition: Entry script downloads (or mounts) `wiktionary_data.jsonl` (raw Wiktextract output or gz variant).
-2. Index: A JSON index (`wiktionary_index.json`) maps `word_lang` keys to byte offsets; loaded at FastAPI startup. (Builder not fully implemented yet.)
-3. Backend Access Pattern: When an endpoint needs a word entry, it seeks to the byte offset and reads a single JSON line from the mmap’d file.
-4. Feature Analysis: PanPhon feature tables compute pairwise segment feature differences for phonological alignment.
-5. Frontend Consumption: The frontend calls the backend REST API; environment variable `API_BACKEND` is embedded at build time for deployed static assets.
-6. Visualization: D3 + React + Leaflet transform structured data (lineage arrays, descendant tree JSON, geospatial metadata) into interactive components.
+1. Acquire dataset (`wiktionary_data.jsonl[.gz]`) from Kaikki.org.
+2. Build offset index + stats (`wiktionary_index.json`, `most_*`, etc.).
+3. FastAPI loads index at startup; endpoints mmap the JSONL and seek directly.
+4. Services layer supplies ancestry + descendant traversal + phonetic alignment.
+5. Frontend fetches REST endpoints; data transformed via D3/Leaflet into visuals.
 
-Directory highlights:
-* `backend/` – FastAPI app, services, data constants, Docker build.
-* `src/components/` – Page components & visualization modules (`geospatial`, `network`, `timeline`).
-* `src/hooks/` – Data fetching & caching hooks.
-* `src/types/` – TS domain models (etymology, languoid metadata).
-* `src/utils/` – API base URL resolution, export helpers, mapping utilities.
+Key directories:
 
-## 5. Tech Stack
+* `backend/` – FastAPI app, index builder, services
+* `src/components/` – Visualization & page components
+* `src/hooks/` – Data fetching + caching hooks
+* `src/types/` – TypeScript domain models
+* `src/utils/` – API base, export & mapping utilities
 
-| Layer | Technologies |
-|-------|--------------|
-| Frontend | React 19, TypeScript, Vite, D3, Leaflet, Tailwind |
-| Backend | FastAPI, Uvicorn, mmap-based random access, PanPhon |
-| Packaging | Docker (multi-arch), GitHub Container Registry |
-| CI/CD | GitHub Actions (frontend deploy, backend image build, release-please) |
-| Language Data | Wiktextract JSONL dump (20GB+ uncompressed) |
+## 5. Prerequisites
 
-## 6. Data Source & Indexing
+* Node.js 18+ (20.x recommended)
+* Python 3.11 recommended (>=3.9 minimum for local non-Docker)
+* Docker + Docker Compose (for container workflow)
+* ~40GB free disk (compressed + uncompressed + indices)
 
-Default dataset URL (override with `WIKTIONARY_DATA_URL`):
+## 6. Tech Stack
+
+| Layer     | Technologies                                          |
+| --------- | ----------------------------------------------------- |
+| Frontend  | React 19, TypeScript, Vite, D3, Leaflet, Tailwind     |
+| Backend   | FastAPI, Uvicorn, mmap random access, PanPhon         |
+| Packaging | Docker (multi-arch), GitHub Container Registry        |
+| CI/CD     | GitHub Actions (deploy, release-please, Docker build) |
+| Data      | Wiktextract JSONL dump (Kaikki.org)                   |
+
+## 7. Data Source & Indexing
+
+Default dataset URL (override `WIKTIONARY_DATA_URL`):
+
 ```
 https://kaikki.org/dictionary/raw-wiktextract-data.jsonl.gz
 ```
 
-Characteristics:
-* Large newline-delimited JSON; each line = lexical entry (word + language + senses + etymology + descendants ...)
-* Access strategy: maintain mapping `"{word}_{lang_code}" -> [byte_offset, optional_metadata]` enabling direct seek.
-
-## 7. Quick Start
-
-Choose one of the following:
-
-### A) Run Everything (Frontend + Backend) Locally
-```bash
-git clone https://github.com/vialab/WiktionaryViz.git
-cd WiktionaryViz
-
-# Frontend deps
-npm install
-
-# Backend (Python 3.11 recommended)
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cd ..
-
-# Start backend (will download dataset unless mounted / skipped)
-npm run backend   # or: uvicorn main:app --reload --host 0.0.0.0 --port 8000 (inside backend/)
-
-# In a second terminal: start frontend
-npm run dev
-```
-Visit: http://localhost:5173 (Vite default). Set `API_BACKEND` at build time for production (see Env Vars).
-
-### B) Docker Compose (Backend only + external static site)
-```bash
-docker compose up --build -d
-```
-Backend exposed at `http://localhost:8000`.
-
-### C) Use Published Backend Image
-
-Requires an `OPENAI_API_KEY`
-
-```bash
-docker run -p 8000:8000 \
-  -e WIKTIONARY_DATA_URL=https://kaikki.org/dictionary/raw-wiktextract-data.jsonl.gz \
-  -e ALLOWED_ORIGINS=* \
-  -e OPENAI_API_KEY=<your-openai-key-here> \
-  ghcr.io/vialab/wiktionaryviz-backend:latest
-```
-
-### D) Static Frontend Preview
-```bash
-npm run build
-npm run preview
-```
-
----
-
-## 8. Detailed Local Development
-
-Important Scripts (see `package.json` for more):
-* `npm run dev` – Start frontend dev server (`vite --host`)
-* `npm run build` – TypeScript build + Vite production bundle (`tsc -b && vite build`)
-* `npm run lint` – Lint codebase with ESLint (`eslint .`)
-* `npm run format` / `npm run format:check` – Format code with Prettier (`prettier . --write` / `--check`)
-* `npm run dev:full` – Concurrent frontend + backend (`concurrently "npm run backend" "npm run dev"`)
-* `npm run backend:up` / `npm run backend:down` – Docker Compose backend up/down
-* `npm run build:api` – Build frontend with injected `API_BACKEND`
-* `npm run deploy` / `npm run deploy:api` – Deploy to GitHub Pages (optionally with custom API)
-
-Recommended Node: v20.x (GitHub Actions matches). Recommended Python: 3.11 (Docker base).
-
----
-
-## 9. Environment Variables
-
-| Variable | Target | Required? | Default | Purpose |
-|----------|--------|-----------|---------|---------|
-| `API_BACKEND` | Frontend build | Yes (deploy) | empty | Absolute base URL to backend API baked into bundle. |
-| `ALLOWED_ORIGINS` | Backend | Optional | `*` | CORS origins (comma-separated). |
-| `PORT` | Backend | Optional | `8000` | Uvicorn port. |
-| `OPENAI_API_KEY` | Backend | Yes | none | Future AI augmentation (IPA estimation, suggestions). Not yet invoked. |
-| `WIKTIONARY_DATA_URL` | Backend | Optional | Kaikki gz URL | Dataset source. |
-| `SKIP_DOWNLOAD` | Backend | Optional | `0` | If `1`, skip auto dataset download. |
-
----
-
-## 10. Docker & Container Usage
-
-Multi-arch images built by CI and pushed to GHCR: `ghcr.io/vialab/wiktionaryviz-backend:latest`.
-
-Features:
-* Non-root user execution
-* Layer-cached dependencies (`requirements.txt` first)
-* Streaming download & unzip of dataset on first start
-* Healthcheck (compose) hitting root endpoint
-
-Persist data volume to avoid re-download:
-```yaml
-volumes:
-  wiktionary-data:
-services:
-  backend:
-    volumes:
-      - wiktionary-data:/app/data
-```
-
----
-
-## 11. API Reference (Current State)
-
-> IMPORTANT: Several endpoints are INCOMPLETE or PARTIAL. This section lists what exists in source; production consumers should gate usage.
-
-Base URL: `http://<host>:8000`
-
-### Implemented / Partial
-| Method | Path | Status | Description |
-|--------|------|--------|-------------|
-| GET | `/` | minimal | Root health placeholder. |
-| GET | `/descendant-tree?word=<w>&lang_code=<l>` | partial | Builds hierarchy from word entry; descendant traversal logic incomplete (missing recursive fill & imports). Returns error if word absent. |
-| GET | `/ancestry-chain?word=<w>&lang_code=<l>` | stub | Calls `build_ancestry_chain` (not yet implemented). |
-| GET | `/phonetic-drift-detailed?ipa1=<>&ipa2=<>` | stub | Loop skeleton present; response not returned. |
-
-### Declared (Not Implemented Yet)
-| Method | Path | Planned Function |
-|--------|------|------------------|
-| GET | `/word-data` | Return lexical entry + computed stats / AI supplement. |
-| GET | `/available-languages` | List languages containing a given word form. |
-| GET | `/random-interesting-word` | Sample from precomputed interesting words. |
-| Future | `/phonetic-drift` | Compact drift score only. |
-| Future | `/compare` | Compare two words' ancestry & phonological drift. |
-| Future | Multiple `/ai/*` | Exploration filter suggestions. |
-| Future | `/kwic` | Key Word In Context examples. |
-
-### Error Handling
-* 404 when key missing from index (implemented in descendants endpoint).
-* 500 generic JSON errors for unexpected exceptions.
-
-### Notes
-* `index` loading occurs in `constants.load_index()` (should be invoked at startup — ensure lifecycle hook wires it in when refactoring lifespan context).
-* Memory mapping occurs per-request rather than persistent global mapping; future optimization: pool or keep-open.
-
----
-
-## 12. Frontend Build & Deployment (GitHub Pages)
-
-Workflow (`frontend-deploy.yml`):
-1. Triggered on pushes to `main` affecting frontend files.
-2. Installs Node deps (`npm ci` if lock present).
-3. Builds with `API_BACKEND` secret injected.
-4. Publishes `dist/` to `gh-pages` branch using James Ives action.
-
-Local Production Build:
-```bash
-API_BACKEND=https://your-backend.example.org npm run build
-```
-Result served from `dist/`. GitHub Pages base path set via `vite.config.ts` (`base: '/WiktionaryViz/'`).
-
----
-
-## 13. CI / Release Automation
-
-GitHub Actions Workflows:
-* `release-please.yml` – Automates version bumps, changelog PRs, prerelease tagging.
-* `frontend-deploy.yml` – Builds & deploys static site to `gh-pages`.
-* `backend-docker.yml` – Builds multi-arch backend image and pushes to GHCR with commit SHA + `latest` tag.
-
-Release Strategy:
-* 0.x: minor increments may include breaking changes; patch used for smaller features/fixes (configured via release-please settings `bump-minor-pre-major`).
-  
----
-
-## 15. Troubleshooting
-
-| Symptom | Possible Cause | Fix |
-|---------|----------------|-----|
-| Backend 404 for valid word | Index missing / not loaded | Ensure `wiktionary_index.json` exists & `load_index()` called at startup. |
-| Large delay on first run | Dataset download/unzip | Set `SKIP_DOWNLOAD=1` if volume already has file. |
-| CORS errors in browser | `ALLOWED_ORIGINS` misconfigured | Set env to `*` or include site origin. |
-| Frontend shows empty visualizations | API endpoint stubs returning nothing | Implement endpoints or guard fetch calls. |
-| Docker memory pressure | Large JSONL | Allocate sufficient container memory or prune dataset variants. |
-
----
-
-## 16. Contributing Guidelines
-
-1. Fork & branch from `main` (e.g., `feat/descendant-weights`).
-2. Keep PRs focused; reference open issues or create one if needed.
-3. Run lint & format before pushing (`npm run lint && npm run format:check`).
-4. Add or update documentation for new endpoints or data fields.
-5. Avoid committing large data files; rely on the download mechanism or volumes.
-6. For new APIs: document in README (API section).
-7. Release process is automated—do not manually edit `CHANGELOG.md`; use conventional commit messages (e.g., `feat(descendants): add depth limiting`).
-
-**Commit messages:**  
-Follow [Conventional Commits](https://www.conventionalcommits.org/) for clarity and automation.  
-You are encouraged to use [`oco`](https://github.com/di-sukharev/opencommit) to help generate descriptive commit messages with AI assistance.
-
-**Suggested commit scopes:**  
-`frontend`, `backend`, `descendants`, `phonology`, `timeline`, `geospatial`, `build`, `ci`, `docs`.
-
----
-
-## 17. License & Attribution
-
-* License: MIT (see `LICENSE`).
-* Data: Derived from Wiktionary via [Wiktextract](https://github.com/tatuylonen/wiktextract) / Kaikki.org. Wiktionary content is available under CC-BY-SA 3.0 and GFDL; ensure compliance when redistributing processed derivatives.
-* Phonological features: [PanPhon](https://github.com/kaepora/panphon).
-
-When publishing analyses, consider citing Wiktionary + Wiktextract + PanPhon.
-
-## 7. Data & Indexing
-
-Files (in `backend/data/` by default):
-
-- `wiktionary_data.jsonl` (raw dump; auto-downloaded in Docker unless skipped)
-- `wiktionary_index.json` (word+lang → byte offset)
-- `longest_words.json`, `most_translations.json`, `most_descendants.json`
-
-Build/rebuild index & stats (run after replacing dataset):
+Index build (after dataset present):
 
 ```bash
 cd backend
 python build_index.py
 ```
 
-How it works:
+Artifacts (in `backend/data/`):
 
-1. Stream JSONL, record file offsets per `{word,lang_code}` key.
-2. Serialize index to JSON (loaded fully at startup—small compared to dataset).
-3. Use `mmap` + `seek` for O(1) retrieval of an entry line.
+* `wiktionary_data.jsonl` – Raw dump (auto-downloaded if not skipped)
+* `wiktionary_index.json` – `{word_lang_code: [byte_offset, ...]}` mapping
+* `longest_words.json`, `most_translations.json`, `most_descendants.json`
 
-## 9. API Summary
+Retrieval strategy: `mmap` + `seek` to recorded offset, read one JSON line, parse on demand.
 
-Base: `http://localhost:8000` (dev) – Docs at `/docs`.
+## 8. Quick Start
 
-| Endpoint | Purpose | Example |
-|----------|---------|---------|
-| `/` | Health | GET `/` |
-| `/word-data` | Entry lookup | `?word=tea&lang_code=en` |
-| `/available-languages` | Languages for word | `?word=tea` |
-| `/random-interesting-word` | Random from stats | – |
-| `/ancestry-chain` | Linear lineage | `?word=tea&lang_code=en` |
-| `/phonetic-drift-detailed` | Phonetic alignment | `?ipa1=/tiː/&ipa2=/te/` |
-| `/descendant-tree` | Descendants from a word | `?word=tea&lang_code=en` |
-| `/descendant-tree-from-root` | Tree from proto/root | `?word=proto-form&lang_code=la` |
+### A. Full Local (Frontend + Backend)
 
-## 13. Troubleshooting
+```bash
+git clone https://github.com/vialab/WiktionaryViz.git
+cd WiktionaryViz
+npm install
+cd backend && python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && cd ..
+npm run backend   # starts FastAPI (downloads dataset if needed)
+# separate terminal
+npm run dev       # starts Vite dev server
+```
 
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| Frontend hits own origin paths (404) | `API_BACKEND` not set at build | Rebuild with `API_BACKEND` or `API` env |
-| Mixed content blocked | HTTPS frontend → HTTP backend | Serve backend over HTTPS (reverse proxy / platform) |
-| CORS error | Origins mismatch | Set `ALLOWED_ORIGINS` to include frontend origin |
-| Empty / 404 word lookups | Dataset not downloaded / index missing | Wait for first download or rebuild index |
-| Slow first start | Large download & index build | Allow completion or pre-seed volume |
+Open <http://localhost:5173>
+
+### B. Docker Compose (Backend only)
+
+```bash
+docker compose up --build -d
+```
+
+Backend at <http://localhost:8000>
+
+### C. Run Published Backend Image
+
+```bash
+docker run -p 8000:8000 \
+  -e WIKTIONARY_DATA_URL=https://kaikki.org/dictionary/raw-wiktextract-data.jsonl.gz \
+  -e ALLOWED_ORIGINS=* \
+  -e OPENAI_API_KEY=<your-openai-key> \
+  ghcr.io/vialab/wiktionaryviz-backend:latest
+```
+
+### D. Static Frontend Preview
+
+```bash
+npm run build
+npm run preview
+```
+
+## 9. Local Development
+
+Core scripts (`package.json`):
+
+* `npm run dev` – Frontend dev server
+* `npm run backend` – FastAPI (reload) via Uvicorn
+* `npm run dev:full` – Concurrent backend + frontend
+* `npm run build` – Type check + production bundle
+* `npm run build:api` – Build with `API_BACKEND` injected
+* `npm run lint` / `format` / `format:check`
+* `npm run backend:up` / `backend:down` – Compose helpers
+* `npm run deploy` – Deploy static site to GitHub Pages
+
+Recommended: Node 20.x, Python 3.11.
+
+## 10. Environment Variables
+
+| Variable              | Scope          | Required (Prod) | Default    | Description                                 |
+| --------------------- | -------------- | --------------- | ---------- | ------------------------------------------- |
+| `API_BACKEND`         | Frontend build | Yes             | (none)     | Absolute backend API base baked into bundle |
+| `ALLOWED_ORIGINS`     | Backend        | No              | `*`        | Comma list for CORS                         |
+| `PORT`                | Backend        | No              | `8000`     | Uvicorn port                                |
+| `OPENAI_API_KEY`      | Backend        | If AI features  | (none)     | For IPA estimation (fallback)               |
+| `WIKTIONARY_DATA_URL` | Backend        | No              | Kaikki URL | Dataset source                              |
+| `SKIP_DOWNLOAD`       | Backend        | No              | `0`        | Set `1` to skip auto download               |
+
+## 11. Docker Usage
+
+Image: `ghcr.io/vialab/wiktionaryviz-backend:latest`
+
+Features:
+
+* Non-root runtime
+* Layer-cached dependency install
+* Streaming download + unzip on first run
+* Reusable volume to avoid re-download
+
+Compose volume example:
+
+```yaml
+volumes:
+  wiktionary-data:
+services:
+  backend:
+    image: ghcr.io/vialab/wiktionaryviz-backend:latest
+    volumes:
+      - wiktionary-data:/app/data
+```
+
+## 12. API Reference
+
+Base (dev): `http://localhost:8000` – Interactive docs at `/docs`.
+
+| Method   | Path                         | Status      | Notes                                                                 |
+| -------- | ---------------------------- | ----------- | --------------------------------------------------------------------- |
+| GET      | `/`                          | stable      | Health message                                                        |
+| GET      | `/word-data`                 | implemented | Returns single lexical entry (raw JSON)                               |
+| GET      | `/available-languages`       | implemented | Lists languages containing a given surface form                       |
+| GET      | `/random-interesting-word`   | implemented | Random entry from stats category                                      |
+| GET      | `/ancestry-chain`            | partial     | Builds chain; IPA estimation fallback; drift scores computed per link |
+| GET      | `/phonetic-drift-detailed`   | partial     | Returns alignment + feature changes (no compact score yet)            |
+| GET      | `/descendant-tree`           | partial     | Builds tree from given word; traversal heuristics evolving            |
+| GET      | `/descendant-tree-from-root` | partial     | Treats provided word/lang as root                                     |
+| (future) | `/phonetic-drift`            | planned     | Compact numeric distance only                                         |
+| (future) | `/compare`                   | planned     | Word vs word ancestry + drift                                         |
+| (future) | `/ai/*`                      | planned     | Exploration suggestions                                               |
+| (future) | `/kwic`                      | planned     | KWIC concordance lines                                                |
+
+Error handling: 404 for missing indexed key, 500 for unexpected exceptions.
+
+## 13. Frontend Build & Deployment
+
+GitHub Pages deploy (via workflow): builds with `API_BACKEND` secret → publishes `dist/` to `gh-pages` (base path set in `vite.config.ts`).
+
+Local production build:
+
+```bash
+API_BACKEND=https://your-backend.example.org npm run build
+```
+
+Serve the `dist/` output (any static host).
+
+## 14. CI / Release Automation
+
+Workflows:
+
+* `release-please.yml` – Conventional commits → automated versioning & CHANGELOG
+* `frontend-deploy.yml` – Static site build + Pages publish
+* `backend-docker.yml` – Multi-arch Docker build & GHCR push
+
+Release model: 0.x (minor may break). Conventional commit scopes recommended for clarity.
+
+## 15. Troubleshooting
+
+| Symptom               | Cause                                    | Resolution                                                             |
+| --------------------- | ---------------------------------------- | ---------------------------------------------------------------------- |
+| 404 for valid word    | Index missing or not loaded              | Ensure index + stats built (`python build_index.py`) & restart backend |
+| Slow first start      | Large dataset download/unpack            | Persist data volume / pre-seed dump                                    |
+| CORS errors           | Origin mismatch                          | Set `ALLOWED_ORIGINS` or deploy behind proxy                           |
+| Empty visualizations  | Endpoint stubs / partial implementations | Guard frontend fetches / contribute implementations                    |
+| Memory pressure       | Large mmap JSONL                         | Increase container memory / split dataset                              |
+| Mixed content blocked | HTTPS site → HTTP API                    | Serve API over HTTPS or use proxy                                      |
+
+## 16. Contributing
+
+1. Create a focused feature/bug branch (`feat/…`, `fix/…`).
+2. Use Conventional Commits (e.g., `feat(descendants): add depth limiting`). You can use [`oco`](https://github.com/di-sukharev/opencommit) to help generate commit messages that follow this standard.
+3. Run lint + format before pushing: `npm run lint && npm run format:check`.
+4. Document new or changed endpoints in the README API table.
+5. Avoid committing large data dumps (use download flow / volumes).
+6. Do not manually edit `CHANGELOG.md` (managed by release-please).
+
+Suggested commit scopes: `frontend`, `backend`, `descendants`, `phonology`, `timeline`, `geospatial`, `build`, `ci`, `docs`.
+
+## 17. License & Attribution
+
+* MIT License (see `LICENSE`).
+* Data derived from Wiktionary via Wiktextract / Kaikki.org (CC-BY-SA 3.0 & GFDL terms apply to original content).
+* Phonological feature data: PanPhon.
+
+Please cite Wiktionary, Wiktextract, and PanPhon in academic outputs.
+
+## 18. Security / Responsible Use
+
+* Do not rely on AI-estimated IPA for authoritative linguistic claims.
+* Validate external input before exposing new endpoints publicly.
+* Respect Wiktionary licensing when redistributing derived datasets.
