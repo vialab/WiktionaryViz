@@ -1,5 +1,3 @@
-<div align="center">
-
 # WiktionaryViz
 
 An interactive linguistic visual analytics tool for exploring language and word evolution over large-scale Wiktionary (Wiktextract) data.
@@ -8,11 +6,9 @@ An interactive linguistic visual analytics tool for exploring language and word 
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/vialab/WiktionaryViz?style=flat-square) ![License](https://img.shields.io/github/license/vialab/WiktionaryViz?style=flat-square) ![Release](https://img.shields.io/github/v/release/vialab/WiktionaryViz?include_prereleases&label=version&style=flat-square)
 
-</div>
-
 > Status: Early 0.x development. Public APIs and data formats may change without notice.
 
-### Disclaimer
+## Disclaimer
 
 This is an academic research / exploratory tool. Visualization accuracy depends on source data quality.
 
@@ -20,24 +16,29 @@ This is an academic research / exploratory tool. Visualization accuracy depends 
 
 ## Table of Contents
 
-1. Overview
-2. Features (Current)
-3. Roadmap (Planned)
-4. Architecture & Data Flow
-5. Prerequisites
-6. Tech Stack
-7. Data Source & Indexing
-8. Quick Start
-9. Local Development
-10. Environment Variables
-11. Docker Usage
-12. API Reference
-13. Frontend Build & Deployment
-14. CI / Release Automation
-15. Troubleshooting
-16. Contributing
-17. License & Attribution
-18. Security / Responsible Use
+- [WiktionaryViz](#wiktionaryviz)
+  - [Disclaimer](#disclaimer)
+  - [Table of Contents](#table-of-contents)
+  - [1. Overview](#1-overview)
+  - [2. Architecture \& Data Flow](#2-architecture--data-flow)
+  - [3. Prerequisites](#3-prerequisites)
+  - [4. Tech Stack](#4-tech-stack)
+  - [5. Data Source \& Indexing](#5-data-source--indexing)
+  - [6. Quick Start](#6-quick-start)
+    - [A. Full Local (Frontend + Backend)](#a-full-local-frontend--backend)
+    - [B. Docker Compose (Backend only)](#b-docker-compose-backend-only)
+    - [C. Run Published Backend Image](#c-run-published-backend-image)
+    - [D. Static Frontend Preview](#d-static-frontend-preview)
+  - [7. Local Development](#7-local-development)
+  - [8. Environment Variables](#8-environment-variables)
+  - [9. Docker Usage](#9-docker-usage)
+  - [10. API Reference](#10-api-reference)
+  - [11. Frontend Build \& Deployment](#11-frontend-build--deployment)
+  - [12. CI / Release Automation](#12-ci--release-automation)
+  - [13. Troubleshooting](#13-troubleshooting)
+  - [14. Contributing](#14-contributing)
+  - [15. License \& Attribution](#15-license--attribution)
+  - [16. Security / Responsible Use](#16-security--responsible-use)
 
 ---
 
@@ -51,7 +52,7 @@ Design principles:
 * Progressive disclosure visualizations (timeline, radial, network, map)
 * Reproducible containerized backend + static frontend deployable to GitHub Pages
 
-## 4. Architecture & Data Flow
+## 2. Architecture & Data Flow
 
 1. Acquire dataset (`wiktionary_data.jsonl[.gz]`) from Kaikki.org.
 2. Build offset index + stats (`wiktionary_index.json`, `most_*`, etc.).
@@ -67,14 +68,14 @@ Key directories:
 * `src/types/` – TypeScript domain models
 * `src/utils/` – API base, export & mapping utilities
 
-## 5. Prerequisites
+## 3. Prerequisites
 
 * Node.js 18+ (20.x recommended)
 * Python 3.11 recommended (>=3.9 minimum for local non-Docker)
 * Docker + Docker Compose (for container workflow)
 * ~40GB free disk (compressed + uncompressed + indices)
 
-## 6. Tech Stack
+## 4. Tech Stack
 
 | Layer     | Technologies                                          |
 | --------- | ----------------------------------------------------- |
@@ -84,11 +85,11 @@ Key directories:
 | CI/CD     | GitHub Actions (deploy, release-please, Docker build) |
 | Data      | Wiktextract JSONL dump (Kaikki.org)                   |
 
-## 7. Data Source & Indexing
+## 5. Data Source & Indexing
 
 Default dataset URL (override `WIKTIONARY_DATA_URL`):
 
-```
+```text
 https://kaikki.org/dictionary/raw-wiktextract-data.jsonl.gz
 ```
 
@@ -107,7 +108,7 @@ Artifacts (in `backend/data/`):
 
 Retrieval strategy: `mmap` + `seek` to recorded offset, read one JSON line, parse on demand.
 
-## 8. Quick Start
+## 6. Quick Start
 
 ### A. Full Local (Frontend + Backend)
 
@@ -148,7 +149,7 @@ npm run build
 npm run preview
 ```
 
-## 9. Local Development
+## 7. Local Development
 
 Core scripts (`package.json`):
 
@@ -163,7 +164,7 @@ Core scripts (`package.json`):
 
 Recommended: Node 20.x, Python 3.11.
 
-## 10. Environment Variables
+## 8. Environment Variables
 
 | Variable              | Scope          | Required (Prod) | Default    | Description                                 |
 | --------------------- | -------------- | --------------- | ---------- | ------------------------------------------- |
@@ -174,7 +175,7 @@ Recommended: Node 20.x, Python 3.11.
 | `WIKTIONARY_DATA_URL` | Backend        | No              | Kaikki URL | Dataset source                              |
 | `SKIP_DOWNLOAD`       | Backend        | No              | `0`        | Set `1` to skip auto download               |
 
-## 11. Docker Usage
+## 9. Docker Usage
 
 Image: `ghcr.io/vialab/wiktionaryviz-backend:latest`
 
@@ -197,7 +198,7 @@ services:
       - wiktionary-data:/app/data
 ```
 
-## 12. API Reference
+## 10. API Reference
 
 Base (dev): `http://localhost:8000` – Interactive docs at `/docs`.
 
@@ -218,7 +219,7 @@ Base (dev): `http://localhost:8000` – Interactive docs at `/docs`.
 
 Error handling: 404 for missing indexed key, 500 for unexpected exceptions.
 
-## 13. Frontend Build & Deployment
+## 11. Frontend Build & Deployment
 
 GitHub Pages deploy (via workflow): builds with `API_BACKEND` secret → publishes `dist/` to `gh-pages` (base path set in `vite.config.ts`).
 
@@ -230,7 +231,7 @@ API_BACKEND=https://your-backend.example.org npm run build
 
 Serve the `dist/` output (any static host).
 
-## 14. CI / Release Automation
+## 12. CI / Release Automation
 
 Workflows:
 
@@ -240,7 +241,7 @@ Workflows:
 
 Release model: 0.x (minor may break). Conventional commit scopes recommended for clarity.
 
-## 15. Troubleshooting
+## 13. Troubleshooting
 
 | Symptom               | Cause                                    | Resolution                                                             |
 | --------------------- | ---------------------------------------- | ---------------------------------------------------------------------- |
@@ -251,7 +252,7 @@ Release model: 0.x (minor may break). Conventional commit scopes recommended for
 | Memory pressure       | Large mmap JSONL                         | Increase container memory / split dataset                              |
 | Mixed content blocked | HTTPS site → HTTP API                    | Serve API over HTTPS or use proxy                                      |
 
-## 16. Contributing
+## 14. Contributing
 
 1. Create a focused feature/bug branch (`feat/…`, `fix/…`).
 2. Use Conventional Commits (e.g., `feat(descendants): add depth limiting`). You can use [`oco`](https://github.com/di-sukharev/opencommit) to help generate commit messages that follow this standard.
@@ -262,7 +263,7 @@ Release model: 0.x (minor may break). Conventional commit scopes recommended for
 
 Suggested commit scopes: `frontend`, `backend`, `descendants`, `phonology`, `timeline`, `geospatial`, `build`, `ci`, `docs`.
 
-## 17. License & Attribution
+## 15. License & Attribution
 
 * MIT License (see `LICENSE`).
 * Data derived from Wiktionary via Wiktextract / Kaikki.org (CC-BY-SA 3.0 & GFDL terms apply to original content).
@@ -270,7 +271,7 @@ Suggested commit scopes: `frontend`, `backend`, `descendants`, `phonology`, `tim
 
 Please cite Wiktionary, Wiktextract, and PanPhon in academic outputs.
 
-## 18. Security / Responsible Use
+## 16. Security / Responsible Use
 
 * Do not rely on AI-estimated IPA for authoritative linguistic claims.
 * Validate external input before exposing new endpoints publicly.
