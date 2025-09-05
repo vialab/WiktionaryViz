@@ -48,7 +48,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   const [currentIndex, setCurrentIndex] = useState<number | undefined>(undefined)
   const [isPlaying, setIsPlaying] = useState(false)
   const [playSpeed, setPlaySpeed] = useState<number>(800) // ms per step
-  const [loop, setLoop] = useState<boolean>(true)
+  const [loop, setLoop] = useState<boolean>(false)
   const [showAllPopups, setShowAllPopups] = useState(false)
   const dwellDurationRef = useRef<number>(1200) // ms pause after each transition for reading (extended for readability)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
