@@ -54,6 +54,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
   const hasAdjustedZoomRef = useRef(false)
   const playbackTimerRef = useRef<number | null>(null)
+  // --- Dynamic zoom refs (distance-based small-jump assist) ---
+  const autoZoomBaselineRef = useRef<number | null>(null) // original zoom before first auto-zoom-in
+  const lastAutoZoomInRef = useRef<number | null>(null) // last zoom level we auto-raised to
+  const lastIndexRef = useRef<number | null>(null) // previous index to compute segment distance
   // const [highlightedCountries, setHighlightedCountries] = useState<string[]>([]); // replaced by LineageCountryHighlights overlay
   // TODO (Timeline Scrubber & Playback State):
   //  - [ ] Derive highlightedCountries (Set) from full lineage once computed; derive focusedCountries from currentIndex.
@@ -141,28 +145,90 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     }
   }, [isPlaying, playSpeed, lineage, loop, currentIndex])
 
-  // Auto-pan map to active node when currentIndex changes (single initial zoom-in).
+  // Auto-pan + dynamic zoom assistance for small geographic jumps.
   useEffect(() => {
     if (!mapInstance || currentIndex === undefined || !lineage) return
     const nodes = flattenLineage(lineage)
     if (currentIndex < 0 || currentIndex >= nodes.length) return
-    const node = nodes[currentIndex]
-    const pos = node.position
-    if (pos && pos[0] != null && pos[1] != null) {
-      try {
-        const baseZoom = mapInstance.getZoom()
-        const minZoomForDetail = 3.2 // Enough to see a single country but keep context
-        if (!hasAdjustedZoomRef.current && baseZoom < minZoomForDetail) {
-          hasAdjustedZoomRef.current = true
-          mapInstance.flyTo([pos[0], pos[1]], minZoomForDetail, { duration: 0.9 })
-        } else {
-          // Just pan; keep current zoom so entire country remains visible
-          mapInstance.panTo([pos[0], pos[1]], { animate: true, duration: 0.9 })
-        }
-      } catch {
-        // ignore
+
+    const currentNode = nodes[currentIndex]
+    const currentPos = currentNode.position // [lat, lng]
+    if (!currentPos) return
+
+    try {
+      const map = mapInstance
+      const baseZoom = map.getZoom()
+      const MIN_DETAIL_ZOOM = 4 // first-level detail when starting playback
+      const MIN_SEGMENT_PX = 140 // desired on-screen minimum distance for a hop
+      const REVERT_SEGMENT_PX = 400 // if a hop is this large, consider zooming back out
+      const MAX_AUTO_ZOOM = 5.5 // hard cap to avoid excessive zoom-in
+
+      // If this is the very first focused node after showing full lineage, ensure a minimum detail zoom.
+      if (!hasAdjustedZoomRef.current && baseZoom < MIN_DETAIL_ZOOM) {
+        hasAdjustedZoomRef.current = true
+        map.flyTo([currentPos[0], currentPos[1]], MIN_DETAIL_ZOOM, { duration: 0.9 })
+        lastIndexRef.current = currentIndex
+        return
       }
+
+      const prevIndex = currentIndex > 0 ? currentIndex - 1 : null
+      const prevPos = prevIndex != null ? nodes[prevIndex]?.position : null
+
+      // If we have a previous position, we can compute on-screen pixel distance.
+      if (prevPos) {
+        const projectDist = (zoom: number) => {
+          // Leaflet expects (lat,lng)
+          const a = map.project(L.latLng(prevPos[0], prevPos[1]), zoom)
+            .subtract(map.project(L.latLng(currentPos[0], currentPos[1]), zoom))
+          return Math.hypot(a.x, a.y)
+        }
+        const distNow = projectDist(baseZoom)
+
+        // Small jump: progressively zoom in until segment length reaches threshold or we hit max.
+        if (distNow < MIN_SEGMENT_PX) {
+          if (autoZoomBaselineRef.current == null) autoZoomBaselineRef.current = baseZoom
+          let targetZoom = baseZoom
+          while (targetZoom < MAX_AUTO_ZOOM && projectDist(targetZoom) < MIN_SEGMENT_PX) {
+            targetZoom += 0.5 // half-step granularity for smoother animation
+          }
+          // Midpoint center so both previous & current remain visible providing context.
+          const mid: [number, number] = [
+            (prevPos[0] + currentPos[0]) / 2,
+            (prevPos[1] + currentPos[1]) / 2,
+          ]
+          if (targetZoom !== baseZoom) {
+            lastAutoZoomInRef.current = targetZoom
+            map.flyTo(mid, targetZoom, { duration: 0.75 })
+          } else {
+            // Even at max; just pan to midpoint for consistency.
+            map.panTo(mid, { animate: true, duration: 0.75 })
+          }
+        } else {
+          // Large enough distance: pan directly to current node. Optionally revert previous auto-zoom.
+            // Decide if we should revert (hysteresis): only revert if we previously auto-zoomed and distance is comfortably large.
+          if (
+            autoZoomBaselineRef.current != null &&
+            lastAutoZoomInRef.current != null &&
+            distNow > REVERT_SEGMENT_PX &&
+            baseZoom > autoZoomBaselineRef.current + 0.1
+          ) {
+            // Revert to baseline while centering at currentPos.
+            map.flyTo([currentPos[0], currentPos[1]], autoZoomBaselineRef.current, { duration: 0.85 })
+            lastAutoZoomInRef.current = null
+            autoZoomBaselineRef.current = null
+          } else {
+            map.panTo([currentPos[0], currentPos[1]], { animate: true, duration: 0.9 })
+          }
+        }
+      } else {
+        // No previous node (first node) -> simple pan (or ensure min detail already handled above).
+        map.panTo([currentPos[0], currentPos[1]], { animate: true, duration: 0.9 })
+      }
+    } catch {
+      // swallow map errors
     }
+
+    lastIndexRef.current = currentIndex
   }, [currentIndex, lineage, mapInstance])
 
   // Stop playback if lineage removed or user selects Full (undefined).
@@ -173,6 +239,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     if (currentIndex === undefined) {
       // Allow a fresh zoom-in next time playback begins
       hasAdjustedZoomRef.current = false
+  // Reset auto-zoom state so a new lineage playback starts clean.
+  autoZoomBaselineRef.current = null
+  lastAutoZoomInRef.current = null
+  lastIndexRef.current = null
     }
   }, [currentIndex, isPlaying])
 
