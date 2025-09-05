@@ -9,7 +9,7 @@ import signal
 from api_routes import phonology, word_data, descendants
 # TODO [HIGH LEVEL]: Add routers for AI suggestions, KWIC examples, user-corpus uploads, and GeoJSON utilities.
 # TODO [LOW LEVEL]: Implement modules `api_routes/ai_tools.py`, `api_routes/kwic.py`, `api_routes/user_corpus.py`, `api_routes/geojson.py` and include them.
-from constants import load_index
+from constants import load_index, load_language_code_map, LANG_MAP_FILE_PATH
 
 # Helper: check and (re)build main index and stats if needed or requested
 def ensure_main_index(rebuild=False):
@@ -33,13 +33,32 @@ def get_rebuild_flag() -> bool:
     """Return True if index rebuild is requested via CLI args."""
     return any(arg in ("--rebuild-index", "--rebuild-all") for arg in sys.argv)
 
+def get_rebuild_language_codes_flag() -> bool:
+    """Return True if language code map rebuild requested via CLI args."""
+    return any(arg in ("--rebuild-lang-codes", "--rebuild-all") for arg in sys.argv)
+
+def ensure_language_codes(rebuild: bool = False):
+    """Ensure language_codes.json exists (or rebuild if requested) then load it."""
+    from constants import LANG_MAP_FILE_PATH
+    if rebuild or not os.path.exists(LANG_MAP_FILE_PATH):
+        print("[INFO] Building language code map..." if rebuild else "[INFO] language_codes.json missing. Building...")
+        try:
+            from build_language_codes import build_language_codes
+            build_language_codes()
+        except Exception as e:
+            print(f"[WARN] Failed to build language code map: {e}")
+    # Always attempt load (will warn if still missing)
+    load_language_code_map()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """FastAPI lifespan handler: setup and teardown logic."""
     rebuild_index = get_rebuild_flag()
+    rebuild_lang_codes = get_rebuild_language_codes_flag()
     ensure_main_index(rebuild_index)
     load_index()
+    ensure_language_codes(rebuild_lang_codes)
     yield
     print("[INFO] FastAPI backend is shutting down. Cleanup complete.")
 
@@ -74,6 +93,7 @@ async def root() -> dict:
 def rebuild_all() -> None:
     """Rebuild all index and stats files."""
     ensure_main_index(True)
+    ensure_language_codes(True)
     print("[INFO] Rebuild complete.")
 
 if __name__ == "__main__":
@@ -82,6 +102,9 @@ if __name__ == "__main__":
     elif "--rebuild-index" in sys.argv:
         ensure_main_index(True)
         print("[INFO] Main index rebuild complete.")
+    elif "--rebuild-lang-codes" in sys.argv:
+        ensure_language_codes(True)
+        print("[INFO] Language codes rebuild complete.")
     else:
         import uvicorn
         uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

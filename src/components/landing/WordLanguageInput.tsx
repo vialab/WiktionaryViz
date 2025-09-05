@@ -1,11 +1,13 @@
 import React from 'react'
 
+interface SimpleLang { code: string; name: string }
+
 interface WordLanguageInputProps {
   word: string
   onWordChange: (word: string) => void
   language: string
   onLanguageChange: (lang: string) => void
-  availableLanguages: string[]
+  availableLanguages: Array<string | SimpleLang>
   loading: boolean
   label?: string
   inputBaseStyles?: string
@@ -45,11 +47,14 @@ const WordLanguageInput: React.FC<WordLanguageInputProps> = ({
           className={inputBaseStyles}
         >
           <option value="">Select a language</option>
-          {availableLanguages.map(lang => (
-            <option key={lang} value={lang}>
-              {lang}
-            </option>
-          ))}
+          {availableLanguages.map(l => {
+            const obj: SimpleLang = typeof l === 'string' ? { code: l, name: l } : l
+            return (
+              <option key={obj.code} value={obj.code}>
+                {obj.name}
+              </option>
+            )
+          })}
         </select>
       ))}
   </div>

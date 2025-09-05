@@ -1,7 +1,7 @@
 import os, json, random, mmap
 from fastapi import APIRouter, Query, Body
 from fastapi.responses import JSONResponse
-from constants import DATA_DIR, index, JSONL_FILE_PATH
+from constants import DATA_DIR, index, JSONL_FILE_PATH, lang_code_to_name
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 import httpx
@@ -28,12 +28,24 @@ async def get_word_data(word: str = Query(...), lang_code: str = Query(...)):
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @router.get("/available-languages")
-async def get_available_languages(word: str = Query(...)):
+async def get_available_languages(word: str = Query(...), codes_only: bool = Query(False)):
+    """Return available languages for a word.
+
+    Params:
+      word: target lemma
+      codes_only: backwards compatibility flag; if true returns just list[str]
+    """
     word = word.lower()
-    langs = [key.split("_", 1)[1] for key in index if key.startswith(f"{word}_")]
-    if not langs:
+    codes = [key.split("_", 1)[1] for key in index if key.startswith(f"{word}_")]
+    if not codes:
         return JSONResponse(content={"message": "No languages found."}, status_code=404)
-    return JSONResponse(content={"languages": sorted(set(langs))})
+    unique_codes = sorted(set(codes))
+    if codes_only:
+        return JSONResponse(content={"languages": unique_codes})
+    enriched = [
+        {"code": c, "name": lang_code_to_name.get(c, c)} for c in unique_codes
+    ]
+    return JSONResponse(content={"languages": enriched})
 
 @router.get("/random-interesting-word")
 async def get_random_interest():
