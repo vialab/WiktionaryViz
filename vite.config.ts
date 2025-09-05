@@ -13,6 +13,6 @@ export default defineConfig({
   },
   
   define: {
-    'import.meta.env.API_BACKEND': JSON.stringify(process.env.API_BACKEND || ''),
+    'import.meta.env.VITE_API_BACKEND': JSON.stringify(process.env.VITE_API_BACKEND || ''),
   },
 })

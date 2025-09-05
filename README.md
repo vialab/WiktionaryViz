@@ -157,7 +157,7 @@ Core scripts (`package.json`):
 * `npm run backend` – FastAPI (reload) via Uvicorn
 * `npm run dev:full` – Concurrent backend + frontend
 * `npm run build` – Type check + production bundle
-* `npm run build:api` – Build with `API_BACKEND` injected
+* `npm run build:api` – Build with `VITE_API_BACKEND` injected
 * `npm run lint` / `format` / `format:check`
 * `npm run backend:up` / `backend:down` – Compose helpers
 * `npm run deploy` – Deploy static site to GitHub Pages
@@ -168,7 +168,7 @@ Recommended: Node 20.x, Python 3.11.
 
 | Variable              | Scope          | Required (Prod) | Default    | Description                                 |
 | --------------------- | -------------- | --------------- | ---------- | ------------------------------------------- |
-| `API_BACKEND`         | Frontend build | Yes             | (none)     | Absolute backend API base baked into bundle |
+| `VITE_API_BACKEND`         | Frontend build | Yes             | (none)     | Absolute backend API base baked into bundle |
 | `ALLOWED_ORIGINS`     | Backend        | No              | `*`        | Comma list for CORS                         |
 | `PORT`                | Backend        | No              | `8000`     | Uvicorn port                                |
 | `OPENAI_API_KEY`      | Backend        | If AI features  | (none)     | For IPA estimation (fallback)               |
@@ -221,12 +221,12 @@ Error handling: 404 for missing indexed key, 500 for unexpected exceptions.
 
 ## 11. Frontend Build & Deployment
 
-GitHub Pages deploy (via workflow): builds with `API_BACKEND` secret → publishes `dist/` to `gh-pages` (base path set in `vite.config.ts`).
+GitHub Pages deploy (via workflow): builds with `VITE_API_BACKEND` secret → publishes `dist/` to `gh-pages` (base path set in `vite.config.ts`).
 
 Local production build:
 
 ```bash
-API_BACKEND=https://your-backend.example.org npm run build
+VITE_API_BACKEND=https://your-backend.example.org npm run build
 ```
 
 Serve the `dist/` output (any static host).

@@ -48,7 +48,7 @@ jobs:
 
       - name: Build with API base
         env:
-          API_BACKEND: ${{ secrets.API_BACKEND }}
+          VITE_API_BACKEND: ${{ secrets.VITE_API_BACKEND }}
         run: npm run build
 
       - name: Deploy to gh-pages branch
