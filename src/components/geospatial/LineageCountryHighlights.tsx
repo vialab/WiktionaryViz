@@ -9,7 +9,6 @@ import { flattenLineage } from '@/utils/mapUtils'
 interface Props {
   lineage: EtymologyNode | null
   path?: string // geojson path
-  tooltip?: boolean
   currentIndex?: number // active node index for focused country pulse
 }
 
@@ -21,6 +20,7 @@ const lineageHighlightStyle: L.PathOptions = {
   fillColor: '#0ea5e9',
   fillOpacity: 0.22,
   className: 'country-path lineage-country',
+  interactive: false, // explicitly disable interactivity
 }
 
 // --- Robust point-in-polygon helpers (GeoJSON uses [lng, lat]) ---
@@ -82,12 +82,7 @@ function computeBBox(geom: Geometry): [number, number, number, number] | undefin
   return undefined
 }
 
-const LineageCountryHighlights: FC<Props> = ({
-  lineage,
-  path = '/countries.geojson',
-  tooltip = true,
-  currentIndex,
-}) => {
+const LineageCountryHighlights: FC<Props> = ({ lineage, path = '/countries.geojson', currentIndex }) => {
   const data = useCountriesGeoJSON(path)
   const lineageNodes = useMemo(() => flattenLineage(lineage), [lineage])
   const lineagePoints = useMemo(
@@ -169,17 +164,6 @@ const LineageCountryHighlights: FC<Props> = ({
     }
   }, [data, lineagePoints, activePoint])
 
-  const onEach = (feature: Feature<Geometry, CountryProps>, layer: L.Layer) => {
-    if (!tooltip) return
-    const props = feature.properties || {}
-    const name = (props.NAME_EN ||
-      props.NAME ||
-      props.ADMIN ||
-      props.SOVEREIGNT ||
-      'Country') as string
-    const l = layer as L.Layer & { bindTooltip?: (c: L.Content, o?: L.TooltipOptions) => unknown }
-    l.bindTooltip?.(name, { direction: 'auto', sticky: true })
-  }
 
   if (!filtered || !filtered.features.length) return null
 
@@ -195,10 +179,13 @@ const LineageCountryHighlights: FC<Props> = ({
           return {
             ...base,
             className: base.className + (focused ? ' country-focused' : ''),
+            interactive: false,
           } as L.PathOptions
         }}
-        onEachFeature={onEach}
+  // onEachFeature omitted to keep layer non-interactive.
         pane="lineage-countries"
+        interactive={false}
+        bubblingMouseEvents={false}
       />
     </Pane>
   )

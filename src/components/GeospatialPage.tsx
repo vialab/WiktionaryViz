@@ -10,7 +10,7 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 import MarkerClusterGroup from 'react-leaflet-markercluster'
 import 'react-leaflet-markercluster/styles'
 import TranslationMarkers, { TranslationMarker } from './geospatial/TranslationMarkers'
-import CountriesLayer from './geospatial/CountriesLayer'
+// CountriesLayer removed: hover interaction replaced by lineage-focused highlights.
 import LineageCountryHighlights from './geospatial/LineageCountryHighlights'
 import EtymologyLineagePath from './geospatial/EtymologyLineagePath'
 import TimelineScrubber from './geospatial/TimelineScrubber.tsx'
@@ -61,7 +61,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   // const [highlightedCountries, setHighlightedCountries] = useState<string[]>([]); // replaced by LineageCountryHighlights overlay
   // TODO (Timeline Scrubber & Playback State):
   //  - [ ] Derive highlightedCountries (Set) from full lineage once computed; derive focusedCountries from currentIndex.
-  //  - [ ] Pass highlighted/focused arrays to <CountriesLayer /> (after its API update).
   //  - [ ] Provide callback to <EtymologyLineagePath /> for node click -> setCurrentIndex.
   //  - [ ] Render <EtymologyTimelineScrubber /> fixed at bottom: ticks, drag, play/pause (currently inside map; relocate outside LayersControl).
   //  - [ ] Handle word/language change: reset index, stop playback, clear timers (partially handled; review edge cases).
@@ -286,23 +285,17 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           </LayersControl.BaseLayer>
           {/* GeoJSON export button added; future: standardized dynamic layer ingestion. */}
           {/* TODO [LOW LEVEL]: Add a file/URL loader for GeoJSON and render via GeoJSON component with style options. */}
-          {/* Countries hover highlight layer */}
-          <LayersControl.Overlay checked name="Countries (hover)">
-            <LayerGroup>
-              <CountriesLayer />
-              {/* Persistent lineage country highlight overlay (non-interactive) */}
-              <LineageCountryHighlights lineage={lineage} currentIndex={currentIndex} />
-            </LayerGroup>
-          </LayersControl.Overlay>
+          {/* Country highlighting now limited to lineage-related countries only (no global hover). */}
           {/* General Etymology Markers Layer */}
           <LayersControl.Overlay checked name="Etymology Markers">
             <MarkerClusterGroup>
               <TranslationMarkers markers={markers} />
             </MarkerClusterGroup>
           </LayersControl.Overlay>
-          {/* Etymology Lineage Path Layer */}
+          {/* Etymology Lineage Path Layer (includes associated country highlights) */}
           <LayersControl.Overlay name="Etymology Lineage Path">
             <LayerGroup>
+              <LineageCountryHighlights lineage={lineage} currentIndex={currentIndex} />
               <EtymologyLineagePath
                 lineage={lineage}
                 currentIndex={currentIndex}
