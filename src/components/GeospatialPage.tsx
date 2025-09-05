@@ -293,7 +293,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
             </MarkerClusterGroup>
           </LayersControl.Overlay>
           {/* Etymology Lineage Path Layer (includes associated country highlights) */}
-          <LayersControl.Overlay name="Etymology Lineage Path">
+          <LayersControl.Overlay checked name="Etymology Lineage Path">
             <LayerGroup>
               <LineageCountryHighlights lineage={lineage} currentIndex={currentIndex} />
               <EtymologyLineagePath
