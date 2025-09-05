@@ -2,6 +2,22 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.9](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.8...wiktionaryviz-v0.1.9) (2025-09-05)
+
+
+### Features
+
+* **GeospatialPage:** implement dynamic zoom assistance for small geographic jumps to enhance user experience during playback ([87f811b](https://github.com/vialab/WiktionaryViz/commit/87f811b5f54e850760cc14da56019323137bed4c))
+* **GeospatialPage:** replace CountriesLayer with LineageCountryHighlights for focused lineage highlighting and remove hover interactions ([8d6c58c](https://github.com/vialab/WiktionaryViz/commit/8d6c58c70e96b1767d2f5dd58e01e997f94b7ebe))
+* **GeospatialPage:** set Etymology Lineage Path layer as checked by default for better user experience ([1ae0507](https://github.com/vialab/WiktionaryViz/commit/1ae0507253ed92e382956bcd7e821b94b7c1d8b4))
+* **language:** add language code mapping and enhance available languages API for better compatibility and usability ([5fed063](https://github.com/vialab/WiktionaryViz/commit/5fed06371116e232f01473e24f4f11096bebbb88))
+
+
+### Bug Fixes
+
+* **GeospatialPage:** change default loop state from true to false to prevent unintended looping behavior ([1c0c4aa](https://github.com/vialab/WiktionaryViz/commit/1c0c4aaac36adca44a8114c396d3af32a2df829a))
+* rename API_BACKEND to VITE_API_BACKEND across configuration and documentation for consistency in environment variable usage ([86e797a](https://github.com/vialab/WiktionaryViz/commit/86e797a36e1107923de732073690c25c228be902))
+
 ## [0.1.8](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.7...wiktionaryviz-v0.1.8) (2025-09-03)
 
 
