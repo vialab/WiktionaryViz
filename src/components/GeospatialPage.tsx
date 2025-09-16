@@ -287,7 +287,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           {/* TODO [LOW LEVEL]: Add a file/URL loader for GeoJSON and render via GeoJSON component with style options. */}
           {/* Country highlighting now limited to lineage-related countries only (no global hover). */}
           {/* General Etymology Markers Layer */}
-          <LayersControl.Overlay checked name="Etymology Markers">
+          <LayersControl.Overlay checked name="Translations">
             <MarkerClusterGroup>
               <TranslationMarkers markers={markers} />
             </MarkerClusterGroup>
