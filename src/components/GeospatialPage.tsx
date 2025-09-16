@@ -29,6 +29,7 @@ interface WordData {
   etymology_templates?: { name: string; args: { [key: string]: string }; expansion: string }[]
   word: string
   lang_code: string
+  lang?: string // full language name (e.g., 'Indonesian') returned by API
 }
 
 interface GeospatialPageProps {
@@ -75,14 +76,23 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     }
     if (Array.isArray(wordData?.etymology_templates) && languoidData.length) {
       processEtymologyLineage(
-        wordData.etymology_templates,
+        wordData?.etymology_templates,
         languoidData,
         wordData.word,
         wordData.lang_code,
       ).then(root => {
+        if (root && typeof wordData.lang === 'string' && wordData.lang?.trim()) {
+          // Walk to tail node (the target word) regardless of lineage direction.
+          let tail = root
+          while (tail.next) tail = tail.next
+          if (tail.expansion === tail.word) {
+            tail.expansion = `${wordData.lang} ${tail.word}`
+          }
+        }
         setLineage(root)
+        // Reset playback-related state for new lineage
         setCurrentIndex(undefined)
-        setIsPlaying(false) // reset playback on new lineage
+        setIsPlaying(false)
         setShowAllPopups(false)
       })
     }
