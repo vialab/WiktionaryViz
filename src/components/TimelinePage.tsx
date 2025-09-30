@@ -67,7 +67,6 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ word, language }) => {
   // TODO [HIGH LEVEL]: Integrate KWIC (keyword-in-context) usage examples per sense and decade.
   // TODO [LOW LEVEL]: Add a panel fetching /kwic?word=...&sense=...&decade=... and paginate examples inline.
 
-
   // Close legend info on outside click / escape (hook always declared)
   useEffect(() => {
     function handle(e: MouseEvent) {
@@ -117,7 +116,7 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ word, language }) => {
         >
           <LegendSwatch color="#22c55e" label="Human IPA" description="Complete" />
           <LegendSwatch color="#f59e42" label="Hybrid" description="Phonemic + AI" />
-            <LegendSwatch color="#ef4444" label="AI Inferred" description="No human IPA" />
+          <LegendSwatch color="#ef4444" label="AI Inferred" description="No human IPA" />
           {legendInfoOpen && (
             <div
               id="legend-info-popover"
@@ -126,7 +125,9 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ word, language }) => {
               className="absolute -right-2 top-2 translate-x-full w-80 max-w-[22rem] bg-[#1f1f1f] border border-[#3a3a3a] rounded-lg p-4 text-xs text-[#E9E3CF] shadow-xl z-40"
             >
               <div className="flex items-start justify-between mb-2">
-                <h2 className="font-semibold text-[#D4AF37] tracking-wide text-sm">What these colours mean</h2>
+                <h2 className="font-semibold text-[#D4AF37] tracking-wide text-sm">
+                  What these colours mean
+                </h2>
                 <button
                   onClick={() => setLegendInfoOpen(false)}
                   className="text-[#B79F58] hover:text-[#F5F5F5] focus:outline-none focus:ring-2 focus:ring-[#D4AF37] rounded p-1"
@@ -136,18 +137,28 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ word, language }) => {
                 </button>
               </div>
               <p className="leading-relaxed mb-2">
-                Source entries vary in phonetic detail. Some have a human curated phonetic (narrow) IPA, some only a
-                phonemic (broad) IPA, and some lack IPA entirely. When phonetic detail is missing, an AI model estimates a
-                likely phonetic realization for that historical stage using patterns learned from the language and related
-                data.
+                Source entries vary in phonetic detail. Some have a human curated phonetic (narrow)
+                IPA, some only a phonemic (broad) IPA, and some lack IPA entirely. When phonetic
+                detail is missing, an AI model estimates a likely phonetic realization for that
+                historical stage using patterns learned from the language and related data.
               </p>
               <ul className="list-disc ml-4 space-y-1 text-[#B79F58]">
-                <li><span className="text-[#22c55e] font-semibold">Human IPA</span>: Curated phonetic transcription present.</li>
-                <li><span className="text-[#f59e42] font-semibold">Hybrid</span>: Human phonemic base + AI phonetic refinement.</li>
-                <li><span className="text-[#ef4444] font-semibold">AI Inferred</span>: No human IPA; AI estimated from context.</li>
+                <li>
+                  <span className="text-[#22c55e] font-semibold">Human IPA</span>: Curated phonetic
+                  transcription present.
+                </li>
+                <li>
+                  <span className="text-[#f59e42] font-semibold">Hybrid</span>: Human phonemic base
+                  + AI phonetic refinement.
+                </li>
+                <li>
+                  <span className="text-[#ef4444] font-semibold">AI Inferred</span>: No human IPA;
+                  AI estimated from context.
+                </li>
               </ul>
               <p className="mt-3 text-[0.65rem] text-[#8d8055]">
-                This transparency helps you gauge certainty and potential reconstruction error in cross-stage comparisons.
+                This transparency helps you gauge certainty and potential reconstruction error in
+                cross-stage comparisons.
               </p>
             </div>
           )}
@@ -161,13 +172,11 @@ const TimelinePage: React.FC<TimelinePageProps> = ({ word, language }) => {
           </div>
           <div className="rounded-b-2xl bg-[#252525] border border-t-0 border-[#2f2f2f] shadow-xl flex-1">
             {currentCard ? (
-              <MetadataPanel
-                card={currentCard}
-                prevCard={prevCard}
-                drift={drift ?? undefined}
-              />
+              <MetadataPanel card={currentCard} prevCard={prevCard} drift={drift ?? undefined} />
             ) : (
-              <div className="p-8 text-center text-[#B79F58] text-sm">Select a node to view metadata.</div>
+              <div className="p-8 text-center text-[#B79F58] text-sm">
+                Select a node to view metadata.
+              </div>
             )}
           </div>
         </div>
@@ -187,12 +196,21 @@ const LegendSwatch: React.FC<{ color: string; label: string; description: string
   <div className="flex items-center gap-2 text-[#F5F5F5]">
     <span
       className="inline-block rounded-md border border-[#3a3a3a]"
-      style={{ width: 18, height: 18, boxShadow: `0 0 0 3px ${color} inset`, background: '#252525' }}
+      style={{
+        width: 18,
+        height: 18,
+        boxShadow: `0 0 0 3px ${color} inset`,
+        background: '#252525',
+      }}
       title={`${label} – ${description}`}
     />
     <div className="leading-tight">
-      <div className="font-semibold" style={{ color }}>{label}</div>
-      <div className="text-[0.65rem] md:text-[0.7rem] text-[#B79F58] uppercase tracking-wide">{description}</div>
+      <div className="font-semibold" style={{ color }}>
+        {label}
+      </div>
+      <div className="text-[0.65rem] md:text-[0.7rem] text-[#B79F58] uppercase tracking-wide">
+        {description}
+      </div>
     </div>
   </div>
 )

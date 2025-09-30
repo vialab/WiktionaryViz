@@ -31,9 +31,13 @@ export function useAvailableLanguages(word: string) {
       .then(data => {
         const langs = data.languages || []
         // Backward compatibility: if array of strings, map to {code,name}
-        const normalized: AvailableLanguage[] = Array.isArray(langs) && typeof langs[0] === 'string'
-          ? (langs as string[]).map(c => ({ code: c, name: c }))
-          : (langs as Array<{code: string; name?: string}>).map(l => ({ code: l.code, name: l.name || l.code }))
+        const normalized: AvailableLanguage[] =
+          Array.isArray(langs) && typeof langs[0] === 'string'
+            ? (langs as string[]).map(c => ({ code: c, name: c }))
+            : (langs as Array<{ code: string; name?: string }>).map(l => ({
+                code: l.code,
+                name: l.name || l.code,
+              }))
         setLanguages(normalized)
       })
       .catch(() => setError('Failed to fetch languages.'))

@@ -104,6 +104,28 @@ body {
   opacity: 0.85;
 }
 
+/* Proto dotted variant overrides (applied via additional class) */
+.etymology-segment-static.proto-dotted {
+  stroke: #e11d48;
+  stroke-dasharray: 6 6;
+  stroke-width: 3px;
+}
+
+/* Solid attested segment explicit class (optional clarity) */
+.etymology-segment-static.attested-solid {
+  stroke: #2563eb;
+  stroke-dasharray: none;
+}
+
+/* Proto region polygon styling (fill + stroke handled inline, but allow extra glow) */
+.proto-region {
+  filter: drop-shadow(0 0 4px rgba(225, 29, 72, 0.55));
+}
+
+.attested-region {
+  filter: drop-shadow(0 0 3px rgba(31, 138, 242, 0.45));
+}
+
 /* Growing segment animation: stroke-dasharray from 0 to full length */
 @keyframes lineage-grow {
   from {
@@ -117,12 +139,12 @@ body {
 .etymology-segment-animating {
   stroke: #60a5fa;
   stroke-width: 3.2px;
-  filter: drop-shadow(0 0 4px rgba(96,165,250,0.65));
+  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.65));
   animation: lineage-grow var(--grow-ms, 900ms) linear forwards;
 }
 
 .etymology-tooltip-active {
-  background: rgba(15,23,42,0.85);
+  background: rgba(15, 23, 42, 0.85);
   color: #f8fafc;
   border: 1px solid #334155;
   padding: 2px 6px;
@@ -130,7 +152,7 @@ body {
 }
 
 .etymology-tooltip-final {
-  background: rgba(30,41,59,0.85);
+  background: rgba(30, 41, 59, 0.85);
   color: #f1f5f9;
   border: 1px solid #475569;
   padding: 2px 6px;
@@ -138,5 +160,9 @@ body {
 }
 
 /* Scrollbar hidden utility */
-.scrollbar-hidden { scrollbar-width: none; }
-.scrollbar-hidden::-webkit-scrollbar { display: none; }
+.scrollbar-hidden {
+  scrollbar-width: none;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}

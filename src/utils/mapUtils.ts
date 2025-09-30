@@ -43,6 +43,14 @@ interface LanguoidData {
   name: string
 }
 
+// Approximate representative centers for proto language macro-regions (lat,lng)
+const PROTO_CENTERS: Record<string, [number, number]> = {
+  'ine-pro': [49.0, 45.0], // PIE Steppe (approx)
+  'gem-pro': [56.5, 11.5], // Proto-Germanic (Scandinavia / Jutland area)
+  'gmw-pro': [53.2, 7.0], // Proto-West Germanic (NW Germany / Netherlands)
+  'sla-pro': [52.5, 24.0], // Proto-Slavic (Central/Eastern Europe)
+}
+
 // TODO (Country Derivation): Provide helper mapLanguageToCountries(lang_code) returning ISO_A3 codes
 // by intersecting languoid.country_ids with a country metadata lookup (to be added) for highlight sets.
 /**
@@ -55,6 +63,8 @@ export const mapLanguageToCountries = async (
 ): Promise<string[]> => {
   const codes: Set<string> = new Set()
   if (!langCode) return []
+  // Proto languages intentionally have no modern country polygons; force empty so proto regions render
+  if (/-pro$/.test(langCode)) return []
   // Normalize potential proto suffix
   const normalized = langCode.replace(/-pro$/, '')
   // Direct lookup by iso639P3code (convert if needed not handled here; upstream ensures ISO639-3 when possible)
@@ -345,8 +355,9 @@ export const processEtymologyLineage = async (
     if (currentNode) currentNode.position = [0, 0] // Default fallback coordinates
   }
 
-  const orderedEtymology = etymologyTemplates.filter(
-    entry => entry.name === 'bor' || entry.name === 'der',
+  // Include inheritance ('inh') along with borrowing ('bor') and derivation ('der')
+  const orderedEtymology = etymologyTemplates.filter(entry =>
+    ['bor', 'der', 'inh'].includes(entry.name),
   )
 
   for (const entry of orderedEtymology) {
@@ -361,6 +372,12 @@ export const processEtymologyLineage = async (
     }
 
     let sourceCoords = await getCoordinatesForLanguage(sourceLang, languoidData)
+
+    // If proto and no coords found, use macro-region center
+    if (!sourceCoords && /-pro$/.test(sourceLang) && PROTO_CENTERS[sourceLang]) {
+      const [lat, lng] = PROTO_CENTERS[sourceLang]
+      sourceCoords = { lat, lng }
+    }
 
     // Approximate coordinates if not found
     if (!sourceCoords) {
@@ -481,9 +498,21 @@ export const normalizePosition = (
  */
 export const createArrowIcon = (
   angle: number,
-  options: { size?: number; color?: string; outline?: string; outlineWidth?: number; opacity?: number } = {},
+  options: {
+    size?: number
+    color?: string
+    outline?: string
+    outlineWidth?: number
+    opacity?: number
+  } = {},
 ) => {
-  const { size = 22, color = '#3b82f6', outline = '#0f172a', outlineWidth = 1.6, opacity = 0.95 } = options
+  const {
+    size = 22,
+    color = '#3b82f6',
+    outline = '#0f172a',
+    outlineWidth = 1.6,
+    opacity = 0.95,
+  } = options
   // Using an inline SVG for sharper scaling and optional outline.
   // Coordinate system: 0 0 100 100 -> arrow pointing "up"; we rotate to bearing.
   const svg = `<svg width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">

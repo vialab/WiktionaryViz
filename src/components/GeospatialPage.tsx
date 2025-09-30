@@ -187,7 +187,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
       if (prevPos) {
         const projectDist = (zoom: number) => {
           // Leaflet expects (lat,lng)
-          const a = map.project(L.latLng(prevPos[0], prevPos[1]), zoom)
+          const a = map
+            .project(L.latLng(prevPos[0], prevPos[1]), zoom)
             .subtract(map.project(L.latLng(currentPos[0], currentPos[1]), zoom))
           return Math.hypot(a.x, a.y)
         }
@@ -214,7 +215,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           }
         } else {
           // Large enough distance: pan directly to current node. Optionally revert previous auto-zoom.
-            // Decide if we should revert (hysteresis): only revert if we previously auto-zoomed and distance is comfortably large.
+          // Decide if we should revert (hysteresis): only revert if we previously auto-zoomed and distance is comfortably large.
           if (
             autoZoomBaselineRef.current != null &&
             lastAutoZoomInRef.current != null &&
@@ -222,7 +223,9 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
             baseZoom > autoZoomBaselineRef.current + 0.1
           ) {
             // Revert to baseline while centering at currentPos.
-            map.flyTo([currentPos[0], currentPos[1]], autoZoomBaselineRef.current, { duration: 0.85 })
+            map.flyTo([currentPos[0], currentPos[1]], autoZoomBaselineRef.current, {
+              duration: 0.85,
+            })
             lastAutoZoomInRef.current = null
             autoZoomBaselineRef.current = null
           } else {
@@ -248,10 +251,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     if (currentIndex === undefined) {
       // Allow a fresh zoom-in next time playback begins
       hasAdjustedZoomRef.current = false
-  // Reset auto-zoom state so a new lineage playback starts clean.
-  autoZoomBaselineRef.current = null
-  lastAutoZoomInRef.current = null
-  lastIndexRef.current = null
+      // Reset auto-zoom state so a new lineage playback starts clean.
+      autoZoomBaselineRef.current = null
+      lastAutoZoomInRef.current = null
+      lastIndexRef.current = null
     }
   }, [currentIndex, isPlaying])
 

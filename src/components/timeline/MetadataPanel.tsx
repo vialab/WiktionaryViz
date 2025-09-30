@@ -115,24 +115,24 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = ({ card, prevCard, dr
       </div>
     )
   }
- 
+
   return (
     <div
       className="p-6 md:p-8 text-[#F5F5F5] w-full bg-[#252525] border-t border-[#2f2f2f]"
       role="region"
       aria-label="Etymology metadata"
     >
-  <div className="max-w-4xl px-2 sm:px-4">
-      <div className="font-bold text-3xl md:text-4xl mb-3 text-[#D4AF37] tracking-wide leading-snug">
-        {card.word}{' '}
-        <span className="text-lg md:text-xl text-[#B79F58] font-medium">({card.lang})</span>
-      </div>
-      {card.pronunciation && (
-        <div className="text-base md:text-lg mb-3 text-[#B79F58] font-mono bg-[#1d1d1d] inline-block px-3 py-1 rounded-md border border-[#3a3a3a]">
-          {card.pronunciation}
+      <div className="max-w-4xl px-2 sm:px-4">
+        <div className="font-bold text-3xl md:text-4xl mb-3 text-[#D4AF37] tracking-wide leading-snug">
+          {card.word}{' '}
+          <span className="text-lg md:text-xl text-[#B79F58] font-medium">({card.lang})</span>
         </div>
-      )}
-      {driftInfo}
+        {card.pronunciation && (
+          <div className="text-base md:text-lg mb-3 text-[#B79F58] font-mono bg-[#1d1d1d] inline-block px-3 py-1 rounded-md border border-[#3a3a3a]">
+            {card.pronunciation}
+          </div>
+        )}
+        {driftInfo}
       </div>
       {/* Add more metadata as needed */}
       {/* TODO [HIGH LEVEL]: Show contested/alternate etymologies and dates side-by-side with visual cues. */}

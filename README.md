@@ -48,9 +48,9 @@ WiktionaryViz lets you explore lexical evolution: ancestry timelines, descendant
 
 Design principles:
 
-* Minimal preprocessing (just an index + small derived stats files)
-* Progressive disclosure visualizations (timeline, radial, network, map)
-* Reproducible containerized backend + static frontend deployable to GitHub Pages
+- Minimal preprocessing (just an index + small derived stats files)
+- Progressive disclosure visualizations (timeline, radial, network, map)
+- Reproducible containerized backend + static frontend deployable to GitHub Pages
 
 ## 2. Architecture & Data Flow
 
@@ -62,18 +62,18 @@ Design principles:
 
 Key directories:
 
-* `backend/` – FastAPI app, index builder, services
-* `src/components/` – Visualization & page components
-* `src/hooks/` – Data fetching + caching hooks
-* `src/types/` – TypeScript domain models
-* `src/utils/` – API base, export & mapping utilities
+- `backend/` – FastAPI app, index builder, services
+- `src/components/` – Visualization & page components
+- `src/hooks/` – Data fetching + caching hooks
+- `src/types/` – TypeScript domain models
+- `src/utils/` – API base, export & mapping utilities
 
 ## 3. Prerequisites
 
-* Node.js 18+ (20.x recommended)
-* Python 3.11 recommended (>=3.9 minimum for local non-Docker)
-* Docker + Docker Compose (for container workflow)
-* ~40GB free disk (compressed + uncompressed + indices)
+- Node.js 18+ (20.x recommended)
+- Python 3.11 recommended (>=3.9 minimum for local non-Docker)
+- Docker + Docker Compose (for container workflow)
+- ~40GB free disk (compressed + uncompressed + indices)
 
 ## 4. Tech Stack
 
@@ -102,9 +102,9 @@ python build_index.py
 
 Artifacts (in `backend/data/`):
 
-* `wiktionary_data.jsonl` – Raw dump (auto-downloaded if not skipped)
-* `wiktionary_index.json` – `{word_lang_code: [byte_offset, ...]}` mapping
-* `longest_words.json`, `most_translations.json`, `most_descendants.json`
+- `wiktionary_data.jsonl` – Raw dump (auto-downloaded if not skipped)
+- `wiktionary_index.json` – `{word_lang_code: [byte_offset, ...]}` mapping
+- `longest_words.json`, `most_translations.json`, `most_descendants.json`
 
 Retrieval strategy: `mmap` + `seek` to recorded offset, read one JSON line, parse on demand.
 
@@ -153,14 +153,14 @@ npm run preview
 
 Core scripts (`package.json`):
 
-* `npm run dev` – Frontend dev server
-* `npm run backend` – FastAPI (reload) via Uvicorn
-* `npm run dev:full` – Concurrent backend + frontend
-* `npm run build` – Type check + production bundle
-* `npm run build:api` – Build with `VITE_API_BACKEND` injected
-* `npm run lint` / `format` / `format:check`
-* `npm run backend:up` / `backend:down` – Compose helpers
-* `npm run deploy` – Deploy static site to GitHub Pages
+- `npm run dev` – Frontend dev server
+- `npm run backend` – FastAPI (reload) via Uvicorn
+- `npm run dev:full` – Concurrent backend + frontend
+- `npm run build` – Type check + production bundle
+- `npm run build:api` – Build with `VITE_API_BACKEND` injected
+- `npm run lint` / `format` / `format:check`
+- `npm run backend:up` / `backend:down` – Compose helpers
+- `npm run deploy` – Deploy static site to GitHub Pages
 
 Recommended: Node 20.x, Python 3.11.
 
@@ -168,7 +168,7 @@ Recommended: Node 20.x, Python 3.11.
 
 | Variable              | Scope          | Required (Prod) | Default    | Description                                 |
 | --------------------- | -------------- | --------------- | ---------- | ------------------------------------------- |
-| `VITE_API_BACKEND`         | Frontend build | Yes             | (none)     | Absolute backend API base baked into bundle |
+| `VITE_API_BACKEND`    | Frontend build | Yes             | (none)     | Absolute backend API base baked into bundle |
 | `ALLOWED_ORIGINS`     | Backend        | No              | `*`        | Comma list for CORS                         |
 | `PORT`                | Backend        | No              | `8000`     | Uvicorn port                                |
 | `OPENAI_API_KEY`      | Backend        | If AI features  | (none)     | For IPA estimation (fallback)               |
@@ -181,10 +181,10 @@ Image: `ghcr.io/vialab/wiktionaryviz-backend:latest`
 
 Features:
 
-* Non-root runtime
-* Layer-cached dependency install
-* Streaming download + unzip on first run
-* Reusable volume to avoid re-download
+- Non-root runtime
+- Layer-cached dependency install
+- Streaming download + unzip on first run
+- Reusable volume to avoid re-download
 
 Compose volume example:
 
@@ -235,9 +235,9 @@ Serve the `dist/` output (any static host).
 
 Workflows:
 
-* `release-please.yml` – Conventional commits → automated versioning & CHANGELOG
-* `frontend-deploy.yml` – Static site build + Pages publish
-* `backend-docker.yml` – Multi-arch Docker build & GHCR push
+- `release-please.yml` – Conventional commits → automated versioning & CHANGELOG
+- `frontend-deploy.yml` – Static site build + Pages publish
+- `backend-docker.yml` – Multi-arch Docker build & GHCR push
 
 Release model: 0.x (minor may break). Conventional commit scopes recommended for clarity.
 
@@ -265,14 +265,14 @@ Suggested commit scopes: `frontend`, `backend`, `descendants`, `phonology`, `tim
 
 ## 15. License & Attribution
 
-* MIT License (see `LICENSE`).
-* Data derived from Wiktionary via Wiktextract / Kaikki.org (CC-BY-SA 3.0 & GFDL terms apply to original content).
-* Phonological feature data: PanPhon.
+- MIT License (see `LICENSE`).
+- Data derived from Wiktionary via Wiktextract / Kaikki.org (CC-BY-SA 3.0 & GFDL terms apply to original content).
+- Phonological feature data: PanPhon.
 
 Please cite Wiktionary, Wiktextract, and PanPhon in academic outputs.
 
 ## 16. Security / Responsible Use
 
-* Do not rely on AI-estimated IPA for authoritative linguistic claims.
-* Validate external input before exposing new endpoints publicly.
-* Respect Wiktionary licensing when redistributing derived datasets.
+- Do not rely on AI-estimated IPA for authoritative linguistic claims.
+- Validate external input before exposing new endpoints publicly.
+- Respect Wiktionary licensing when redistributing derived datasets.

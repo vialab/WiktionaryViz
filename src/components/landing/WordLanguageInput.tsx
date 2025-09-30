@@ -1,6 +1,9 @@
 import React from 'react'
 
-interface SimpleLang { code: string; name: string }
+interface SimpleLang {
+  code: string
+  name: string
+}
 
 interface WordLanguageInputProps {
   word: string
