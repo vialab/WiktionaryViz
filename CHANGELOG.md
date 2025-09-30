@@ -2,6 +2,19 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.10](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.9...wiktionaryviz-v0.1.10) (2025-09-30)
+
+
+### Features
+
+* added proto regions ([b1b4621](https://github.com/vialab/WiktionaryViz/commit/b1b4621ccabd6ca81c1cf8ee8b920ed7bf844b68))
+* **GeospatialPage:** add optional lang property to WordData and update lineage processing to include language in expansion ([9235654](https://github.com/vialab/WiktionaryViz/commit/9235654316719c34c69707833a64779d1cec8005))
+
+
+### Bug Fixes
+
+* **GeospatialPage:** update overlay name from "Etymology Markers" to "Translations" for clarity in the UI ([ea391a6](https://github.com/vialab/WiktionaryViz/commit/ea391a66352a38ee06555dd68957d29525b576b9))
+
 ## [0.1.9](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.8...wiktionaryviz-v0.1.9) (2025-09-05)
 
 
