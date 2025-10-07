@@ -12,6 +12,7 @@
     "format:check": "prettier . --check",
     "preview": "vite preview",
     "proto:regions": "node scripts/build_proto_regions.cjs",
+    "families:build": "node scripts/build_language_families.cjs",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
     "deploy:api": "VITE_API_BACKEND=$VITE_API_BACKEND npm run deploy",

@@ -16,6 +16,7 @@ import EtymologyLineagePath from './geospatial/EtymologyLineagePath'
 import TimelineScrubber from './geospatial/TimelineScrubber.tsx'
 import ExportGeoJSONButton from './geospatial/ExportGeoJSONButton'
 import ProtoLanguageZones from './geospatial/ProtoLanguageZones'
+import LanguageFamiliesLayer from './geospatial/LanguageFamiliesLayer'
 import type { EtymologyNode } from '@/types/etymology'
 import type { Translation } from '@/utils/mapUtils'
 
@@ -310,6 +311,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           <LayersControl.Overlay name="Proto-Language Zones">
             <LayerGroup>
               <ProtoLanguageZones path="/proto_regions.geojson" />
+            </LayerGroup>
+          </LayersControl.Overlay>
+          {/* Language Families polygons from Glottolog-derived hulls */}
+          <LayersControl.Overlay name="Language Families">
+            <LayerGroup>
+              <LanguageFamiliesLayer path="/language_families.geojson" />
             </LayerGroup>
           </LayersControl.Overlay>
           {/* Etymology Lineage Path Layer (includes associated country highlights) */}
