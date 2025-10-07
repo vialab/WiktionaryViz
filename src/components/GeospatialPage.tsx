@@ -15,6 +15,7 @@ import LineageCountryHighlights from './geospatial/LineageCountryHighlights'
 import EtymologyLineagePath from './geospatial/EtymologyLineagePath'
 import TimelineScrubber from './geospatial/TimelineScrubber.tsx'
 import ExportGeoJSONButton from './geospatial/ExportGeoJSONButton'
+import ProtoLanguageZones from './geospatial/ProtoLanguageZones'
 import type { EtymologyNode } from '@/types/etymology'
 import type { Translation } from '@/utils/mapUtils'
 
@@ -304,6 +305,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
             <MarkerClusterGroup>
               <TranslationMarkers markers={markers} />
             </MarkerClusterGroup>
+          </LayersControl.Overlay>
+          {/* Proto-Language Zones overlay from public/proto_regions.geojson */}
+          <LayersControl.Overlay name="Proto-Language Zones">
+            <LayerGroup>
+              <ProtoLanguageZones path="/proto_regions.geojson" />
+            </LayerGroup>
           </LayersControl.Overlay>
           {/* Etymology Lineage Path Layer (includes associated country highlights) */}
           <LayersControl.Overlay checked name="Etymology Lineage Path">
