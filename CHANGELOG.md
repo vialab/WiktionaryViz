@@ -2,6 +2,16 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.11](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.10...wiktionaryviz-v0.1.11) (2025-10-07)
+
+
+### Features
+
+* **language-families:** add functionality to build and display language family polygons from Glottolog data in the geospatial interface ([93e5651](https://github.com/vialab/WiktionaryViz/commit/93e5651479ed242a73bc46eb5dc15e9759f92a62))
+* **language-families:** added language families geojson ([123af8b](https://github.com/vialab/WiktionaryViz/commit/123af8b378eca451ab5878e598a80254dbcda671))
+* **proto-regions:** add scripts for generating and managing proto-language regions and integrate them into the geospatial component ([8d195a5](https://github.com/vialab/WiktionaryViz/commit/8d195a5deecb86f5c1209bd5257deeb8cc59802f))
+* **proto-regions:** added proto regions geojson ([bd52fb3](https://github.com/vialab/WiktionaryViz/commit/bd52fb33de36100f37b86181f4e76889009cf8d2))
+
 ## [0.1.10](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.9...wiktionaryviz-v0.1.10) (2025-09-30)
 
 
