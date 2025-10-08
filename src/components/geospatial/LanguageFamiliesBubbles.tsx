@@ -47,6 +47,8 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
   const map = useMap()
   const [paths, setPaths] = useState<PathEntry[]>([])
   const [hoverId, setHoverId] = useState<string | null>(null)
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null)
+  const svgRef = useRef<SVGSVGElement | null>(null)
   const bubble = useMemo(() => new BubbleSet(), [])
   const simplifiers = useMemo(
     () => [new ShapeSimplifier(0.0), new BSplineShapeGenerator(), new ShapeSimplifier(0.0)],
@@ -142,6 +144,7 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
   return (
     <Pane name="language-families-bubbles" style={{ zIndex: 536 }}>
       <svg
+        ref={svgRef}
         width={svgSize.w}
         height={svgSize.h}
         style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible' }}
@@ -159,35 +162,53 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
                 strokeWidth={hovered ? 2.25 : 1.5}
                 style={{ pointerEvents: 'visiblePainted', cursor: 'default' }}
                 onMouseEnter={() => setHoverId(p.id)}
-                onMouseLeave={() => setHoverId(prev => (prev === p.id ? null : prev))}
+                onMouseLeave={() => {
+                  setHoverId(prev => (prev === p.id ? null : prev))
+                  setHoverPos(null)
+                }}
+                onMouseMove={e => {
+                  const svg = svgRef.current
+                  if (!svg) return
+                  const rect = svg.getBoundingClientRect()
+                  const x = e.clientX - rect.left
+                  const y = e.clientY - rect.top
+                  const OFFSET_X = 10
+                  const OFFSET_Y = -10
+                  setHoverPos({ x: x + OFFSET_X, y: y + OFFSET_Y })
+                }}
               >
                 <title>{p.title}</title>
               </path>
-              {hovered && (
-                <g
-                  transform={`translate(${p.labelX}, ${p.labelY})`}
-                  style={{ pointerEvents: 'none' }}
-                >
-                  <text
-                    x={0}
-                    y={0}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fontSize={12}
-                    fill="#ffffff"
-                    style={{
-                      paintOrder: 'stroke',
-                      stroke: 'rgba(0,0,0,0.85)',
-                      strokeWidth: 3,
-                    }}
-                  >
-                    {p.name}
-                  </text>
-                </g>
-              )}
             </g>
           )
         })}
+        {/* Render the hover label last so it's above all bubble paths */}
+        {hoverId && (() => {
+          const p = paths.find(pp => pp.id === hoverId)
+          if (!p) return null
+          const pos = hoverPos ?? { x: p.labelX, y: p.labelY }
+          return (
+            <g key="hover-label" transform={`translate(${pos.x}, ${pos.y})`} style={{ pointerEvents: 'none' }}>
+              {/* Background pill using textLength unknown: approximate with a rect via <text> measurement is complex; keep stroke-text for simplicity */}
+              <text
+                x={0}
+                y={0}
+                textAnchor="start"
+                dominantBaseline="hanging"
+                fontSize={16}
+                fill="#ffffff"
+                style={{
+                  paintOrder: 'stroke',
+                  stroke: 'rgba(0,0,0,0.9)',
+                  strokeWidth: 3,
+                  filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))',
+                }}
+              >
+                {` ${p.name} `}
+              </text>
+            </g>
+          )
+        })()}
       </svg>
     </Pane>
   )
