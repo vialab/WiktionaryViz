@@ -192,6 +192,18 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
             setHoverCandidates(null)
           }
         }}
+        onWheel={e => {
+          // Cycle between overlapping candidates when not locked
+          if (!hoverCandidates || hoverCandidates.length <= 1 || selectedId) return
+          e.preventDefault()
+          e.stopPropagation()
+          const len = hoverCandidates.length
+          const dir = e.deltaY > 0 ? 1 : -1
+          const next = (menuIndex + dir + len) % len
+          setMenuIndex(next)
+          const choice = hoverCandidates[next]
+          if (choice) setHoverId(choice.id)
+        }}
       >
         {(() => {
           const activeId = selectedId || hoverId || null
@@ -320,13 +332,16 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
             </>
           )
         })()}
-        {/* Render the hover label last so it's above all bubble paths */}
+    {/* Render the hover label last so it's above all bubble paths */}
   {(selectedId || hoverId) &&
           (() => {
       const activeId = selectedId || hoverId
       const p = paths.find(pp => pp.id === activeId)
             if (!p) return null
       const pos = hoverPos ?? { x: p.labelX, y: p.labelY }
+    const multi = hoverCandidates && hoverCandidates.length > 1 && !selectedId
+    const idx = multi ? hoverCandidates!.findIndex(c => c.id === activeId) : -1
+    const badge = multi && idx >= 0 ? `(${idx + 1}/${hoverCandidates!.length}) ` : ''
             return (
               <g
                 key="hover-label"
@@ -348,59 +363,11 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
                     filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))',
                   }}
                 >
-      {` ${p.name}${selectedId ? ' 🔒' : ''} `}
+    {` ${badge}${p.name}${selectedId ? ' 🔒' : ''} `}
                 </text>
               </g>
             )
           })()}
-
-        {/* Disambiguation menu when multiple bubbles are under cursor */}
-    {hoverCandidates && hoverCandidates.length > 1 && hoverPos && (
-          <g
-            key="hover-menu"
-      transform={`translate(${hoverPos.x }, ${hoverPos.y + 28})`}
-            style={{ pointerEvents: 'auto' }}
-            onWheel={e => {
-              e.preventDefault()
-              e.stopPropagation()
-              const len = hoverCandidates.length
-              if (!len) return
-              const dir = e.deltaY > 0 ? 1 : -1
-              setMenuIndex(i => (i + dir + len) % len)
-            }}
-          >
-            {/* Panel background */}
-            <rect x={-6} y={-6} rx={6} ry={6} width={240} height={hoverCandidates.length * 22 + 12} fill="rgba(10,10,15,0.92)" stroke="rgba(255,255,255,0.2)" />
-            {hoverCandidates.slice(0, 8).map((c, idx) => {
-              const isActive = idx === menuIndex
-              return (
-              <g
-                key={c.id}
-                transform={`translate(0, ${idx * 22})`}
-                style={{ cursor: 'pointer' }}
-                onMouseDown={e => {
-                  e.stopPropagation()
-      setHoverId(c.id)
-      setSelectedId(c.id)
-                  setHoverCandidates(null)
-                }}
-                onMouseEnter={() => setMenuIndex(idx)}
-              >
-                <rect x={-4} y={0} width={232} height={20} fill={isActive ? 'rgba(255,255,255,0.08)' : 'transparent'} />
-                <rect x={0} y={4} width={12} height={12} fill={c.color} rx={2} ry={2} />
-                <text
-                  x={18}
-                  y={14}
-                  fontSize={13}
-                  fill="#ffffff"
-                  style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.9)', strokeWidth: 2 }}
-                >
-                  {c.name}
-                </text>
-              </g>
-            )})}
-          </g>
-        )}
       </svg>
     </Pane>
   )
