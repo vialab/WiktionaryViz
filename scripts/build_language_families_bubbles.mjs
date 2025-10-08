@@ -24,7 +24,7 @@ function project([lon, lat]) {
   return [x, Math.max(-max, Math.min(max, y))]
 }
 function unproject([x, y]) {
-  const lon = (x / R) / DEG2RAD
+  const lon = x / R / DEG2RAD
   const lat = (2 * Math.atan(Math.exp(y / R)) - Math.PI / 2) / DEG2RAD
   return [lon, lat]
 }
@@ -175,7 +175,7 @@ async function build() {
     // Build rectangles and pad them
     const rectsRaw = Array.from(cells).map(gridRectFromKey)
     const rects = BubbleSet.addPadding(rectsRaw, PAD)
-  let list = []
+    let list = []
     try {
       list = bubbles.createOutline(rects, [], null)
     } catch {
@@ -206,12 +206,12 @@ async function build() {
       continue
     }
 
-  // list is an array of points (objects with x,y)
-  const pts = Array.isArray(list) ? list.map(p => [p.x, p.y]) : []
+    // list is an array of points (objects with x,y)
+    const pts = Array.isArray(list) ? list.map(p => [p.x, p.y]) : []
 
     // Ensure closed ring and simplify further with RDP in projected space
     if (pts.length >= 3) {
-  const rdp = simplifyRDP(pts, 10_000) // 10km tolerance
+      const rdp = simplifyRDP(pts, 10_000) // 10km tolerance
       const closed = rdp[0][0] === rdp[rdp.length - 1][0] && rdp[0][1] === rdp[rdp.length - 1][1]
       const ring = closed ? rdp : rdp.concat([rdp[0]])
       const ringLonLat = ring.map(unproject)

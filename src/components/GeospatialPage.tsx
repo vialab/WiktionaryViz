@@ -338,7 +338,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           </LayersControl.Overlay>
           {/* Language Families polygons from Glottolog-derived hulls */}
           <LayersControl.Overlay name="Language Families">
-            <LayerGroup ref={(instance) => setLanguageFamiliesGroup(instance)}>
+            <LayerGroup ref={instance => setLanguageFamiliesGroup(instance)}>
               {showLanguageFamilies && (
                 <LanguageFamiliesBubbles path="/language_families.geojson" />
               )}

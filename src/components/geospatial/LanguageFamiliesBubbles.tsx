@@ -1,15 +1,8 @@
 import { FC, useEffect, useMemo, useRef, useState } from 'react'
 import { Pane, useMap } from 'react-leaflet'
-import type { FeatureCollection, Geometry, Feature, Polygon } from 'geojson'
-import useLanguageFamiliesGeoJSON, {
-  LanguageFamilyProps,
-} from '@/hooks/useLanguageFamiliesGeoJSON'
-import {
-  BSplineShapeGenerator,
-  BubbleSet,
-  PointPath,
-  ShapeSimplifier,
-} from 'bubblesets'
+import type { FeatureCollection, Geometry, Feature, Polygon, MultiPoint } from 'geojson'
+import useLanguageFamiliesGeoJSON, { LanguageFamilyProps } from '@/hooks/useLanguageFamiliesGeoJSON'
+import { BSplineShapeGenerator, BubbleSet, PointPath, ShapeSimplifier } from 'bubblesets'
 
 type Props = { path?: string }
 
@@ -68,39 +61,56 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
         sizeRef.current = { w, h }
         setSvgSize({ w, h })
       }
-  const newPaths: PathEntry[] = []
+      const newPaths: PathEntry[] = []
       const pad = 6
       const dot = 8 // rectangle size for each sampled vertex (in px)
 
       const project = (lat: number, lon: number) => map.latLngToLayerPoint([lat, lon])
 
-      const eachFeature = (
-        f: Feature<Geometry, LanguageFamilyProps>,
-      ): void => {
-        if (f.geometry?.type !== 'Polygon') return
-  const id = f.properties?.id || ''
-  const color = colorForId(id)
-  const name = f.properties?.name ?? id
-  const title = `${name} (${f.properties?.point_count ?? 0})`
-        // Use outer ring only
-        const poly = f.geometry as Polygon
-        const ring = poly.coordinates[0] || []
-        if (ring.length < 3) return
-        // Sample vertices to reduce rectangles; aim for at most ~48 points per feature
-        const step = Math.max(1, Math.ceil(ring.length / 48))
+      const eachFeature = (f: Feature<Geometry, LanguageFamilyProps>): void => {
+        if (!f.geometry) return
+        const id = f.properties?.id || ''
+        const color = colorForId(id)
+        const name = f.properties?.name ?? id
+        const title = `${name} (${f.properties?.point_count ?? 0})`
         const rects: { x: number; y: number; width: number; height: number }[] = []
         let minX = Infinity,
           minY = Infinity,
           maxX = -Infinity,
           maxY = -Infinity
-        for (let i = 0; i < ring.length; i += step) {
-          const [lon, lat] = ring[i]
-          const p = project(lat, lon)
-          rects.push({ x: p.x - dot / 2, y: p.y - dot / 2, width: dot, height: dot })
-          if (p.x < minX) minX = p.x
-          if (p.y < minY) minY = p.y
-          if (p.x > maxX) maxX = p.x
-          if (p.y > maxY) maxY = p.y
+
+        if (f.geometry.type === 'Polygon') {
+          // Use outer ring only
+          const poly = f.geometry as Polygon
+          const ring = poly.coordinates[0] || []
+          if (ring.length < 3) return
+          // Sample vertices to reduce rectangles; aim for at most ~48 points per feature
+          const step = Math.max(1, Math.ceil(ring.length / 48))
+          for (let i = 0; i < ring.length; i += step) {
+            const [lon, lat] = ring[i]
+            const p = project(lat, lon)
+            rects.push({ x: p.x - dot / 2, y: p.y - dot / 2, width: dot, height: dot })
+            if (p.x < minX) minX = p.x
+            if (p.y < minY) minY = p.y
+            if (p.x > maxX) maxX = p.x
+            if (p.y > maxY) maxY = p.y
+          }
+        } else if (f.geometry.type === 'MultiPoint') {
+          const mp = f.geometry as MultiPoint
+          const coords = mp.coordinates || []
+          // Sample points; if there are many, downsample to ~96 rects
+          const step = Math.max(1, Math.ceil(coords.length / 96))
+          for (let i = 0; i < coords.length; i += step) {
+            const [lon, lat] = coords[i]
+            const p = project(lat, lon)
+            rects.push({ x: p.x - dot / 2, y: p.y - dot / 2, width: dot, height: dot })
+            if (p.x < minX) minX = p.x
+            if (p.y < minY) minY = p.y
+            if (p.x > maxX) maxX = p.x
+            if (p.y > maxY) maxY = p.y
+          }
+        } else {
+          return
         }
         if (rects.length < 1) return
         try {
@@ -183,32 +193,37 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
           )
         })}
         {/* Render the hover label last so it's above all bubble paths */}
-        {hoverId && (() => {
-          const p = paths.find(pp => pp.id === hoverId)
-          if (!p) return null
-          const pos = hoverPos ?? { x: p.labelX, y: p.labelY }
-          return (
-            <g key="hover-label" transform={`translate(${pos.x}, ${pos.y})`} style={{ pointerEvents: 'none' }}>
-              {/* Background pill using textLength unknown: approximate with a rect via <text> measurement is complex; keep stroke-text for simplicity */}
-              <text
-                x={0}
-                y={0}
-                textAnchor="start"
-                dominantBaseline="hanging"
-                fontSize={16}
-                fill="#ffffff"
-                style={{
-                  paintOrder: 'stroke',
-                  stroke: 'rgba(0,0,0,0.9)',
-                  strokeWidth: 3,
-                  filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))',
-                }}
+        {hoverId &&
+          (() => {
+            const p = paths.find(pp => pp.id === hoverId)
+            if (!p) return null
+            const pos = hoverPos ?? { x: p.labelX, y: p.labelY }
+            return (
+              <g
+                key="hover-label"
+                transform={`translate(${pos.x}, ${pos.y})`}
+                style={{ pointerEvents: 'none' }}
               >
-                {` ${p.name} `}
-              </text>
-            </g>
-          )
-        })()}
+                {/* Background pill using textLength unknown: approximate with a rect via <text> measurement is complex; keep stroke-text for simplicity */}
+                <text
+                  x={0}
+                  y={0}
+                  textAnchor="start"
+                  dominantBaseline="hanging"
+                  fontSize={16}
+                  fill="#ffffff"
+                  style={{
+                    paintOrder: 'stroke',
+                    stroke: 'rgba(0,0,0,0.9)',
+                    strokeWidth: 3,
+                    filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))',
+                  }}
+                >
+                  {` ${p.name} `}
+                </text>
+              </g>
+            )
+          })()}
       </svg>
     </Pane>
   )

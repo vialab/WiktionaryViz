@@ -148,23 +148,6 @@ async function build() {
   const features = []
   for (const [fid, pts] of familyPoints.entries()) {
     if (!pts || pts.length === 0) continue // skip empty
-    let coordinates
-    if (pts.length === 1) {
-      coordinates = [rectAround(pts[0])]
-    } else if (pts.length === 2) {
-      const m = meanPoint(pts)
-      coordinates = [rectAround(m, 1.0, 0.75)]
-    } else {
-      const hull = convexHull(pts)
-      if (hull.length >= 3) {
-        const ring = hull.concat([hull[0]])
-        coordinates = [ring]
-      } else {
-        const m = meanPoint(pts)
-        coordinates = [rectAround(m, 1.0, 0.75)]
-      }
-    }
-
     const center = meanPoint(pts)
     const famName = idToName.get(fid) || fid
     features.push({
@@ -177,8 +160,8 @@ async function build() {
         label_lat: center[1],
       },
       geometry: {
-        type: 'Polygon',
-        coordinates,
+        type: 'MultiPoint',
+        coordinates: pts, // all language/dialect points in this family
       },
     })
   }
