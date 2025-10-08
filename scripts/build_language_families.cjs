@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
  * Build Language Family polygons from Glottolog languoid.csv
- * - Families are rows where level === 'family'.
- * - Languages/Dialects are rows where level in {'language','dialect'} with lat/lon and parent_id referencing a family id.
- * - For each family, compute a convex hull of descendant coordinates; fallback to a small rectangle if < 3 points.
+ * - Group by family_id for each row.
+ * - Use only language/dialect rows that have lat/lon; add their coordinates to the group identified by their family_id.
+ * - For each family_id, compute a convex hull of its coordinates; fallback to a small rectangle if < 3 points.
  * - Output: public/language_families.geojson (FeatureCollection of Polygon features)
  *
  * Notes:
@@ -106,7 +106,7 @@ async function build() {
     throw new Error(`CSV not found: ${CSV_PATH}`)
   }
 
-  const families = new Map() // id -> { id, name }
+  const idToName = new Map() // any id -> name (useful to label family_id)
   const familyPoints = new Map() // family_id -> Array<[lon,lat]>
 
   const stream = fs.createReadStream(CSV_PATH, { encoding: 'utf8' })
@@ -129,31 +129,25 @@ async function build() {
     const id = cols[idx('id')]
     const name = cols[idx('name')]
     const level = cols[idx('level')]
-    const parent_id = cols[idx('parent_id')]
+    const family_id = cols[idx('family_id')]
     const latStr = cols[idx('latitude')]
     const lonStr = cols[idx('longitude')]
 
-    if (level === 'family') {
-      families.set(id, { id, name })
-      if (!familyPoints.has(id)) familyPoints.set(id, [])
-      continue
-    }
+    // Record name lookup for any id (family_id will reference one of these ids)
+    if (id) idToName.set(id, name)
 
-    if ((level === 'language' || level === 'dialect') && parent_id) {
+    if ((level === 'language' || level === 'dialect') && family_id) {
       const lat = parseFloat(latStr)
       const lon = parseFloat(lonStr)
       if (!isFinite(lat) || !isFinite(lon)) continue
-      // Attach to parent family if exists (direct parent family)
-      if (families.has(parent_id)) {
-        familyPoints.get(parent_id).push([lon, lat])
-      }
+      if (!familyPoints.has(family_id)) familyPoints.set(family_id, [])
+      familyPoints.get(family_id).push([lon, lat])
     }
   }
 
   const features = []
-  for (const [fid, fam] of families.entries()) {
-    const pts = familyPoints.get(fid) || []
-    if (pts.length === 0) continue // no geometry for this family
+  for (const [fid, pts] of familyPoints.entries()) {
+    if (!pts || pts.length === 0) continue // skip empty
     let coordinates
     if (pts.length === 1) {
       coordinates = [rectAround(pts[0])]
@@ -172,11 +166,12 @@ async function build() {
     }
 
     const center = meanPoint(pts)
+    const famName = idToName.get(fid) || fid
     features.push({
       type: 'Feature',
       properties: {
         id: fid,
-        name: fam.name,
+        name: famName,
         point_count: pts.length,
         label_lon: center[0],
         label_lat: center[1],
