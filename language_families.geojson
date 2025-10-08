@@ -625,30 +625,6 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "spee1234",
-        "name": "Speech Register",
-        "point_count": 12,
-        "label_lon": 24.995593083333336,
-        "label_lat": 24.86808075
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [-68.10176, -15.88451],
-            [27.942, -26.247],
-            [157.156112, 5.78748],
-            [14.4036, 62.2313],
-            [9.48913, 62.6217],
-            [-7.73983, 53.7907],
-            [-68.10176, -15.88451]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "id": "kamu1264",
         "name": "Kamula-Elevala",
         "point_count": 3,
@@ -4050,29 +4026,6 @@
             [-105.985, 35.99745],
             [-107.985, 35.99745],
             [-107.985, 34.49745]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "arti1236",
-        "name": "Artificial Language",
-        "point_count": 5,
-        "label_lon": 70.269688,
-        "label_lat": 23.484684
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [2.615, 48.203],
-            [168.25945, -17.57023],
-            [160.219, -11.615],
-            [17.44454, 49.07835],
-            [2.81045, 49.3273],
-            [2.615, 48.203]
           ]
         ]
       }
