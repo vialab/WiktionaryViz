@@ -41,6 +41,7 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
   const [paths, setPaths] = useState<PathEntry[]>([])
   const [hoverId, setHoverId] = useState<string | null>(null)
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null)
+  const [hoverCandidates, setHoverCandidates] = useState<PathEntry[] | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
   const bubble = useMemo(() => new BubbleSet(), [])
   const simplifiers = useMemo(
@@ -161,6 +162,7 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
         onMouseLeave={() => {
           setHoverId(null)
           setHoverPos(null)
+          setHoverCandidates(null)
         }}
       >
         {(() => {
@@ -180,11 +182,13 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
                   stroke={p.color}
                   strokeOpacity={strokeOpacity}
                   strokeWidth={strokeWidth}
+                  data-bubble-id={p.id}
                   style={{ pointerEvents: 'visiblePainted', cursor: 'default' }}
                   onMouseEnter={() => setHoverId(p.id)}
                   onMouseLeave={() => {
                     setHoverId(prev => (prev === p.id ? null : prev))
                     setHoverPos(null)
+                    setHoverCandidates(null)
                   }}
                   onMouseMove={e => {
                     const svg = svgRef.current
@@ -195,6 +199,27 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
                     const OFFSET_X = 10
                     const OFFSET_Y = -10
                     setHoverPos({ x: x + OFFSET_X, y: y + OFFSET_Y })
+
+                    // Disambiguation: find all bubble paths under cursor
+                    const els = document.elementsFromPoint(e.clientX, e.clientY)
+                    const ids: string[] = []
+                    for (const el of els) {
+                      if (
+                        el instanceof SVGPathElement &&
+                        (el as SVGPathElement).hasAttribute('data-bubble-id')
+                      ) {
+                        const id = (el as SVGPathElement).getAttribute('data-bubble-id')
+                        if (id && !ids.includes(id)) ids.push(id)
+                      }
+                    }
+                    if (ids.length > 1) {
+                      const cands = ids
+                        .map(id => paths.find(pp => pp.id === id))
+                        .filter(Boolean) as PathEntry[]
+                      setHoverCandidates(cands)
+                    } else {
+                      setHoverCandidates(null)
+                    }
                   }}
                 >
                   <title>{p.title}</title>
@@ -243,6 +268,42 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
               </g>
             )
           })()}
+
+        {/* Disambiguation menu when multiple bubbles are under cursor */}
+        {hoverCandidates && hoverCandidates.length > 1 && hoverPos && (
+          <g
+            key="hover-menu"
+            transform={`translate(${hoverPos.x + 8}, ${hoverPos.y + 8})`}
+            style={{ pointerEvents: 'auto' }}
+          >
+            {/* Panel background */}
+            <rect x={-6} y={-6} rx={6} ry={6} width={220} height={hoverCandidates.length * 22 + 12} fill="rgba(10,10,15,0.92)" stroke="rgba(255,255,255,0.2)" />
+            {hoverCandidates.slice(0, 6).map((c, idx) => (
+              <g
+                key={c.id}
+                transform={`translate(0, ${idx * 22})`}
+                style={{ cursor: 'pointer' }}
+                onMouseDown={e => {
+                  e.stopPropagation()
+                  setHoverId(c.id)
+                  setHoverCandidates(null)
+                }}
+              >
+                <rect x={-4} y={0} width={212} height={20} fill="transparent" />
+                <rect x={0} y={4} width={12} height={12} fill={c.color} rx={2} ry={2} />
+                <text
+                  x={18}
+                  y={14}
+                  fontSize={13}
+                  fill="#ffffff"
+                  style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.9)', strokeWidth: 2 }}
+                >
+                  {c.name}
+                </text>
+              </g>
+            ))}
+          </g>
+        )}
       </svg>
     </Pane>
   )
