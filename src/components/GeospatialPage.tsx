@@ -10,7 +10,6 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 import MarkerClusterGroup from 'react-leaflet-markercluster'
 import 'react-leaflet-markercluster/styles'
 import TranslationMarkers, { TranslationMarker } from './geospatial/TranslationMarkers'
-// CountriesLayer removed: hover interaction replaced by lineage-focused highlights.
 import LineageCountryHighlights from './geospatial/LineageCountryHighlights'
 import EtymologyLineagePath from './geospatial/EtymologyLineagePath'
 import TimelineScrubber from './geospatial/TimelineScrubber.tsx'
@@ -55,6 +54,9 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   const [showAllPopups, setShowAllPopups] = useState(false)
   const dwellDurationRef = useRef<number>(1200) // ms pause after each transition for reading (extended for readability)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
+  // Track visibility of LayersControl overlays that render non-Leaflet DOM (bubbles SVG)
+  const [showLanguageFamilies, setShowLanguageFamilies] = useState(false)
+  const [languageFamiliesGroup, setLanguageFamiliesGroup] = useState<L.LayerGroup | null>(null)
   const hasAdjustedZoomRef = useRef(false)
   const playbackTimerRef = useRef<number | null>(null)
   // --- Dynamic zoom refs (distance-based small-jump assist) ---
@@ -267,6 +269,27 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     }
   }, [])
 
+  // Bind to overlay add/remove for the Language Families overlay so we can mount/unmount bubbles SVG
+  useEffect(() => {
+    const map = mapInstance
+    const group = languageFamiliesGroup
+    if (!map || !group) return
+    const onAdd = (e: L.LayersControlEvent) => {
+      if (e.layer === group) setShowLanguageFamilies(true)
+    }
+    const onRemove = (e: L.LayersControlEvent) => {
+      if (e.layer === group) setShowLanguageFamilies(false)
+    }
+    map.on('overlayadd', onAdd)
+    map.on('overlayremove', onRemove)
+    // initialize based on whether the group is currently on the map
+    setShowLanguageFamilies(map.hasLayer(group))
+    return () => {
+      map.off('overlayadd', onAdd)
+      map.off('overlayremove', onRemove)
+    }
+  }, [mapInstance, languageFamiliesGroup])
+
   return (
     <section id="geospatial" className="w-full h-screen bg-gray-900 text-white">
       <MapContainer
@@ -313,10 +336,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
               <ProtoLanguageZones path="/proto_regions.geojson" />
             </LayerGroup>
           </LayersControl.Overlay>
-          {/* Language Families bubbles via BubbleSets derived from existing GeoJSON */}
+          {/* Language Families polygons from Glottolog-derived hulls */}
           <LayersControl.Overlay name="Language Families">
-            <LayerGroup>
-              <LanguageFamiliesBubbles path="/language_families.geojson" />
+            <LayerGroup ref={(instance) => setLanguageFamiliesGroup(instance)}>
+              {showLanguageFamilies && (
+                <LanguageFamiliesBubbles path="/language_families.geojson" />
+              )}
             </LayerGroup>
           </LayersControl.Overlay>
           {/* Etymology Lineage Path Layer (includes associated country highlights) */}
