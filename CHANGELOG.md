@@ -2,6 +2,16 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.12](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.11...wiktionaryviz-v0.1.12) (2025-10-08)
+
+
+### Features
+
+* add Language Families Bubbles component and related scripts for visualizing language family data using BubbleSets ([e5b2353](https://github.com/vialab/WiktionaryViz/commit/e5b2353115b7a3926f1cfa83f6103c41bf7d63d3))
+* **GeospatialPage:** implement Language Families overlay with dynamic visibility and remove LanguageFamiliesLayer component for cleaner code structure ([7f4f07b](https://github.com/vialab/WiktionaryViz/commit/7f4f07ba60a5a1acb81c9259e5e203c38b190f61))
+* **LanguageFamiliesBubbles:** add hover position state and label rendering for improved user interaction ([ffcbca8](https://github.com/vialab/WiktionaryViz/commit/ffcbca8e63b7635b22375a3bc5e66d8683b22292))
+* **LanguageFamiliesBubbles:** enhance bubble component with hover effects and additional properties for improved interactivity and labeling ([463ab94](https://github.com/vialab/WiktionaryViz/commit/463ab9456f129f4b9b0dbdf8620dc7683bb5345b))
+
 ## [0.1.11](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.10...wiktionaryviz-v0.1.11) (2025-10-07)
 
 
