@@ -158,40 +158,59 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
         width={svgSize.w}
         height={svgSize.h}
         style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible' }}
+        onMouseLeave={() => {
+          setHoverId(null)
+          setHoverPos(null)
+        }}
       >
-        {paths.map(p => {
-          const hovered = hoverId === p.id
+        {(() => {
+          const hovered = hoverId ? paths.find(p => p.id === hoverId) : null
+          const others = hoverId ? paths.filter(p => p.id !== hoverId) : paths
+          const renderPath = (p: PathEntry, isHovered: boolean) => {
+            const baseFill = 0.16
+            const fillOpacity = isHovered ? 0.28 : hoverId ? baseFill * 0.35 : baseFill
+            const strokeOpacity = isHovered ? 0.98 : hoverId ? 0.45 : 0.95
+            const strokeWidth = isHovered ? 2.4 : 1.4
+            return (
+              <g key={p.id}>
+                <path
+                  d={p.d}
+                  fill={p.color}
+                  fillOpacity={fillOpacity}
+                  stroke={p.color}
+                  strokeOpacity={strokeOpacity}
+                  strokeWidth={strokeWidth}
+                  style={{ pointerEvents: 'visiblePainted', cursor: 'default' }}
+                  onMouseEnter={() => setHoverId(p.id)}
+                  onMouseLeave={() => {
+                    setHoverId(prev => (prev === p.id ? null : prev))
+                    setHoverPos(null)
+                  }}
+                  onMouseMove={e => {
+                    const svg = svgRef.current
+                    if (!svg) return
+                    const rect = svg.getBoundingClientRect()
+                    const x = e.clientX - rect.left
+                    const y = e.clientY - rect.top
+                    const OFFSET_X = 10
+                    const OFFSET_Y = -10
+                    setHoverPos({ x: x + OFFSET_X, y: y + OFFSET_Y })
+                  }}
+                >
+                  <title>{p.title}</title>
+                </path>
+              </g>
+            )
+          }
           return (
-            <g key={p.id}>
-              <path
-                d={p.d}
-                fill={p.color}
-                fillOpacity={hovered ? 0.24 : 0.16}
-                stroke={p.color}
-                strokeOpacity={0.95}
-                strokeWidth={hovered ? 2.25 : 1.5}
-                style={{ pointerEvents: 'visiblePainted', cursor: 'default' }}
-                onMouseEnter={() => setHoverId(p.id)}
-                onMouseLeave={() => {
-                  setHoverId(prev => (prev === p.id ? null : prev))
-                  setHoverPos(null)
-                }}
-                onMouseMove={e => {
-                  const svg = svgRef.current
-                  if (!svg) return
-                  const rect = svg.getBoundingClientRect()
-                  const x = e.clientX - rect.left
-                  const y = e.clientY - rect.top
-                  const OFFSET_X = 10
-                  const OFFSET_Y = -10
-                  setHoverPos({ x: x + OFFSET_X, y: y + OFFSET_Y })
-                }}
-              >
-                <title>{p.title}</title>
-              </path>
-            </g>
+            <>
+              {/* Render non-hovered first (possibly faded) */}
+              {others.map(p => renderPath(p, false))}
+              {/* Render hovered last to raise z-order */}
+              {hovered ? renderPath(hovered, true) : null}
+            </>
           )
-        })}
+        })()}
         {/* Render the hover label last so it's above all bubble paths */}
         {hoverId &&
           (() => {
