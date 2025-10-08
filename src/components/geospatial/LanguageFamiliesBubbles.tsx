@@ -42,6 +42,8 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
   const [hoverId, setHoverId] = useState<string | null>(null)
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null)
   const [hoverCandidates, setHoverCandidates] = useState<PathEntry[] | null>(null)
+  const [menuIndex, setMenuIndex] = useState<number>(0)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
   const bubble = useMemo(() => new BubbleSet(), [])
   const simplifiers = useMemo(
@@ -150,6 +152,24 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
     }
   }, [data, recompute, map])
 
+  // Keyboard handling: Escape to unlock/close menu
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedId(null)
+        setHoverId(null)
+        setHoverCandidates(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // Reset menu selection when candidate list changes
+  useEffect(() => {
+    if (hoverCandidates && hoverCandidates.length > 0) setMenuIndex(0)
+  }, [hoverCandidates])
+
   if (!data) return null
 
   return (
@@ -164,17 +184,77 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
           setHoverPos(null)
           setHoverCandidates(null)
         }}
+        onMouseDown={e => {
+          // Click background clears selection
+          if (e.target === svgRef.current) {
+            setSelectedId(null)
+            setHoverId(null)
+            setHoverCandidates(null)
+          }
+        }}
       >
         {(() => {
-          const hovered = hoverId ? paths.find(p => p.id === hoverId) : null
-          const others = hoverId ? paths.filter(p => p.id !== hoverId) : paths
+          const activeId = selectedId || hoverId || null
+          const hovered = activeId ? paths.find(p => p.id === activeId) : null
+          const others = activeId ? paths.filter(p => p.id !== activeId) : paths
           const renderPath = (p: PathEntry, isHovered: boolean) => {
             const baseFill = 0.16
-            const fillOpacity = isHovered ? 0.28 : hoverId ? baseFill * 0.35 : baseFill
-            const strokeOpacity = isHovered ? 0.98 : hoverId ? 0.45 : 0.95
+            const hasFocus = !!(selectedId || hoverId)
+            const fillOpacity = isHovered ? 0.28 : hasFocus ? baseFill * 0.35 : baseFill
+            const strokeOpacity = isHovered ? 0.98 : hasFocus ? 0.45 : 0.95
             const strokeWidth = isHovered ? 2.4 : 1.4
             return (
               <g key={p.id}>
+                {/* Invisible fat hit-area to improve targeting in dense clusters */}
+                <path
+                  d={p.d}
+                  fill="none"
+                  stroke="#000"
+                  strokeOpacity={0}
+                  strokeWidth={28}
+                  data-bubble-id={p.id}
+                  style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+                  onMouseEnter={() => setHoverId(p.id)}
+                  onMouseLeave={() => {
+                    setHoverId(prev => (prev === p.id ? null : prev))
+                    setHoverPos(null)
+                    setHoverCandidates(null)
+                  }}
+                  onMouseMove={e => {
+                    const svg = svgRef.current
+                    if (!svg) return
+                    const rect = svg.getBoundingClientRect()
+                    const x = e.clientX - rect.left
+                    const y = e.clientY - rect.top
+                    const OFFSET_X = 10
+                    const OFFSET_Y = -10
+                    setHoverPos({ x: x + OFFSET_X, y: y + OFFSET_Y })
+                    const els = document.elementsFromPoint(e.clientX, e.clientY)
+                    const ids: string[] = []
+                    for (const el of els) {
+                      if (
+                        el instanceof SVGPathElement &&
+                        (el as SVGPathElement).hasAttribute('data-bubble-id')
+                      ) {
+                        const id = (el as SVGPathElement).getAttribute('data-bubble-id')
+                        if (id && !ids.includes(id)) ids.push(id)
+                      }
+                    }
+                    if (ids.length > 1) {
+                      const cands = ids
+                        .map(id => paths.find(pp => pp.id === id))
+                        .filter(Boolean) as PathEntry[]
+                      setHoverCandidates(cands)
+                    } else {
+                      setHoverCandidates(null)
+                    }
+                  }}
+                  onMouseDown={e => {
+                    e.stopPropagation()
+                    // Toggle lock: click again to unlock
+                    setSelectedId(prev => (prev === p.id ? null : p.id))
+                  }}
+                />
                 <path
                   d={p.d}
                   fill={p.color}
@@ -183,7 +263,7 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
                   strokeOpacity={strokeOpacity}
                   strokeWidth={strokeWidth}
                   data-bubble-id={p.id}
-                  style={{ pointerEvents: 'visiblePainted', cursor: 'default' }}
+                  style={{ pointerEvents: 'visiblePainted', cursor: 'pointer' }}
                   onMouseEnter={() => setHoverId(p.id)}
                   onMouseLeave={() => {
                     setHoverId(prev => (prev === p.id ? null : prev))
@@ -221,6 +301,10 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
                       setHoverCandidates(null)
                     }
                   }}
+                  onMouseDown={e => {
+                    e.stopPropagation()
+                    setSelectedId(prev => (prev === p.id ? null : p.id))
+                  }}
                 >
                   <title>{p.title}</title>
                 </path>
@@ -237,11 +321,12 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
           )
         })()}
         {/* Render the hover label last so it's above all bubble paths */}
-        {hoverId &&
+  {(selectedId || hoverId) &&
           (() => {
-            const p = paths.find(pp => pp.id === hoverId)
+      const activeId = selectedId || hoverId
+      const p = paths.find(pp => pp.id === activeId)
             if (!p) return null
-            const pos = hoverPos ?? { x: p.labelX, y: p.labelY }
+      const pos = hoverPos ?? { x: p.labelX, y: p.labelY }
             return (
               <g
                 key="hover-label"
@@ -263,33 +348,45 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
                     filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))',
                   }}
                 >
-                  {` ${p.name} `}
+      {` ${p.name}${selectedId ? ' 🔒' : ''} `}
                 </text>
               </g>
             )
           })()}
 
         {/* Disambiguation menu when multiple bubbles are under cursor */}
-        {hoverCandidates && hoverCandidates.length > 1 && hoverPos && (
+    {hoverCandidates && hoverCandidates.length > 1 && hoverPos && (
           <g
             key="hover-menu"
-            transform={`translate(${hoverPos.x + 8}, ${hoverPos.y + 8})`}
+      transform={`translate(${hoverPos.x }, ${hoverPos.y + 28})`}
             style={{ pointerEvents: 'auto' }}
+            onWheel={e => {
+              e.preventDefault()
+              e.stopPropagation()
+              const len = hoverCandidates.length
+              if (!len) return
+              const dir = e.deltaY > 0 ? 1 : -1
+              setMenuIndex(i => (i + dir + len) % len)
+            }}
           >
             {/* Panel background */}
-            <rect x={-6} y={-6} rx={6} ry={6} width={220} height={hoverCandidates.length * 22 + 12} fill="rgba(10,10,15,0.92)" stroke="rgba(255,255,255,0.2)" />
-            {hoverCandidates.slice(0, 6).map((c, idx) => (
+            <rect x={-6} y={-6} rx={6} ry={6} width={240} height={hoverCandidates.length * 22 + 12} fill="rgba(10,10,15,0.92)" stroke="rgba(255,255,255,0.2)" />
+            {hoverCandidates.slice(0, 8).map((c, idx) => {
+              const isActive = idx === menuIndex
+              return (
               <g
                 key={c.id}
                 transform={`translate(0, ${idx * 22})`}
                 style={{ cursor: 'pointer' }}
                 onMouseDown={e => {
                   e.stopPropagation()
-                  setHoverId(c.id)
+      setHoverId(c.id)
+      setSelectedId(c.id)
                   setHoverCandidates(null)
                 }}
+                onMouseEnter={() => setMenuIndex(idx)}
               >
-                <rect x={-4} y={0} width={212} height={20} fill="transparent" />
+                <rect x={-4} y={0} width={232} height={20} fill={isActive ? 'rgba(255,255,255,0.08)' : 'transparent'} />
                 <rect x={0} y={4} width={12} height={12} fill={c.color} rx={2} ry={2} />
                 <text
                   x={18}
@@ -301,7 +398,7 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
                   {c.name}
                 </text>
               </g>
-            ))}
+            )})}
           </g>
         )}
       </svg>
