@@ -32,12 +32,21 @@ function colorForId(id: string) {
   return palette[h % palette.length]
 }
 
-type PathEntry = { id: string; d: string; color: string; title: string }
+type PathEntry = {
+  id: string
+  d: string
+  color: string
+  title: string
+  name: string
+  labelX: number
+  labelY: number
+}
 
 const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson' }) => {
   const data = useLanguageFamiliesGeoJSON(path)
   const map = useMap()
   const [paths, setPaths] = useState<PathEntry[]>([])
+  const [hoverId, setHoverId] = useState<string | null>(null)
   const bubble = useMemo(() => new BubbleSet(), [])
   const simplifiers = useMemo(
     () => [new ShapeSimplifier(0.0), new BSplineShapeGenerator(), new ShapeSimplifier(0.0)],
@@ -57,7 +66,7 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
         sizeRef.current = { w, h }
         setSvgSize({ w, h })
       }
-      const newPaths: PathEntry[] = []
+  const newPaths: PathEntry[] = []
       const pad = 6
       const dot = 8 // rectangle size for each sampled vertex (in px)
 
@@ -67,9 +76,10 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
         f: Feature<Geometry, LanguageFamilyProps>,
       ): void => {
         if (f.geometry?.type !== 'Polygon') return
-        const id = f.properties?.id || ''
-        const color = colorForId(id)
-        const title = `${f.properties?.name ?? id} (${f.properties?.point_count ?? 0})`
+  const id = f.properties?.id || ''
+  const color = colorForId(id)
+  const name = f.properties?.name ?? id
+  const title = `${name} (${f.properties?.point_count ?? 0})`
         // Use outer ring only
         const poly = f.geometry as Polygon
         const ring = poly.coordinates[0] || []
@@ -77,17 +87,29 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
         // Sample vertices to reduce rectangles; aim for at most ~48 points per feature
         const step = Math.max(1, Math.ceil(ring.length / 48))
         const rects: { x: number; y: number; width: number; height: number }[] = []
+        let minX = Infinity,
+          minY = Infinity,
+          maxX = -Infinity,
+          maxY = -Infinity
         for (let i = 0; i < ring.length; i += step) {
           const [lon, lat] = ring[i]
           const p = project(lat, lon)
           rects.push({ x: p.x - dot / 2, y: p.y - dot / 2, width: dot, height: dot })
+          if (p.x < minX) minX = p.x
+          if (p.y < minY) minY = p.y
+          if (p.x > maxX) maxX = p.x
+          if (p.y > maxY) maxY = p.y
         }
         if (rects.length < 1) return
         try {
           const list = bubble.createOutline(BubbleSet.addPadding(rects, pad), [], null)
           const outline = new PointPath(list).transform(simplifiers)
           const d = `${outline}`
-          if (d && d.length > 0) newPaths.push({ id, d, color, title })
+          if (d && d.length > 0) {
+            const labelX = (minX + maxX) / 2
+            const labelY = (minY + maxY) / 2
+            newPaths.push({ id, d, color, title, name, labelX, labelY })
+          }
         } catch {
           // fallback: skip this feature on failure
         }
@@ -118,26 +140,54 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
   if (!data) return null
 
   return (
-    <Pane name="language-families-bubbles" style={{ zIndex: 536, pointerEvents: 'none' }}>
+    <Pane name="language-families-bubbles" style={{ zIndex: 536 }}>
       <svg
         width={svgSize.w}
         height={svgSize.h}
         style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible' }}
       >
-        {paths.map(p => (
-          <g key={p.id}>
-            <path
-              d={p.d}
-              fill={p.color}
-              fillOpacity={0.16}
-              stroke={p.color}
-              strokeOpacity={0.95}
-              strokeWidth={1.5}
-            >
-              <title>{p.title}</title>
-            </path>
-          </g>
-        ))}
+        {paths.map(p => {
+          const hovered = hoverId === p.id
+          return (
+            <g key={p.id}>
+              <path
+                d={p.d}
+                fill={p.color}
+                fillOpacity={hovered ? 0.24 : 0.16}
+                stroke={p.color}
+                strokeOpacity={0.95}
+                strokeWidth={hovered ? 2.25 : 1.5}
+                style={{ pointerEvents: 'visiblePainted', cursor: 'default' }}
+                onMouseEnter={() => setHoverId(p.id)}
+                onMouseLeave={() => setHoverId(prev => (prev === p.id ? null : prev))}
+              >
+                <title>{p.title}</title>
+              </path>
+              {hovered && (
+                <g
+                  transform={`translate(${p.labelX}, ${p.labelY})`}
+                  style={{ pointerEvents: 'none' }}
+                >
+                  <text
+                    x={0}
+                    y={0}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={12}
+                    fill="#ffffff"
+                    style={{
+                      paintOrder: 'stroke',
+                      stroke: 'rgba(0,0,0,0.85)',
+                      strokeWidth: 3,
+                    }}
+                  >
+                    {p.name}
+                  </text>
+                </g>
+              )}
+            </g>
+          )
+        })}
       </svg>
     </Pane>
   )
