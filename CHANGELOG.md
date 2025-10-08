@@ -2,6 +2,16 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.13](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.12...wiktionaryviz-v0.1.13) (2025-10-08)
+
+
+### Features
+
+* **LanguageFamiliesBubbles:** add hover candidates state and disambiguation menu for overlapping bubbles to enhance user interaction ([c67c103](https://github.com/vialab/WiktionaryViz/commit/c67c103ec960f6eebd3d48224a294c4049d508a7))
+* **LanguageFamiliesBubbles:** add mouse wheel support to cycle through overlapping candidates for improved user interaction ([9dbd37e](https://github.com/vialab/WiktionaryViz/commit/9dbd37e25855b8ed93412cc89b79195ce515e751))
+* **LanguageFamiliesBubbles:** enhance hover effects and rendering logic for improved user interaction and visual clarity ([616c903](https://github.com/vialab/WiktionaryViz/commit/616c903a42d6166f7afaf1491110acdfc4008ef2))
+* **LanguageFamiliesBubbles:** implement keyboard handling and selection logic for improved user interaction with language family bubbles ([ba1d5f4](https://github.com/vialab/WiktionaryViz/commit/ba1d5f4cd303d39fafd69a4d791184aec636f007))
+
 ## [0.1.12](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.11...wiktionaryviz-v0.1.12) (2025-10-08)
 
 
