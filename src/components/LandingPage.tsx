@@ -240,7 +240,7 @@ export default function LandingPage({
                         <p className="text-[#B79F58]">Loading…</p>
                       ) : (
                         <select
-                          className="w-full h-11 bg-transparent text-gray-100 px-2 focus:outline-none"
+                          className="w-full h-11 bg-neutral-800 text-gray-100 px-2 focus:outline-none appearance-none"
                           value={language}
                           onChange={e => setLanguage(e.target.value)}
                           aria-label="Language"
@@ -291,7 +291,7 @@ export default function LandingPage({
                             <p className="text-[#B79F58]">Loading…</p>
                           ) : (
                             <select
-                              className="w-full h-11 bg-transparent text-gray-100 px-2 focus:outline-none"
+                              className="w-full h-11 bg-neutral-800 text-gray-100 px-2 focus:outline-none appearance-none"
                               value={languageB}
                               onChange={e => setLanguageB(e.target.value)}
                               aria-label="Language for second word"
