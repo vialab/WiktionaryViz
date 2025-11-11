@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import ExplorationTypeSelector from './landing/ExplorationTypeSelector'
 import WordLanguageInput from './landing/WordLanguageInput'
-import VisualizationTypeSelector from './landing/VisualizationTypeSelector'
 import { useAvailableLanguages } from '@/hooks/useAvailableLanguages'
 import { useInterestingWord } from '@/hooks/useInterestingWord'
 
@@ -57,8 +55,8 @@ export default function LandingPage({
 
   const inputRef = useRef<HTMLInputElement | null>(null)
 
-  const [explorationType, setExplorationType] = useState<'single' | 'compare' | null>('single')
-  const [selectedVisualization, setSelectedVisualization] = useState<string | null>('geospatial')
+  // explorationType and selectedVisualization may be reintroduced if we add more controls above the fold;
+  // keep the minimal state needed for now.
 
   // hooks for available languages and interesting word suggestions
   const { languages: availableLangs, loading: langsLoading } = useAvailableLanguages(word)
@@ -191,6 +189,31 @@ export default function LandingPage({
             Search a word
           </h2>
 
+          {/* Compare toggle moved to top of the interaction card for easier access */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-300">Compare mode</span>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={compareMode}
+                onClick={() => setCompareMode(s => !s)}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
+                  compareMode ? 'bg-yellow-500' : 'bg-neutral-700'
+                }`}
+              >
+                <span className="sr-only">Toggle compare mode</span>
+                <motion.span
+                  // use absolute positioning so the circle doesn't get clipped by transforms
+                  initial={{ left: 4 }}
+                  animate={{ left: compareMode ? 20 : 4 }}
+                  transition={{ type: 'spring', stiffness: 700, damping: 30 }}
+                  className="pointer-events-none absolute top-0.5 left-1 h-5 w-5 rounded-full bg-white shadow-md"
+                />
+              </button>
+            </div>
+          </div>
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <WordLanguageInput
@@ -334,36 +357,10 @@ export default function LandingPage({
                       Exploring…
                     </>
                   ) : (
-                    'Explore evolution'
+                    'Explore'
                   )}
                 </button>
               </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-300">Compare mode</span>
-
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={compareMode}
-                  onClick={() => setCompareMode(s => !s)}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
-                    compareMode ? 'bg-yellow-500' : 'bg-neutral-700'
-                  }`}
-                >
-                  <span className="sr-only">Toggle compare mode</span>
-                  <motion.span
-                    layout
-                    className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md"
-                    animate={{ x: compareMode ? 20 : 0 }}
-                    transition={{ type: 'spring', stiffness: 700, damping: 30 }}
-                  />
-                </button>
-              </div>
-
-              <div className="text-sm text-gray-300">{compareMode ? 'ON' : 'OFF'}</div>
             </div>
           </form>
         </motion.section>

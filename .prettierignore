@@ -13,3 +13,5 @@ backend/data
 CHANGELOG.md
 
 backend/backend/CHANGELOG.md
+
+backend/.venv/
