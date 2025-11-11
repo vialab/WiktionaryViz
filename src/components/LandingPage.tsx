@@ -16,6 +16,11 @@ interface LandingPageProps {
   onBackToSearch?: () => void
   setWord2?: (word: string) => void
   setLanguage2?: (lang: string) => void
+  // legacy/backwards compatible controlled second-word props (used by App.tsx)
+  word2?: string
+  language2?: string
+  // legacy/backwards compatible controlled first-word language prop
+  language1?: string
 
   // legacy/backwards compatible optional props (used by App.tsx)
   setVisibleSection?: (section: string) => void
@@ -46,12 +51,18 @@ export default function LandingPage({
   setLanguage1,
   setLanguage2,
   word1,
+  // legacy controlled second-word props
+  word2,
+  language2,
+  // legacy controlled first-word language
+  language1,
 }: LandingPageProps) {
   const [word, setWord] = useState<string>(initialWord ?? word1 ?? '')
   const [compareMode, setCompareMode] = useState<boolean>(false)
-  const [wordB, setWordB] = useState<string>('')
-  const [language, setLanguage] = useState<string>(initialLanguage)
-  const [languageB, setLanguageB] = useState<string>(initialLanguage)
+  const [wordB, setWordB] = useState<string>(word2 ?? '')
+  // prefer any legacy controlled language props when provided (fall back to initialLanguage)
+  const [language, setLanguage] = useState<string>(language1 || initialLanguage)
+  const [languageB, setLanguageB] = useState<string>(language2 || initialLanguage)
 
   const inputRef = useRef<HTMLInputElement | null>(null)
 
