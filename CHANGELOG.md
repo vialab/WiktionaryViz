@@ -2,6 +2,19 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.14](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.13...wiktionaryviz-v0.1.14) (2025-11-11)
+
+
+### Features
+
+* **descendants:** add endpoint and component for fetching and displaying descendant paths from a root word in the geospatial interface ([761a9a9](https://github.com/vialab/WiktionaryViz/commit/761a9a94d7b0c2074e42544797d32c70d8b4e53f))
+* **landing-page:** enhance LandingPage component with improved props and layout for better user experience and accessibility ([b2d42a3](https://github.com/vialab/WiktionaryViz/commit/b2d42a36b4122336bbbf8a2f25d0cf4acefe283b))
+
+
+### Bug Fixes
+
+* **LandingPage.tsx:** simplify conditional rendering for word and wordB to enhance readability and maintainability ([05f8423](https://github.com/vialab/WiktionaryViz/commit/05f84232bf820bca82d2ad7a7db55abee20ac741))
+
 ## [0.1.13](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.12...wiktionaryviz-v0.1.13) (2025-10-08)
 
 
