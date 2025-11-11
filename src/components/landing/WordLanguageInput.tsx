@@ -1,17 +1,8 @@
 import React from 'react'
 
-interface SimpleLang {
-  code: string
-  name: string
-}
-
 interface WordLanguageInputProps {
   word: string
   onWordChange: (word: string) => void
-  language: string
-  onLanguageChange: (lang: string) => void
-  availableLanguages: Array<string | SimpleLang>
-  loading: boolean
   label?: string
   inputBaseStyles?: string
   placeholder?: string
@@ -23,10 +14,6 @@ interface WordLanguageInputProps {
 const WordLanguageInput: React.FC<WordLanguageInputProps> = ({
   word,
   onWordChange,
-  language,
-  onLanguageChange,
-  availableLanguages,
-  loading,
   label,
   inputBaseStyles = '',
   placeholder = 'Enter a word',
@@ -40,26 +27,7 @@ const WordLanguageInput: React.FC<WordLanguageInputProps> = ({
       onChange={e => onWordChange(e.target.value)}
       className={inputBaseStyles}
     />
-    {word &&
-      (loading ? (
-        <p className="text-[#B79F58]">Loading languages...</p>
-      ) : (
-        <select
-          value={language}
-          onChange={e => onLanguageChange(e.target.value)}
-          className={inputBaseStyles}
-        >
-          <option value="">Select a language</option>
-          {availableLanguages.map(l => {
-            const obj: SimpleLang = typeof l === 'string' ? { code: l, name: l } : l
-            return (
-              <option key={obj.code} value={obj.code}>
-                {obj.name}
-              </option>
-            )
-          })}
-        </select>
-      ))}
+    {/* Language selection moved to parent (LandingPage) to centralize backend fetching */}
   </div>
 )
 
