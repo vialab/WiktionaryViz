@@ -215,53 +215,46 @@ export default function LandingPage({
             </div>
           </div>
           <form onSubmit={onSubmit} className="space-y-4">
-            <div>
+            {/* <div>
               <WordLanguageInput
                 word={word}
                 onWordChange={setWord}
                 inputBaseStyles="w-full px-4 py-3 rounded-lg bg-neutral-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1"
                 placeholder="Enter a word or phrase…"
               />
-            </div>
+            </div> */}
 
             {/* Compare mode second input (animated) */}
-            <motion.div layout className="">
-              {compareMode && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.28 }}
-                  className="mt-3 flex flex-col md:flex-row md:items-center gap-3"
-                >
+            
+
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="sr-only">Word and language</label>
+                <div className="flex items-stretch w-full rounded-lg overflow-hidden border border-neutral-800 bg-neutral-900">
                   <div className="flex-1">
                     <WordLanguageInput
-                      word={wordB}
-                      onWordChange={setWordB}
-                      inputBaseStyles="w-full px-4 py-3 rounded-lg bg-neutral-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1"
-                      placeholder="Enter a second word…"
+                      word={word}
+                      onWordChange={setWord}
+                      inputBaseStyles="w-full px-4 py-3 rounded-none bg-transparent text-gray-100 placeholder-gray-400 focus:outline-none"
+                      placeholder="Enter a word or phrase…"
                     />
                   </div>
 
-                  <div className="flex flex-col md:flex-col gap-3 md:gap-6">
-                    <div className="text-sm text-yellow-300 font-semibold">VS</div>
-
-                    {wordB ? (
-                      langsBLoading ? (
-                        <p className="text-[#B79F58]">Loading languages...</p>
+                  <div className="w-40 md:w-44 flex items-center px-2 border-l border-neutral-800 bg-neutral-800">
+                    {word ? (
+                      langsLoading ? (
+                        <p className="text-[#B79F58]">Loading…</p>
                       ) : (
                         <select
-                          className="w-full px-3 py-2 rounded-lg bg-neutral-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                          value={languageB}
-                          onChange={e => setLanguageB(e.target.value)}
-                          aria-label="Language for second word"
+                          className="w-full h-11 bg-transparent text-gray-100 px-2 focus:outline-none"
+                          value={language}
+                          onChange={e => setLanguage(e.target.value)}
+                          aria-label="Language"
                           disabled={isLoading}
                         >
                           <option value="">Select a language</option>
-                          {availableLangsB.map(l => {
-                            const obj =
-                              typeof l === 'string'
-                                ? { code: l, name: l }
-                                : (l as { code: string; name: string })
+                          {availableLangs.map(l => {
+                            const obj = typeof l === 'string' ? { code: l, name: l } : (l as { code: string; name: string })
                             return (
                               <option key={obj.code} value={obj.code}>
                                 {obj.name}
@@ -271,63 +264,72 @@ export default function LandingPage({
                         </select>
                       )
                     ) : (
-                      <select
-                        className="w-full px-3 py-2 rounded-lg bg-neutral-800 text-gray-400"
-                        disabled
-                      >
-                        <option>Enter a second word to see languages</option>
-                      </select>
+                      <div className="text-gray-400 text-sm">Enter a word</div>
                     )}
                   </div>
-                </motion.div>
-              )}
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
-              <div>
-                <label htmlFor="language-select" className="block text-sm text-gray-300 mb-2">
-                  Language
-                </label>
-                {word ? (
-                  langsLoading ? (
-                    <p className="text-[#B79F58]">Loading languages...</p>
-                  ) : (
-                    <select
-                      id="language-select"
-                      className="w-full px-3 py-2 rounded-lg bg-neutral-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      value={language}
-                      onChange={e => setLanguage(e.target.value)}
-                      aria-label="Language"
-                      disabled={isLoading}
-                    >
-                      <option value="">Select a language</option>
-                      {availableLangs.map(l => {
-                        const obj =
-                          typeof l === 'string'
-                            ? { code: l, name: l }
-                            : (l as { code: string; name: string })
-                        return (
-                          <option key={obj.code} value={obj.code}>
-                            {obj.name}
-                          </option>
-                        )
-                      })}
-                    </select>
-                  )
-                ) : (
-                  <select
-                    className="w-full px-3 py-2 rounded-lg bg-neutral-800 text-gray-400"
-                    disabled
-                  >
-                    <option>Enter a word to see languages</option>
-                  </select>
-                )}
+                </div>
               </div>
 
+              {/* Vertical VS and second input when compareMode is active */}
+              {compareMode && (
+                <>
+                  <div className="flex items-center justify-center">
+                    <div className="text-yellow-300 font-semibold text-lg">VS</div>
+                  </div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.28 }}
+                    className="flex-1"
+                  >
+                    <div className="flex items-stretch w-full rounded-lg overflow-hidden border border-neutral-800 bg-neutral-900">
+                      <div className="flex-1">
+                        <WordLanguageInput
+                          word={wordB}
+                          onWordChange={setWordB}
+                          inputBaseStyles="w-full px-4 py-3 rounded-none bg-transparent text-gray-100 placeholder-gray-400 focus:outline-none"
+                          placeholder="Enter a second word…"
+                        />
+                      </div>
+
+                      <div className="w-40 md:w-44 flex items-center px-2 border-l border-neutral-800 bg-neutral-800">
+                        {wordB ? (
+                          langsBLoading ? (
+                            <p className="text-[#B79F58]">Loading…</p>
+                          ) : (
+                            <select
+                              className="w-full h-11 bg-transparent text-gray-100 px-2 focus:outline-none"
+                              value={languageB}
+                              onChange={e => setLanguageB(e.target.value)}
+                              aria-label="Language for second word"
+                              disabled={isLoading}
+                            >
+                              <option value="">Select a language</option>
+                              {availableLangsB.map(l => {
+                                const obj = typeof l === 'string' ? { code: l, name: l } : (l as { code: string; name: string })
+                                return (
+                                  <option key={obj.code} value={obj.code}>
+                                    {obj.name}
+                                  </option>
+                                )
+                              })}
+                            </select>
+                          )
+                        ) : (
+                          <div className="text-gray-400 text-sm">Enter a second word</div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+
+              {/* Submit button below inputs */}
               <div className="flex items-end">
                 <button
                   type="submit"
-                  className={`w-full md:ml-3 inline-flex items-center justify-center px-4 py-3 rounded-lg font-semibold transition-transform focus:outline-none focus:ring-2 focus:ring-yellow-400
+                  className={`w-full inline-flex items-center justify-center px-4 py-3 rounded-lg font-semibold transition-transform focus:outline-none focus:ring-2 focus:ring-yellow-400
                     ${isLoading ? 'bg-yellow-300 text-neutral-900 cursor-not-allowed opacity-90' : 'bg-yellow-500 hover:bg-yellow-400 text-neutral-900'}`}
                   disabled={isLoading}
                   aria-disabled={isLoading}
