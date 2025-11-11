@@ -61,12 +61,7 @@ export default function LandingPage({
   // hooks for available languages and interesting word suggestions
   const { languages: availableLangs, loading: langsLoading } = useAvailableLanguages(word)
   const { languages: availableLangsB, loading: langsBLoading } = useAvailableLanguages(wordB)
-  const {
-    interestingWord,
-    category: wordCategory,
-    loading: interestingLoading,
-    refresh,
-  } = useInterestingWord()
+  const { loading: interestingLoading, refresh } = useInterestingWord()
 
   // Autofocus on mount
   useEffect(() => {
@@ -108,8 +103,13 @@ export default function LandingPage({
     // Ask the backend for a fresh interesting word when possible
     if (typeof refresh === 'function') {
       try {
-        await refresh()
-        // the hook's interestingWord will update and be handled by the effect below
+        const result = await refresh()
+        if (result?.word) {
+          setInspireWord(result.word)
+          setInspireLabel(result.reason || 'interesting')
+          setWord(result.word)
+          inputRef.current?.focus()
+        }
         return
       } catch {
         // fall through to local fallback
@@ -126,15 +126,9 @@ export default function LandingPage({
     inputRef.current?.focus()
   }
 
-  // When the backend-provided interestingWord changes, populate the input
-  useEffect(() => {
-    if (interestingWord?.word) {
-      setInspireWord(interestingWord.word)
-      setInspireLabel(interestingWord.reason || wordCategory || 'interesting')
-      setWord(interestingWord.word)
-      inputRef.current?.focus()
-    }
-  }, [interestingWord, wordCategory])
+  // Do not auto-populate a word on startup. Only set a word when the user clicks
+  // "Inspire me". The hook's `refresh` returns the fetched word so we can
+  // update local state immediately after a manual refresh.
 
   const triggerExploreCompare = (a: string, aLang: string, b: string, bLang: string) => {
     const ta = a.trim()

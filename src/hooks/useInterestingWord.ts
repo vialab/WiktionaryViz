@@ -16,26 +16,32 @@ export function useInterestingWord() {
   const [category, setCategory] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
-  const fetchInterestingWord = useCallback(async () => {
+  const fetchInterestingWord = useCallback(async (): Promise<InterestingWord | null> => {
     setLoading(true)
     try {
       const res = await fetch(apiUrl('/random-interesting-word'))
       const data = await res.json()
       if (data?.entry?.word && data?.entry?.lang_code) {
-        setInterestingWord({
+        const obj = {
           word: data.entry.word,
           reason:
             data.entry.reason || `Highlighted in ${data.category.replace(/_/g, ' ')} category`,
           lang_code: data.entry.lang_code,
-        })
+        }
+        setInterestingWord(obj)
         setCategory(data.category.replace(/_/g, ' '))
+        return obj
       } else {
-        setInterestingWord({ word: 'example', reason: 'Could not fetch real interesting words.' })
+        const obj = { word: 'example', reason: 'Could not fetch real interesting words.' }
+        setInterestingWord(obj)
         setCategory('unknown')
+        return obj
       }
     } catch {
-      setInterestingWord({ word: 'example', reason: 'Could not fetch real interesting words.' })
+      const obj = { word: 'example', reason: 'Could not fetch real interesting words.' }
+      setInterestingWord(obj)
       setCategory('unknown')
+      return obj
     } finally {
       setLoading(false)
     }
