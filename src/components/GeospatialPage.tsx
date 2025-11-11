@@ -16,6 +16,7 @@ import TimelineScrubber from './geospatial/TimelineScrubber.tsx'
 import ExportGeoJSONButton from './geospatial/ExportGeoJSONButton'
 import ProtoLanguageZones from './geospatial/ProtoLanguageZones'
 import LanguageFamiliesBubbles from './geospatial/LanguageFamiliesBubbles'
+import DescendantLineagePaths from './geospatial/DescendantLineagePaths'
 import type { EtymologyNode } from '@/types/etymology'
 import type { Translation } from '@/utils/mapUtils'
 
@@ -353,6 +354,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
                 currentIndex={currentIndex}
                 showAllPopups={showAllPopups}
               />
+            </LayerGroup>
+          </LayersControl.Overlay>
+          {/* Descendant paths from ancestor (all branches) */}
+          <LayersControl.Overlay name="Descendant Paths">
+            <LayerGroup>
+              <DescendantLineagePaths rootWord={word || (lineage?.word ?? '')} rootLang={language || (lineage?.lang_code ?? '')} />
             </LayerGroup>
           </LayersControl.Overlay>
           {/* TODO (Timeline UI): After implementing, mount timeline scrubber outside LayersControl for fixed positioning. */}
