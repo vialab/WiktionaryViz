@@ -234,9 +234,9 @@ export default function LandingPage({
                     />
                   </div>
 
-                  <div className="w-40 md:w-44 flex items-center px-2 border-l border-neutral-800 bg-neutral-800">
-                    {word ? (
-                      langsLoading ? (
+                  {word && word.trim().length > 0 && (
+                    <div className="w-40 md:w-44 flex items-center px-2 border-l border-neutral-800 bg-neutral-800">
+                      {langsLoading ? (
                         <p className="text-[#B79F58]">Loading…</p>
                       ) : (
                         <select
@@ -256,11 +256,9 @@ export default function LandingPage({
                             )
                           })}
                         </select>
-                      )
-                    ) : (
-                      <div className="text-gray-400 text-sm">Enter a word</div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -287,9 +285,9 @@ export default function LandingPage({
                         />
                       </div>
 
-                      <div className="w-40 md:w-44 flex items-center px-2 border-l border-neutral-800 bg-neutral-800">
-                        {wordB ? (
-                          langsBLoading ? (
+                      {wordB && wordB.trim().length > 0 && (
+                        <div className="w-40 md:w-44 flex items-center px-2 border-l border-neutral-800 bg-neutral-800">
+                          {langsBLoading ? (
                             <p className="text-[#B79F58]">Loading…</p>
                           ) : (
                             <select
@@ -309,11 +307,9 @@ export default function LandingPage({
                                 )
                               })}
                             </select>
-                          )
-                        ) : (
-                          <div className="text-gray-400 text-sm">Enter a second word</div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 </>
