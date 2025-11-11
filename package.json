@@ -18,7 +18,7 @@
     "deploy": "gh-pages -d dist",
     "deploy:api": "VITE_API_BACKEND=$VITE_API_BACKEND npm run deploy",
     "backend": "cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000",
-    "dev:full": "concurrently \"npm run backend\" \"npm run dev\"",
+    "dev:full": "concurrently \"bash -lc 'cd backend && source .venv/bin/activate && npm run backend'\" \"npm run dev\"",
     "backend:up": "docker compose up --build -d",
     "backend:down": "docker compose down",
     "build:api": "VITE_API_BACKEND=$VITE_API_BACKEND npm run build"
