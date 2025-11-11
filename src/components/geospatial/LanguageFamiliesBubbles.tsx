@@ -332,16 +332,16 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
             </>
           )
         })()}
-    {/* Render the hover label last so it's above all bubble paths */}
-  {(selectedId || hoverId) &&
+        {/* Render the hover label last so it's above all bubble paths */}
+        {(selectedId || hoverId) &&
           (() => {
-      const activeId = selectedId || hoverId
-      const p = paths.find(pp => pp.id === activeId)
+            const activeId = selectedId || hoverId
+            const p = paths.find(pp => pp.id === activeId)
             if (!p) return null
-      const pos = hoverPos ?? { x: p.labelX, y: p.labelY }
-    const multi = hoverCandidates && hoverCandidates.length > 1 && !selectedId
-    const idx = multi ? hoverCandidates!.findIndex(c => c.id === activeId) : -1
-    const badge = multi && idx >= 0 ? `(${idx + 1}/${hoverCandidates!.length}) ` : ''
+            const pos = hoverPos ?? { x: p.labelX, y: p.labelY }
+            const multi = hoverCandidates && hoverCandidates.length > 1 && !selectedId
+            const idx = multi ? hoverCandidates!.findIndex(c => c.id === activeId) : -1
+            const badge = multi && idx >= 0 ? `(${idx + 1}/${hoverCandidates!.length}) ` : ''
             return (
               <g
                 key="hover-label"
@@ -363,7 +363,7 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
                     filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))',
                   }}
                 >
-    {` ${badge}${p.name}${selectedId ? ' 🔒' : ''} `}
+                  {` ${badge}${p.name}${selectedId ? ' 🔒' : ''} `}
                 </text>
               </g>
             )

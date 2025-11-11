@@ -2,8 +2,6 @@ import { useState } from 'react'
 import Navbar from '@/components/Navbar'
 import LandingPage from '@/components/LandingPage'
 import GeospatialPage from '@/components/GeospatialPage'
-import NetworkPage from '@/components/NetworkPage'
-import TimelinePage from '@/components/TimelinePage'
 
 function App() {
   const [visibleSection, setVisibleSection] = useState<string>('landing-page')
@@ -47,11 +45,6 @@ function App() {
           />
         )}
         {visibleSection === 'geospatial' && <GeospatialPage word={word1} language={language1} />}
-        {visibleSection === 'network' && (
-          <NetworkPage word1={word1} word2={word2} language1={language1} language2={language2} />
-        )}
-        {visibleSection === 'timeline' && <TimelinePage word={word1} language={language1} />}
-
         {/* TODO [HIGH LEVEL]: Add a "Lecture/Presentation" mode that scripts camera pans/zooms and reveals, with narration hooks. */}
         {/* TODO [LOW LEVEL]: Provide a presentation controller component to step through saved view states across pages. */}
       </main>

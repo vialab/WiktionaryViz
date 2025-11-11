@@ -12,7 +12,7 @@ interface VisualizationTypeSelectorProps {
 const VisualizationTypeSelector: React.FC<VisualizationTypeSelectorProps> = ({
   value,
   onChange,
-  options = ['geospatial', 'network', 'timeline'],
+  options = ['geospatial'],
 }) => (
   <ul className="mt-3 grid grid-cols-1 gap-3 text-left">
     {options.map(option => (
