@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.15](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.14...wiktionaryviz-v0.1.15) (2025-11-13)
+
+
+### Features
+
+* **LandingPage:** add legacy props for backwards compatibility with controlled second-word and first-word language settings ([68a3276](https://github.com/vialab/WiktionaryViz/commit/68a3276e88ab7170f857ad04c5e46fbe2b6de75a))
+
 ## [0.1.14](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.13...wiktionaryviz-v0.1.14) (2025-11-11)
 
 
