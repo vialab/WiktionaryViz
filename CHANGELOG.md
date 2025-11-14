@@ -2,6 +2,20 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.16](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.15...wiktionaryviz-v0.1.16) (2025-11-14)
+
+
+### Features
+
+* **descendants.py:** add logging for descendant tree API endpoints to improve traceability and debugging ([f1f5586](https://github.com/vialab/WiktionaryViz/commit/f1f55860f7e2956d117bc0b183a2033c90eb2f02))
+* **package.json:** add dev:backend script to streamline backend development environment setup ([f1f5586](https://github.com/vialab/WiktionaryViz/commit/f1f55860f7e2956d117bc0b183a2033c90eb2f02))
+* **wiktionary_io.py:** add logging to track descendant hierarchy building process and improve debugging ([f1f5586](https://github.com/vialab/WiktionaryViz/commit/f1f55860f7e2956d117bc0b183a2033c90eb2f02))
+
+
+### Bug Fixes
+
+* **descendants.py:** handle empty index offset list and improve error handling for file reading ([f1f5586](https://github.com/vialab/WiktionaryViz/commit/f1f55860f7e2956d117bc0b183a2033c90eb2f02))
+
 ## [0.1.15](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.14...wiktionaryviz-v0.1.15) (2025-11-13)
 
 

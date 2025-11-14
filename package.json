@@ -1,7 +1,7 @@
 {
   "name": "wiktionaryviz",
   "private": true,
-  "version": "0.1.15",
+  "version": "0.1.16",
   "type": "module",
   "homepage": "https://vialab.github.io/WiktionaryViz/",
   "scripts": {
