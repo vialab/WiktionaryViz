@@ -197,7 +197,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
         })}
       </LayerGroup>
 
-      <div style={{ position: 'absolute', right: 12, bottom: 92, zIndex: 580, background: 'rgba(7,9,14,0.7)', padding: 8, borderRadius: 8, color: '#f8fafc', fontSize: 12, minWidth: 200 }}>
+      {/* <div style={{ position: 'absolute', right: 12, bottom: 92, zIndex: 580, background: 'rgba(7,9,14,0.7)', padding: 8, borderRadius: 8, color: '#f8fafc', fontSize: 12, minWidth: 200 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ fontWeight: 700, color: '#FBBF24' }}>Descendant Paths</div>
@@ -236,7 +236,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
             <div style={{ color: '#94a3b8' }}>No descendant paths found</div>
           )}
         </div>
-      </div>
+      </div> */}
     </Pane>
   )
 }
