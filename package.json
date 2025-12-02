@@ -1,7 +1,7 @@
 {
   "name": "wiktionaryviz",
   "private": true,
-  "version": "0.1.16",
+  "version": "0.1.17",
   "type": "module",
   "homepage": "https://vialab.github.io/WiktionaryViz/",
   "scripts": {
@@ -42,10 +42,8 @@
     "react-leaflet": "^5.0.0",
     "react-leaflet-markercluster": "^5.0.0-rc.0",
     "react-papaparse": "^4.4.0",
-    "simple-icons": "^14.15.0"
-    ,
-    "html2canvas": "^1.4.1"
-    ,
+    "simple-icons": "^14.15.0",
+    "html2canvas": "^1.4.1",
     "leaflet-image": "^0.0.4"
   },
   "devDependencies": {
