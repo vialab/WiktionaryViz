@@ -36,11 +36,11 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
     setLoading(true)
     ;(async () => {
       try {
-        const url = apiUrl(
-          `/descendant-paths-from-root?word=${encodeURIComponent(rootWord)}&lang_code=${encodeURIComponent(
-            rootLang || '',
-          )}`,
-        )
+        // const url = apiUrl(
+        //   `/descendant-paths-from-root?word=${encodeURIComponent(rootWord)}&lang_code=${encodeURIComponent(
+        //     rootLang || '',
+        //   )}`,
+        // )
         console.debug('DescendantLineagePaths: fetching', url)
         const res = await fetch(url)
         if (!res.ok) {

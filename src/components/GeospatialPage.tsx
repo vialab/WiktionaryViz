@@ -14,6 +14,7 @@ import LineageCountryHighlights from './geospatial/LineageCountryHighlights'
 import EtymologyLineagePath from './geospatial/EtymologyLineagePath'
 import TimelineScrubber from './geospatial/TimelineScrubber.tsx'
 import ExportGeoJSONButton from './geospatial/ExportGeoJSONButton'
+import ScreenshotButton from './geospatial/ScreenshotButton'
 import ProtoLanguageZones from './geospatial/ProtoLanguageZones'
 import LanguageFamiliesBubbles from './geospatial/LanguageFamiliesBubbles'
 import DescendantLineagePaths from './geospatial/DescendantLineagePaths'
@@ -300,11 +301,13 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
         scrollWheelZoom={false}
         className="relative w-full h-full"
         style={{ background: '#0b0f1a' }}
+        id="map-root"
         ref={instance => {
           if (instance) setMapInstance(instance)
         }}
       >
         {/* Export current map data as GeoJSON */}
+        <ScreenshotButton mapInstance={mapInstance} word={word} language={language} />
         <ExportGeoJSONButton markers={markers} lineage={lineage} />
         <LayersControl position="topright">
           {/* Base Layers */}
