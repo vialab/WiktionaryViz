@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.17](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.16...wiktionaryviz-v0.1.17) (2025-12-02)
+
+
+### Features
+
+* **geospatial:** add ScreenshotButton component for capturing map images and update package.json with new dependencies ([80809ab](https://github.com/vialab/WiktionaryViz/commit/80809ab9f5105d6481484794b3734ade05cb1f1b))
+
 ## [0.1.16](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.15...wiktionaryviz-v0.1.16) (2025-11-14)
 
 
