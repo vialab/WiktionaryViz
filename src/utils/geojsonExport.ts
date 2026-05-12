@@ -2,6 +2,7 @@
 // GeoJSON spec: https://datatracker.ietf.org/doc/html/rfc7946
 import type { TranslationMarker } from '@/components/geospatial/TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
+import { flattenLineage } from '@/utils/mapUtils'
 
 export interface ExportOptions {
   markers?: boolean // include translation markers as Point features
@@ -17,17 +18,6 @@ interface LineageNodeFeatureProps {
   romanization: string | null
   expansion: string
   index: number // order in the lineage
-}
-
-// Traverse lineage linked list into array for easier processing
-function flattenLineage(root: EtymologyNode | null): EtymologyNode[] {
-  const nodes: EtymologyNode[] = []
-  let current = root
-  while (current) {
-    nodes.push(current)
-    current = current.next
-  }
-  return nodes
 }
 
 export function buildGeoJSON(

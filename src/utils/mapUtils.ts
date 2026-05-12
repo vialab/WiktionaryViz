@@ -2,6 +2,7 @@ import { getCountryFromLanguageCode } from '@/utils/languageUtils'
 import { apiUrl } from '@/utils/apiBase'
 import { getLanguage } from '@ladjs/country-language'
 import type { EtymologyNode } from '@/types/etymology'
+import type { LanguoidData } from '@/types/languoid'
 import countriesIso from 'i18n-iso-countries'
 // Locale registration skipped (default English names sufficient for alpha2->alpha3 conversion)
 
@@ -30,17 +31,6 @@ interface Coordinate {
 interface Marker {
   position: [number, number]
   popupText: string
-}
-
-/**
- * Represents language metadata from the dataset.
- */
-interface LanguoidData {
-  iso639P3code: string
-  latitude?: string
-  longitude?: string
-  country_ids?: string
-  name: string
 }
 
 // Approximate representative centers for proto language macro-regions (lat,lng)
