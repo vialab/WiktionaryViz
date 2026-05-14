@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.18](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.17...wiktionaryviz-v0.1.18) (2026-05-14)
+
+
+### Features
+
+* **descendants:** add new descendant-related endpoints and caching mechanism to improve performance and reduce redundant processing ([8935dc2](https://github.com/vialab/WiktionaryViz/commit/8935dc2aa88a85f9f4a6159e55bb52e9f0d8c8c6))
+
 ## [0.1.17](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.16...wiktionaryviz-v0.1.17) (2025-12-02)
 
 
