@@ -212,6 +212,12 @@ Base (dev): `http://localhost:8000` – Interactive docs at `/docs`.
 | GET      | `/phonetic-drift-detailed`   | partial     | Returns alignment + feature changes (no compact score yet)            |
 | GET      | `/descendant-tree`           | partial     | Builds tree from given word; traversal heuristics evolving            |
 | GET      | `/descendant-tree-from-root` | partial     | Treats provided word/lang as root                                     |
+| GET      | `/descendant-paths-from-root`| partial     | Returns bounded linear descendant paths from a resolved/provided root |
+| GET      | `/descendant-preview`        | partial     | Shallow bounded tree preview for overview-first map rendering         |
+| GET      | `/descendant-count`          | partial     | Bounded descendant count (cap-aware)                                  |
+| GET      | `/descendant-tree-aggregated`| partial     | Descendant tree with wide branches collapsed into summary clusters    |
+| GET      | `/ancestor-roots`            | partial     | Resolves proto/root candidates by bounded upward traversal            |
+| GET      | `/descendant-paths-resolved` | partial     | Combined root-resolution + descendant paths in one request            |
 | (future) | `/phonetic-drift`            | planned     | Compact numeric distance only                                         |
 | (future) | `/compare`                   | planned     | Word vs word ancestry + drift                                         |
 | (future) | `/ai/*`                      | planned     | Exploration suggestions                                               |

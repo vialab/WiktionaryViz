@@ -49,8 +49,19 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
     # Optimized memory: store only keys, not full entries
     all_entry_keys = set()
 
-    # Reverse descendant links: parent_key -> [child_key, ...]
-    descendant_links = defaultdict(list)
+    # Local descendant graph used only for the offline "most descendants" stat.
+    descendant_links = defaultdict(set)
+
+    def add_descendant_link(parent_word: str, parent_lang: str, child_key: str) -> None:
+        parent_word = (parent_word or "").strip().lower()
+        parent_lang = (parent_lang or "").strip().lower()
+        if not parent_word or not child_key:
+            return
+
+        exact_key = f"{parent_word}_{parent_lang}" if parent_lang else None
+        if exact_key:
+            descendant_links[exact_key].add(child_key)
+        descendant_links[parent_word].add(child_key)
 
     with open(jsonl_file_path, "r", encoding="utf-8") as jsonl_file:
         with tqdm(desc="Indexing records", unit=" lines") as progress_bar:
@@ -88,17 +99,29 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
                             if len(most_translations_heap) > TOP_N:
                                 heapq.heappop(most_translations_heap)
 
-                        # ✅ Reverse descendant mapping
+                        # ✅ Local descendant graph for offline descendant-count stats
                         descendants = entry.get("descendants", [])
                         for desc in descendants:
                             text = desc.get("text", "")
                             if ":" in text:
                                 lang_part, word_part = text.split(":", 1)
                                 lang = lang_part.strip().lower()
-                                child_word = word_part.strip().split(" ")[0]  # remove gloss
+                                child_word = word_part.strip().split(" ", 1)[0]
                                 if child_word:
                                     child_key = f"{child_word.lower()}_{lang}"
-                                    descendant_links[index_key].append(child_key)
+                                    add_descendant_link(word, lang_code, child_key)
+
+                        for tpl in entry.get("etymology_templates", []) or []:
+                            if not tpl or not isinstance(tpl, dict):
+                                continue
+                            args = tpl.get("args") or {}
+                            parent_word = args.get("3")
+                            parent_lang = args.get("2")
+                            tr = args.get("tr")
+                            use_word = tr or parent_word
+                            if not use_word:
+                                continue
+                            add_descendant_link(str(use_word), str(parent_lang or ""), index_key)
 
                     record_count += 1
                     progress_bar.update(1)

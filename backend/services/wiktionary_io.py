@@ -42,88 +42,238 @@ def _normalize_for_match(s):
     return str(s).strip().lower()
 
 
-def build_descendant_hierarchy(word, f, lang_code=None, depth=0, visited=None, max_depth=50):
+def _candidate_index_keys(word, lang_code=None):
+    normalized_word = _normalize_for_match(word)
+    if not normalized_word:
+        return []
+
+    candidates = []
+    if lang_code:
+        exact_key = f"{normalized_word}_{_normalize_for_match(lang_code)}"
+        if exact_key in index:
+            candidates.append(exact_key)
+    for key in index:
+        if key.startswith(f"{normalized_word}_") and key not in candidates:
+            candidates.append(key)
+    return candidates
+
+
+def _extract_child_ref_from_descendant(desc):
     """
-    Build a descendant hierarchy starting from `word` by finding entries whose
-    `etymology_templates` refer to `word` (args['3'] or args['tr']).
+    Generically extract child reference from any Wiktionary descendant template.
+    Tries multiple arg patterns across different template types (desc, der, cog, bnt-desc, etc.)
+    Returns dict with word, lang_code, key, expansion or None.
+    Language codes are typically shorter (2-10 chars) while words are longer.
+    """
+    if not isinstance(desc, dict):
+        return None
+
+    templates = desc.get("templates", []) or []
+    
+    # Try each template to extract a valid child reference
+    for tpl in templates:
+        if not isinstance(tpl, dict):
+            continue
+        
+        name = (tpl.get("name") or "").strip().lower()
+        args = tpl.get("args") or {}
+        
+        # Only process templates that look like descendant/derived/cognate templates
+        if not any(keyword in name for keyword in ["desc", "der", "cog", "bnt", "mak"]):
+            continue
+        
+        # Try to extract from positional args "1" and "2"
+        # Language codes are typically short, so use length as primary heuristic
+        arg1 = (args.get("1") or "").strip()
+        arg2 = (args.get("2") or "").strip()
+        arg1_norm = _normalize_for_match(arg1)
+        arg2_norm = _normalize_for_match(arg2)
+        
+        if arg1_norm and arg2_norm:
+            # If arg1 is much shorter, it's likely the language code
+            # (e.g., "fr" vs "orenge", or "es" vs "naranja")
+            if len(arg1_norm) <= 10 and (len(arg1_norm) < len(arg2_norm) or len(arg2_norm) > 15):
+                return {
+                    "word": arg2,
+                    "lang_code": arg1_norm,
+                    "key": f"{arg2.lower()}_{arg1_norm}",
+                    "expansion": tpl.get("expansion") or desc.get("text"),
+                }
+            # Otherwise, arg2 is likely the language code
+            elif len(arg2_norm) <= 10:
+                return {
+                    "word": arg1,
+                    "lang_code": arg2_norm,
+                    "key": f"{arg1.lower()}_{arg2_norm}",
+                    "expansion": tpl.get("expansion") or desc.get("text"),
+                }
+        
+        # Pattern 2: word in "1", lang_code in "lang" named arg
+        arg1 = (args.get("1") or "").strip()
+        lang_arg = _normalize_for_match(args.get("lang"))
+        if arg1 and lang_arg:
+            return {
+                "word": arg1,
+                "lang_code": lang_arg,
+                "key": f"{arg1.lower()}_{lang_arg}",
+                "expansion": tpl.get("expansion") or desc.get("text"),
+            }
+        
+        # Pattern 3: word only in "1", no language code
+        arg1 = (args.get("1") or "").strip()
+        if arg1:
+            return {
+                "word": arg1,
+                "lang_code": None,
+                "key": None,
+                "expansion": tpl.get("expansion") or desc.get("text"),
+            }
+    
+    # Fallback: try text-based parsing for "lang: word" format
+    text = desc.get("text", "")
+    if isinstance(text, str) and ":" in text:
+        lang_part, word_part = text.split(":", 1)
+        child_word = word_part.strip().split(" ", 1)[0].strip()
+        lang_code = _normalize_for_match(lang_part)
+        if child_word and lang_code and len(lang_code) <= 10:
+            return {
+                "word": child_word,
+                "lang_code": lang_code,
+                "key": f"{child_word.lower()}_{lang_code}",
+            }
+    
+    return None
+
+
+def _child_refs_from_entry(entry, max_per_step=32):
+    descendants = (entry or {}).get("descendants", []) or []
+    child_refs = []
+    seen = set()
+
+    for desc in descendants:
+        child_ref = _extract_child_ref_from_descendant(desc)
+        if not child_ref:
+            continue
+        child_word = child_ref.get("word")
+        lang_code = child_ref.get("lang_code")
+        child_key = child_ref.get("key")
+        if not child_word or not child_key:
+            continue
+        if child_key in seen:
+            continue
+        seen.add(child_key)
+        child_refs.append({"word": child_word, "lang_code": lang_code, "key": child_key, "expansion": child_ref.get("expansion")})
+        if len(child_refs) >= max_per_step:
+            break
+
+    return child_refs
+
+
+def _read_entry_for_word(f, word, lang_code=None):
+    for key in _candidate_index_keys(word, lang_code):
+        try:
+            offset = index.get(key)
+            if isinstance(offset, (list, tuple)) and offset:
+                offset = offset[0]
+            f.seek(offset)
+            entry = json.loads(f.readline().decode("utf-8"))
+            return key, entry
+        except Exception:
+            continue
+    return None, None
+
+
+def build_descendant_hierarchy(
+    word,
+    f,
+    lang_code=None,
+    depth=0,
+    visited=None,
+    max_depth=50,
+    node_budget=None,
+):
+    """
+    Build a descendant hierarchy from a word by reading its explicit descendants list.
 
     Returns a dict: {"name": word, "children": [ {"word":..., "lang_code":..., "expansion":..., "children": [...]}, ... ] }
 
     - `f` should be an open file-like object supporting `seek()` and `readline()` (mmap is preferred).
     - `visited` is a set of index keys already processed to avoid cycles.
     - `max_depth` prevents runaway recursion on noisy data.
+    - `node_budget` is a mutable dict like {"remaining": int, "truncated": bool} to bound work.
     """
     if visited is None:
         visited = set()
+
+    if node_budget is None:
+        node_budget = {"remaining": 2000, "truncated": False}
 
     if depth >= max_depth:
         logger.info("max_depth reached for %s at depth %d", word, depth)
         return {"name": word, "children": []}
 
-    target_norm = _normalize_for_match(word)
+    if node_budget.get("remaining", 0) <= 0:
+        node_budget["truncated"] = True
+        return {"name": word, "children": []}
+
     results = []
 
     logger.info("build_descendant_hierarchy target=%r lang_code=%r depth=%d", word, lang_code, depth)
 
-    def _get_offset(k):
-        v = index.get(k)
-        if isinstance(v, (list, tuple)) and len(v) > 0:
-            return v[0]
-        return v
+    current_key, current_entry = _read_entry_for_word(f, word, lang_code)
+    if not current_entry:
+        logger.info("no descendant entry found for %r (%r)", word, lang_code)
+        return {"name": word, "children": []}
 
-    # Scan all index entries to find those that cite `word` as an ancestor in etymology_templates.
-    for key, val in index.items():
-        # if lang_code is provided, filter by key suffix
-        if lang_code and not key.endswith(f"_{lang_code.lower()}"):
-            continue
-        if key in visited:
+    seen_children = set()
+    for child_ref in _child_refs_from_entry(current_entry):
+        child_key = child_ref["key"]
+        if child_key in visited or child_key in seen_children:
             continue
 
-        offset = _get_offset(key)
+        seen_children.add(child_key)
+        visited.add(child_key)
+        node_budget["remaining"] = max(0, node_budget.get("remaining", 0) - 1)
+        if node_budget.get("remaining", 0) <= 0:
+            node_budget["truncated"] = True
+
         try:
+            offset = index.get(child_key)
+            if isinstance(offset, (list, tuple)) and offset:
+                offset = offset[0]
             f.seek(offset)
-            entry = json.loads(f.readline().decode("utf-8"))
+            child_entry = json.loads(f.readline().decode("utf-8"))
         except Exception as exc:
-            logger.debug("failed to read entry at offset %r for key %s: %s", offset, key, exc)
+            logger.debug("failed to read descendant child %s: %s", child_key, exc)
             continue
 
-        # Look for etymology templates that reference this target
-        templates = entry.get("etymology_templates", []) or []
-        matched = False
-        for tpl in templates:
-            if not tpl or not isinstance(tpl, dict):
-                continue
-            args = tpl.get("args") or {}
-            cand = args.get("3")
-            tr = args.get("tr")
-            if _normalize_for_match(cand) == target_norm or _normalize_for_match(tr) == target_norm:
-                matched = True
-                break
-
-        if not matched:
-            continue
-
-        logger.info("matched descendant: key=%s offset=%s word=%r lang=%r", key, offset, entry.get("word"), entry.get("lang_code"))
-
-        # We have an entry that derives from `word`.
-        visited.add(key)
-
-        child_word = entry.get("word")
-        child_lang = entry.get("lang_code")
-        child_exp = entry.get("expansion")
-
-        # Recurse to build children of this child
-        child_tree = build_descendant_hierarchy(child_word, f, lang_code=child_lang, depth=depth + 1, visited=visited, max_depth=max_depth)
+        child_word = child_entry.get("word")
+        child_lang = child_entry.get("lang_code")
+        child_exp = child_entry.get("expansion") or child_ref.get("expansion")
+        child_tree = build_descendant_hierarchy(
+            child_word,
+            f,
+            lang_code=child_lang,
+            depth=depth + 1,
+            visited=visited,
+            max_depth=max_depth,
+            node_budget=node_budget,
+        )
 
         logger.debug("built child tree for %r lang=%r -> %d children", child_word, child_lang, len(child_tree.get("children", [])))
 
-        node = {
-            "word": child_word,
-            "lang_code": child_lang,
-            "expansion": child_exp,
-            "children": child_tree.get("children", []),
-        }
-        results.append(node)
+        results.append(
+            {
+                "word": child_word,
+                "lang_code": child_lang,
+                "expansion": child_exp,
+                "children": child_tree.get("children", []),
+            }
+        )
+
+        if node_budget.get("remaining", 0) <= 0:
+            node_budget["truncated"] = True
+            break
 
     logger.info("finished %r: found %d children at depth %d", word, len(results), depth)
     return {"name": word, "children": results}

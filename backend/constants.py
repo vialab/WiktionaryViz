@@ -35,6 +35,7 @@ def load_index():
     except FileNotFoundError:
         print("❌ Index file not found at:", INDEX_FILE_PATH)
 
+
 def load_language_code_map():
     """Load language code -> name map from existing JSON file.
 
