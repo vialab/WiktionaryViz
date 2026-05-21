@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.19](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.18...wiktionaryviz-v0.1.19) (2026-05-21)
+
+
+### Features
+
+* **descendants.py, wiktionary_io.py:** enhance word variant handling and ancestor root resolution for improved accuracy in etymology queries ([3dfb01c](https://github.com/vialab/WiktionaryViz/commit/3dfb01cb4466912235e4d6782fc7d2a5812b41cc))
+
 ## [0.1.18](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.17...wiktionaryviz-v0.1.18) (2026-05-14)
 
 
