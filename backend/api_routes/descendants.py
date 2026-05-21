@@ -1,6 +1,7 @@
 import mmap, json
 import logging
 import time
+import unicodedata
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 from constants import index, JSONL_FILE_PATH
@@ -58,27 +59,50 @@ def _offset_from_index_value(val):
 
 def _find_index_key_for(w: str):
     """Best-effort: find any index key that starts with the provided word + '_' (case-insensitive)."""
-    wk = f"{w.lower()}_"
-    for k in index:
-        if k.startswith(wk):
-            return k
+    for variant in _index_word_variants(w):
+        wk = f"{variant}_"
+        for k in index:
+            if k.startswith(wk):
+                return k
     return None
 
 
 def _find_index_keys_for_word(w: str, lang_code: str = None, max_keys: int = 200):
-    wk = f"{w.lower()}_"
     out = []
-    if lang_code:
-        exact = f"{w.lower()}_{lang_code.lower()}"
-        if exact in index:
-            return [exact]
-    for k in index:
-        if not k.startswith(wk):
-            continue
-        out.append(k)
+    lang_key = _normalize_index_word(lang_code) if lang_code else None
+    for variant in _index_word_variants(w):
+        if lang_key:
+            exact = f"{variant}_{lang_key}"
+            if exact in index and exact not in out:
+                return [exact]
+        wk = f"{variant}_"
+        for k in index:
+            if not k.startswith(wk):
+                continue
+            if k not in out:
+                out.append(k)
+            if len(out) >= max_keys:
+                break
         if len(out) >= max_keys:
             break
     return out
+
+
+def _normalize_index_word(text: str):
+    if not text:
+        return None
+    return str(text).strip().lower()
+
+
+def _index_word_variants(text: str):
+    raw = _normalize_index_word(text)
+    if not raw:
+        return []
+    variants = [raw]
+    stripped = "".join(ch for ch in unicodedata.normalize("NFKD", raw) if unicodedata.category(ch) != "Mn")
+    if stripped and stripped != raw:
+        variants.append(stripped)
+    return variants
 
 
 def _read_entry_by_key(mm, key: str):
@@ -100,6 +124,12 @@ def _node_from_entry(entry, fallback_word=None, fallback_lang=None):
     }
 
 
+def _is_proto_like(word, lang_code):
+    word_norm = (word or "").strip()
+    lang_norm = (lang_code or "").strip().lower() if lang_code else ""
+    return word_norm.startswith("*") or (lang_norm and "pro" in lang_norm)
+
+
 def _candidate_parent_nodes(mm, entry, max_per_step=8):
     """Extract immediate ancestor candidates from etymology templates.
 
@@ -111,6 +141,8 @@ def _candidate_parent_nodes(mm, entry, max_per_step=8):
 
     for tpl in reversed(templates):
         if not isinstance(tpl, dict):
+            continue
+        if (tpl.get("name") or "").strip().lower() == "etymon":
             continue
         args = tpl.get("args") or {}
         cand_word = args.get("3")
@@ -213,33 +245,52 @@ def _resolve_ancestor_roots(mm, word: str, lang_code: str, max_depth: int, max_p
         )
         all_paths.extend(sub_paths)
 
-    roots = []
-    seen_roots = set()
+    roots_by_key = {}
     for p in all_paths:
         if not p:
             continue
-        leaf = p[-1]
-        r_word = (leaf.get("word") or "").strip()
-        r_lang = (leaf.get("lang_code") or "").strip().lower() if leaf.get("lang_code") else None
+        root_index = len(p) - 1
+        root_node = p[-1]
+        for rev_idx, node in enumerate(reversed(p)):
+            node_word = (node.get("word") or "").strip()
+            node_lang = (node.get("lang_code") or "").strip().lower() if node.get("lang_code") else None
+            if _is_proto_like(node_word, node_lang):
+                continue
+            root_index = len(p) - 1 - rev_idx
+            root_node = node
+            break
+
+        r_word = (root_node.get("word") or "").strip()
+        r_lang = (root_node.get("lang_code") or "").strip().lower() if root_node.get("lang_code") else None
         if not r_word:
             continue
         r_key = f"{r_word.lower()}_{r_lang or ''}"
-        if r_key in seen_roots:
-            continue
-        seen_roots.add(r_key)
-        roots.append(
-            {
+        root_info = roots_by_key.get(r_key)
+        if not root_info:
+            root_info = {
                 "word": r_word,
                 "lang_code": r_lang,
-                "supporting_paths": sum(
-                    1
-                    for path in all_paths
-                    if path and (path[-1].get("word") or "").strip().lower() == r_word.lower()
-                ),
+                "supporting_paths": 0,
+                "max_path_length": 0,
+                "max_root_index": 0,
+                "proto_score": 1 if _is_proto_like(r_word, r_lang) else 0,
             }
-        )
+            roots_by_key[r_key] = root_info
 
-    roots.sort(key=lambda r: r.get("supporting_paths", 0), reverse=True)
+        root_info["supporting_paths"] += 1
+        root_info["max_path_length"] = max(root_info["max_path_length"], len(p))
+        root_info["max_root_index"] = max(root_info["max_root_index"], root_index)
+
+    roots = list(roots_by_key.values())
+    roots.sort(
+        key=lambda r: (
+            r.get("max_root_index", 0),
+            r.get("proto_score", 0),
+            r.get("max_path_length", 0),
+            r.get("supporting_paths", 0),
+        ),
+        reverse=True,
+    )
     return roots, all_paths
 
 

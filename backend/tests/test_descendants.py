@@ -135,6 +135,69 @@ class DescendantsRouteTests(unittest.TestCase):
                     ],
                 },
             ),
+            (
+                'surface_xx',
+                {
+                    'word': 'surface',
+                    'lang_code': 'xx',
+                    'expansion': 'Surface form',
+                    'etymology_templates': [
+                        {'args': {'1': 'xx', '2': 'xx', '3': 'shallow'}, 'name': 'der'},
+                        {'args': {'1': 'xx', '2': 'xx', '3': 'deep1'}, 'name': 'der'},
+                    ],
+                },
+            ),
+            (
+                'shallow_xx',
+                {
+                    'word': 'shallow',
+                    'lang_code': 'xx',
+                    'expansion': 'Shallow root',
+                    'etymology_templates': [],
+                },
+            ),
+            (
+                'deep1_xx',
+                {
+                    'word': 'deep1',
+                    'lang_code': 'xx',
+                    'expansion': 'Intermediate ancestor',
+                    'etymology_templates': [
+                        {'args': {'1': 'xx', '2': 'xx', '3': 'deep2'}, 'name': 'der'}
+                    ],
+                },
+            ),
+            (
+                'deep2_xx',
+                {
+                    'word': 'deep2',
+                    'lang_code': 'xx',
+                    'expansion': 'Deeper ancestor',
+                    'etymology_templates': [
+                        {'args': {'1': 'xx', '2': 'xx', '3': 'deeproot'}, 'name': 'der'}
+                    ],
+                },
+            ),
+            (
+                'deeproot_xx',
+                {
+                    'word': 'deeproot',
+                    'lang_code': 'xx',
+                    'expansion': 'Furthest root',
+                    'etymology_templates': [],
+                },
+            ),
+            (
+                'protochild_xx',
+                {
+                    'word': '*protochild',
+                    'lang_code': 'pro-xx',
+                    'expansion': 'Proto child',
+                    'etymology_templates': [
+                        {'args': {'1': 'pro-xx', '2': 'xx', '3': 'deep2'}, 'name': 'der'}
+                    ],
+                },
+            ),
         ]
         self.temp_jsonl, self.offsets = _build_fixture(self.entries)
 
@@ -181,6 +244,28 @@ class DescendantsRouteTests(unittest.TestCase):
         self.assertGreaterEqual(len(payload['roots']), 1)
         self.assertEqual(payload['roots'][0]['word'], 'aurantium')
         self.assertEqual(payload['roots'][0]['lang_code'], 'la')
+
+    def test_ancestor_roots_prefers_deepest_chain(self):
+        with ExitStack() as stack:
+            self._patch_backend(stack)
+            response = self.client.get('/ancestor-roots', params={'word': 'surface', 'lang_code': 'xx'})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertGreaterEqual(len(payload['roots']), 2)
+        self.assertEqual(payload['roots'][0]['word'], 'deeproot')
+        self.assertEqual(payload['roots'][0]['lang_code'], 'xx')
+
+    def test_ancestor_roots_prefers_non_proto_boundary(self):
+        with ExitStack() as stack:
+            self._patch_backend(stack)
+            response = self.client.get('/ancestor-roots', params={'word': 'protochild', 'lang_code': 'pro-xx'})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertGreaterEqual(len(payload['roots']), 1)
+        self.assertEqual(payload['roots'][0]['word'], 'deeproot')
+        self.assertEqual(payload['roots'][0]['lang_code'], 'xx')
 
     def test_descendant_tree_aggregated_collapses_extra_branches(self):
         with ExitStack() as stack:

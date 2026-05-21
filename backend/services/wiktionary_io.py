@@ -1,5 +1,6 @@
 import json
 import logging
+import unicodedata
 from constants import index
 
 # Configure basic logging for debugging when running locally.
@@ -21,16 +22,19 @@ def find_root_ancestor(entry, mmapped_file):
             break
         visited.add(head)
         found_next = False
-        for key in index:
-            if key.startswith(f"{head.lower()}_"):
-                v = index.get(key)
-                offset = v[0] if isinstance(v, (list, tuple)) and v else v
-                mmapped_file.seek(offset)
-                next_entry = json.loads(mmapped_file.readline().decode("utf-8"))
-                if "etymology_text" in next_entry:
-                    current = next_entry
-                    found_next = True
-                    break
+        for head_key in _index_word_variants(head):
+            for key in index:
+                if key.startswith(f"{head_key}_"):
+                    v = index.get(key)
+                    offset = v[0] if isinstance(v, (list, tuple)) and v else v
+                    mmapped_file.seek(offset)
+                    next_entry = json.loads(mmapped_file.readline().decode("utf-8"))
+                    if "etymology_text" in next_entry:
+                        current = next_entry
+                        found_next = True
+                        break
+            if found_next:
+                break
         if not found_next:
             break
     return current.get("word")
@@ -42,19 +46,32 @@ def _normalize_for_match(s):
     return str(s).strip().lower()
 
 
+def _index_word_variants(s):
+    if not s:
+        return []
+    raw = str(s).strip().lower()
+    variants = [raw]
+    stripped = "".join(ch for ch in unicodedata.normalize("NFKD", raw) if unicodedata.category(ch) != "Mn")
+    if stripped and stripped != raw:
+        variants.append(stripped)
+    return variants
+
+
 def _candidate_index_keys(word, lang_code=None):
-    normalized_word = _normalize_for_match(word)
-    if not normalized_word:
+    word_variants = _index_word_variants(word)
+    if not word_variants:
         return []
 
     candidates = []
-    if lang_code:
-        exact_key = f"{normalized_word}_{_normalize_for_match(lang_code)}"
-        if exact_key in index:
-            candidates.append(exact_key)
-    for key in index:
-        if key.startswith(f"{normalized_word}_") and key not in candidates:
-            candidates.append(key)
+    lang_key = _normalize_for_match(lang_code) if lang_code else None
+    for normalized_word in word_variants:
+        if lang_key:
+            exact_key = f"{normalized_word}_{lang_key}"
+            if exact_key in index and exact_key not in candidates:
+                candidates.append(exact_key)
+        for key in index:
+            if key.startswith(f"{normalized_word}_") and key not in candidates:
+                candidates.append(key)
     return candidates
 
 
@@ -227,7 +244,15 @@ def build_descendant_hierarchy(
 
     seen_children = set()
     for child_ref in _child_refs_from_entry(current_entry):
-        child_key = child_ref["key"]
+        child_word = child_ref.get("word")
+        child_lang = child_ref.get("lang_code")
+        if not child_word:
+            continue
+
+        child_key, child_entry = _read_entry_for_word(f, child_word, child_lang)
+        if not child_entry:
+            continue
+
         if child_key in visited or child_key in seen_children:
             continue
 
@@ -236,16 +261,6 @@ def build_descendant_hierarchy(
         node_budget["remaining"] = max(0, node_budget.get("remaining", 0) - 1)
         if node_budget.get("remaining", 0) <= 0:
             node_budget["truncated"] = True
-
-        try:
-            offset = index.get(child_key)
-            if isinstance(offset, (list, tuple)) and offset:
-                offset = offset[0]
-            f.seek(offset)
-            child_entry = json.loads(f.readline().decode("utf-8"))
-        except Exception as exc:
-            logger.debug("failed to read descendant child %s: %s", child_key, exc)
-            continue
 
         child_word = child_entry.get("word")
         child_lang = child_entry.get("lang_code")
