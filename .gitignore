@@ -115,3 +115,4 @@ backend/data/
 # Ignore Python cache files
 __pycache__/
 *.py[cod]
+backend/.venv/
