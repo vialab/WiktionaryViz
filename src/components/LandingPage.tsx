@@ -43,8 +43,6 @@ export default function LandingPage({
   isLoading = false,
   onExplore,
   onExploreCompare,
-  onBackToSearch,
-  // legacy
   setVisibleSection,
   setWord1,
   setWord2,
@@ -204,7 +202,7 @@ export default function LandingPage({
                 role="switch"
                 aria-checked={compareMode}
                 onClick={() => setCompareMode(s => !s)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
+                className={` disabled relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
                   compareMode ? 'bg-yellow-500' : 'bg-neutral-700'
                 }`}
               >
@@ -214,7 +212,7 @@ export default function LandingPage({
                   initial={{ left: 4 }}
                   animate={{ left: compareMode ? 20 : 4 }}
                   transition={{ type: 'spring', stiffness: 700, damping: 30 }}
-                  className="pointer-events-none absolute top-0.5 left-1 h-5 w-5 rounded-full bg-white shadow-md"
+                  className="pointer-events-none absolute top-0.5 left-1 h-5 w-5 rounded-full bg-white shadow-md disabled"
                 />
               </button>
             </div>
@@ -391,19 +389,6 @@ export default function LandingPage({
           */}
         </aside>
       </div>
-      {/* Floating back to search button */}
-      <motion.button
-        onClick={() => {
-          if (onBackToSearch) onBackToSearch()
-          else setVisibleSection?.('landing-page')
-        }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="fixed left-4 bottom-6 bg-neutral-800 text-yellow-300 px-3 py-2 rounded-md shadow-lg hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-      >
-        Back to Search
-      </motion.button>
     </section>
   )
 }
