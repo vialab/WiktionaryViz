@@ -37,6 +37,129 @@ body {
   filter: drop-shadow(0 0 2px rgba(34, 211, 238, 0.6));
 }
 
+/* Geospatial page Leaflet controls */
+#geospatial .leaflet-top.leaflet-left .leaflet-control-zoom {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.88);
+  box-shadow:
+    0 12px 28px rgba(2, 6, 23, 0.35),
+    0 0 0 1px rgba(148, 163, 184, 0.08) inset;
+  backdrop-filter: blur(10px);
+}
+
+#geospatial .leaflet-top.leaflet-left .leaflet-control-zoom a {
+  width: 2.5rem;
+  height: 2.5rem;
+  line-height: 2.5rem;
+  border: 0;
+  color: #e2e8f0;
+  background: transparent;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+#geospatial .leaflet-top.leaflet-left .leaflet-control-zoom a:hover {
+  color: #f8fafc;
+  background: rgba(30, 41, 59, 0.9);
+}
+
+#geospatial .leaflet-top.leaflet-left .leaflet-control-zoom a:focus-visible {
+  outline: 2px solid rgba(125, 211, 252, 0.9);
+  outline-offset: -2px;
+}
+
+#geospatial .leaflet-top.leaflet-left .leaflet-control-zoom a.leaflet-control-zoom-in,
+#geospatial .leaflet-top.leaflet-left .leaflet-control-zoom a.leaflet-control-zoom-out {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+#geospatial .leaflet-top.leaflet-left .leaflet-control-zoom a.leaflet-control-zoom-in {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+#geospatial .leaflet-top.leaflet-left .leaflet-control-zoom a.leaflet-disabled {
+  color: rgba(148, 163, 184, 0.42);
+  background: rgba(15, 23, 42, 0.6);
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 1rem;
+  background: rgba(15, 23, 42, 0.88);
+  box-shadow:
+    0 12px 28px rgba(2, 6, 23, 0.35),
+    0 0 0 1px rgba(148, 163, 184, 0.08) inset;
+  backdrop-filter: blur(10px);
+  color: #e2e8f0;
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers-toggle {
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 1.15rem 1.15rem;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease,
+    filter 160ms ease;
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers-toggle:hover {
+  background-color: rgba(30, 41, 59, 0.9);
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers-toggle:focus-visible {
+  outline: 2px solid rgba(125, 211, 252, 0.9);
+  outline-offset: -2px;
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers-expanded {
+  min-width: 15rem;
+  max-width: 18rem;
+  padding: 0.85rem 0.9rem;
+  background: rgba(15, 23, 42, 0.95);
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers-list,
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers-base,
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers-overlays {
+  color: #e2e8f0;
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers-separator {
+  margin: 0.6rem 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.1rem;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers label:hover {
+  color: #f8fafc;
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers-selector {
+  accent-color: #38bdf8;
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers-expanded a {
+  color: #e2e8f0;
+}
+
 /* Highlighted lineage countries */
 .country-highlighted {
   transition:
