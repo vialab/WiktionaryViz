@@ -2,6 +2,14 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.21](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.20...wiktionaryviz-v0.1.21) (2026-05-28)
+
+
+### Features
+
+* **GeospatialPage:** integrate GeospatialSettingsMenu for enhanced map settings and export options ([48cef71](https://github.com/vialab/WiktionaryViz/commit/48cef7115006876484c14adb03f96db893f78ab2))
+* **styles:** add custom styles for Leaflet controls on the geospatial page to enhance user interface and experience ([869b4c7](https://github.com/vialab/WiktionaryViz/commit/869b4c7a2cc8c970db1c5e07a227ff5cc75999e4))
+
 ## [0.1.20](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.19...wiktionaryviz-v0.1.20) (2026-05-28)
 
 
