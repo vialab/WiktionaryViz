@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.22](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.21...wiktionaryviz-v0.1.22) (2026-05-28)
+
+
+### Features
+
+* **GeospatialPage:** adjust section height to account for header space for better layout ([913d33b](https://github.com/vialab/WiktionaryViz/commit/913d33bbaaf22ea5a9d92a3ce3ecfa6924ed1676))
+
 ## [0.1.21](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.20...wiktionaryviz-v0.1.21) (2026-05-28)
 
 
