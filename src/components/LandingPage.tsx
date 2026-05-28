@@ -42,25 +42,15 @@ export default function LandingPage({
   suggestedWords = ['world', 'love', 'sun', 'orange'],
   isLoading = false,
   onExplore,
-  onExploreCompare,
   setVisibleSection,
   setWord1,
-  setWord2,
   setLanguage1,
-  setLanguage2,
   word1,
-  // legacy controlled second-word props
-  word2,
-  language2,
-  // legacy controlled first-word language
   language1,
 }: LandingPageProps) {
   const [word, setWord] = useState<string>(initialWord ?? word1 ?? '')
-  const [compareMode, setCompareMode] = useState<boolean>(false)
-  const [wordB, setWordB] = useState<string>(word2 ?? '')
   // prefer any legacy controlled language props when provided (fall back to initialLanguage)
   const [language, setLanguage] = useState<string>(language1 || initialLanguage)
-  const [languageB, setLanguageB] = useState<string>(language2 || initialLanguage)
 
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -69,7 +59,6 @@ export default function LandingPage({
 
   // hooks for available languages and interesting word suggestions
   const { languages: availableLangs, loading: langsLoading } = useAvailableLanguages(word)
-  const { languages: availableLangsB, loading: langsBLoading } = useAvailableLanguages(wordB)
   const { loading: interestingLoading, refresh } = useInterestingWord()
 
   // Autofocus on mount
@@ -139,32 +128,10 @@ export default function LandingPage({
   // "Inspire me". The hook's `refresh` returns the fetched word so we can
   // update local state immediately after a manual refresh.
 
-  const triggerExploreCompare = (a: string, aLang: string, b: string, bLang: string) => {
-    const ta = a.trim()
-    const tb = b.trim()
-    if (!ta) return
-    if (onExploreCompare) {
-      onExploreCompare(ta, aLang, tb, bLang)
-      return
-    }
-
-    // fallback: set words and navigate — set second word if present
-    setWord1?.(ta)
-    setLanguage1?.(aLang)
-    setWord2?.(tb)
-    setLanguage2?.(bLang)
-    setVisibleSection?.(tb ? 'geospatial' : 'geospatial')
-  }
-
-  // submit handler updated for compare mode
   const onSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
     if (isLoading) return
-    if (compareMode) {
-      triggerExploreCompare(word, language, wordB, languageB)
-    } else {
-      triggerExplore(word, language)
-    }
+    triggerExplore(word, language)
   }
 
   return (
@@ -192,27 +159,25 @@ export default function LandingPage({
             Search a word
           </h2>
 
-          {/* Compare toggle moved to top of the interaction card for easier access */}
-          <div className="flex items-center justify-between mb-4">
+          {/* Compare mode is intentionally disabled for now. */}
+          <div className="mb-4 flex items-center justify-between opacity-40">
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-300">Compare mode</span>
 
               <button
                 type="button"
                 role="switch"
-                aria-checked={compareMode}
-                onClick={() => setCompareMode(s => !s)}
-                className={` disabled relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
-                  compareMode ? 'bg-yellow-500' : 'bg-neutral-700'
-                }`}
+                aria-checked={false}
+                aria-disabled="true"
+                disabled
+                className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full bg-neutral-700 transition-colors focus:outline-none"
               >
-                <span className="sr-only">Toggle compare mode</span>
+                <span className="sr-only">Compare mode disabled</span>
                 <motion.span
-                  // use absolute positioning so the circle doesn't get clipped by transforms
                   initial={{ left: 4 }}
-                  animate={{ left: compareMode ? 20 : 4 }}
+                  animate={{ left: 4 }}
                   transition={{ type: 'spring', stiffness: 700, damping: 30 }}
-                  className="pointer-events-none absolute top-0.5 left-1 h-5 w-5 rounded-full bg-white shadow-md disabled"
+                  className="pointer-events-none absolute top-0.5 left-1 h-5 w-5 rounded-full bg-white shadow-md"
                 />
               </button>
             </div>
@@ -226,9 +191,6 @@ export default function LandingPage({
                 placeholder="Enter a word or phrase…"
               />
             </div> */}
-
-            {/* Compare mode second input (animated) */}
-            
 
             <div className="flex flex-col gap-3">
               <div>
@@ -270,59 +232,6 @@ export default function LandingPage({
                   )}
                 </div>
               </div>
-
-              {/* Vertical VS and second input when compareMode is active */}
-              {compareMode && (
-                <>
-                  <div className="flex items-center justify-center">
-                    <div className="text-yellow-300 font-semibold text-lg">VS</div>
-                  </div>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.28 }}
-                    className="flex-1"
-                  >
-                    <div className="flex items-stretch w-full rounded-lg overflow-hidden border border-neutral-800 bg-neutral-900">
-                      <div className="flex-1">
-                        <WordLanguageInput
-                          word={wordB}
-                          onWordChange={setWordB}
-                          inputBaseStyles="w-full px-4 py-3 rounded-none bg-transparent text-gray-100 placeholder-gray-400 focus:outline-none"
-                          placeholder="Enter a second word…"
-                        />
-                      </div>
-
-                      {wordB && wordB.trim().length > 0 && (
-                        <div className="w-40 md:w-44 flex items-center px-2 border-l border-neutral-800 bg-neutral-800">
-                          {langsBLoading ? (
-                            <p className="text-[#B79F58]">Loading…</p>
-                          ) : (
-                            <select
-                              className="w-full h-11 bg-neutral-800 text-gray-100 px-2 focus:outline-none appearance-none"
-                              value={languageB}
-                              onChange={e => setLanguageB(e.target.value)}
-                              aria-label="Language for second word"
-                              disabled={isLoading}
-                            >
-                              <option value="">Select a language</option>
-                              {availableLangsB.map(l => {
-                                const obj = typeof l === 'string' ? { code: l, name: l } : (l as { code: string; name: string })
-                                return (
-                                  <option key={obj.code} value={obj.code}>
-                                    {obj.name}
-                                  </option>
-                                )
-                              })}
-                            </select>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                </>
-              )}
 
               {/* Submit button below inputs */}
               <div className="flex items-end">
