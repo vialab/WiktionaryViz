@@ -59,6 +59,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   // Track visibility of LayersControl overlays that render non-Leaflet DOM (bubbles SVG)
   const [showLanguageFamilies, setShowLanguageFamilies] = useState(false)
   const [languageFamiliesGroup, setLanguageFamiliesGroup] = useState<L.LayerGroup | null>(null)
+  const [showEtymologyLineage, setShowEtymologyLineage] = useState(false)
+  const [etymologyLineageGroup, setEtymologyLineageGroup] = useState<L.LayerGroup | null>(null)
   const hasAdjustedZoomRef = useRef(false)
   const playbackTimerRef = useRef<number | null>(null)
   // --- Dynamic zoom refs (distance-based small-jump assist) ---
@@ -292,6 +294,26 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     }
   }, [mapInstance, languageFamiliesGroup])
 
+  // Mirror the etymology overlay state so the timeline scrubber only shows while that layer is visible.
+  useEffect(() => {
+    const map = mapInstance
+    const group = etymologyLineageGroup
+    if (!map || !group) return
+    const onAdd = (e: L.LayersControlEvent) => {
+      if (e.layer === group) setShowEtymologyLineage(true)
+    }
+    const onRemove = (e: L.LayersControlEvent) => {
+      if (e.layer === group) setShowEtymologyLineage(false)
+    }
+    map.on('overlayadd', onAdd)
+    map.on('overlayremove', onRemove)
+    setShowEtymologyLineage(map.hasLayer(group))
+    return () => {
+      map.off('overlayadd', onAdd)
+      map.off('overlayremove', onRemove)
+    }
+  }, [mapInstance, etymologyLineageGroup])
+
   return (
     <section id="geospatial" className="w-full h-screen bg-gray-900 text-white">
       <MapContainer
@@ -350,7 +372,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           </LayersControl.Overlay>
           {/* Etymology Lineage Path Layer (includes associated country highlights) */}
           <LayersControl.Overlay checked name="Etymology Lineage Path">
-            <LayerGroup>
+            <LayerGroup ref={instance => setEtymologyLineageGroup(instance)}>
               <LineageCountryHighlights lineage={lineage} currentIndex={currentIndex} />
               <EtymologyLineagePath
                 lineage={lineage}
@@ -371,22 +393,24 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           {/* TODO [HIGH LEVEL]: Filters (time slider, region, language family) to declutter map; uncertainty styling. */}
           {/* TODO [LOW LEVEL]: Add a control panel to filter markers by decade/region and desaturate uncertain items. */}
         </LayersControl>
-        <TimelineScrubber
-          lineage={lineage}
-          currentIndex={currentIndex}
-          onChange={setCurrentIndex}
-          isPlaying={isPlaying}
-          onTogglePlay={() => setIsPlaying(p => !p)}
-          speed={playSpeed}
-          onSpeedChange={setPlaySpeed}
-          loop={loop}
-          onToggleLoop={() => setLoop(l => !l)}
-          onReset={() => {
-            setCurrentIndex(undefined)
-            setIsPlaying(false)
-            setShowAllPopups(false)
-          }}
-        />
+        {showEtymologyLineage && lineage && (
+          <TimelineScrubber
+            lineage={lineage}
+            currentIndex={currentIndex}
+            onChange={setCurrentIndex}
+            isPlaying={isPlaying}
+            onTogglePlay={() => setIsPlaying(p => !p)}
+            speed={playSpeed}
+            onSpeedChange={setPlaySpeed}
+            loop={loop}
+            onToggleLoop={() => setLoop(l => !l)}
+            onReset={() => {
+              setCurrentIndex(undefined)
+              setIsPlaying(false)
+              setShowAllPopups(false)
+            }}
+          />
+        )}
       </MapContainer>
     </section>
   )
