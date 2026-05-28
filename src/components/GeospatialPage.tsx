@@ -314,7 +314,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   }, [mapInstance, etymologyLineageGroup])
 
   return (
-    <section id="geospatial" className="w-full h-screen bg-gray-900 text-white">
+    <section
+      id="geospatial"
+      className="w-full h-[calc(100vh-4rem)] overflow-hidden bg-gray-900 text-white"
+    >
       <MapContainer
         center={[0, 0]}
         zoom={2}
