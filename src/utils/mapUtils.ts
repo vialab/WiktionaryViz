@@ -33,6 +33,10 @@ interface Marker {
   popupText: string
 }
 
+interface LanguageMetadata {
+  name?: string | string[]
+}
+
 // Approximate representative centers for proto language macro-regions (lat,lng)
 const PROTO_CENTERS: Record<string, [number, number]> = {
   'ine-pro': [49.0, 45.0], // PIE Steppe (approx)
@@ -85,6 +89,22 @@ export const mapLanguageToCountries = async (
     }
   }
   return Array.from(codes)
+}
+
+const getLanguageMetadata = async (code: string): Promise<LanguageMetadata | null> => {
+  try {
+    return await new Promise(resolve => {
+      getLanguage(code, (err, data) => {
+        if (err || !data) {
+          resolve(null)
+        } else {
+          resolve(data)
+        }
+      })
+    })
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -165,29 +185,58 @@ export const getCoordinatesForLanguage = async (
     return null
   }
 
-  // Try to find an exact match in the dataset
-  console.log(`Looking up coordinates for ISO code: ${iso639P3}`)
-  const matchingRow = languoidData.find(
-    row => row.iso639P3code?.toLowerCase() === iso639P3.toLowerCase(),
+  const lookupCodes = [iso639P3.toLowerCase(), languageCode.toLowerCase()]
+  const exactMatches = languoidData.filter(row =>
+    lookupCodes.includes(row.iso639P3code?.toLowerCase() ?? ''),
   )
 
-  if (matchingRow) {
-    console.log(`Matched language by ISO code: ${iso639P3}`)
-    console.log(`Coordinates: ${matchingRow.latitude}, ${matchingRow.longitude}`)
-    return parseCoordinate(matchingRow.latitude, matchingRow.longitude)
+  for (const match of exactMatches) {
+    const coordinate = parseCoordinate(match.latitude, match.longitude)
+    if (coordinate) {
+      console.log(`Matched language by ISO code: ${match.iso639P3code}`)
+      console.log(`Coordinates: ${match.latitude}, ${match.longitude}`)
+      return coordinate
+    }
   }
 
-  // 🔥 SAFELY HANDLE MISSING `name` PROPERTY
+  const languageMetadata = await getLanguageMetadata(languageCode)
+  const languageNames = Array.isArray(languageMetadata?.name)
+    ? languageMetadata.name
+    : languageMetadata?.name
+      ? [languageMetadata.name]
+      : []
+
+  for (const languageName of languageNames) {
+    const normalizedName = String(languageName).trim().toLowerCase()
+    if (!normalizedName) continue
+
+    const nameMatches = languoidData.filter(row => {
+      const rowName = row.name?.trim().toLowerCase() ?? ''
+      return rowName === normalizedName || rowName.includes(normalizedName)
+    })
+
+    for (const match of nameMatches) {
+      const coordinate = parseCoordinate(match.latitude, match.longitude)
+      if (coordinate) {
+        console.log(`Matched language by name: ${match.name}`)
+        console.log(`Coordinates: ${match.latitude}, ${match.longitude}`)
+        return coordinate
+      }
+    }
+  }
+
   try {
-    const nameMatch = languoidData.find(
-      row => row.name && row.name.toLowerCase().includes(languageCode.toLowerCase()),
-    )
-    if (nameMatch) {
-      console.log(`Matched using name: ${nameMatch.name}`)
-      return parseCoordinate(nameMatch.latitude, nameMatch.longitude)
+    const fallbackCountry = (await getCountryFromLanguageCode(languageCode)) as {
+      code_2?: string
+    } | null
+    if (fallbackCountry?.code_2) {
+      const fallbackCoordinate = await getCountryCoordinates(fallbackCountry.code_2, languoidData)
+      if (fallbackCoordinate.lat !== 0 && fallbackCoordinate.lng !== 0) {
+        return fallbackCoordinate
+      }
     }
   } catch (err) {
-    console.error(`Error while searching by name for language code: ${languageCode}`, err)
+    console.error(`Error while resolving fallback country for language code: ${languageCode}`, err)
   }
 
   console.warn(`No coordinates found for language code: ${iso639P3}. Skipping.`)
@@ -345,9 +394,9 @@ export const processEtymologyLineage = async (
     if (currentNode) currentNode.position = [0, 0] // Default fallback coordinates
   }
 
-  // Include inheritance ('inh') along with borrowing ('bor') and derivation ('der')
+  // Include inheritance ('inh') along with borrowing ('bor'/'bor+') and derivation ('der')
   const orderedEtymology = etymologyTemplates.filter(entry =>
-    ['bor', 'der', 'inh'].includes(entry.name),
+    ['bor', 'bor+', 'der', 'inh'].includes(entry.name),
   )
 
   for (const entry of orderedEtymology) {
