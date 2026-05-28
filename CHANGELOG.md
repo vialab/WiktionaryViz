@@ -2,6 +2,15 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.20](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.19...wiktionaryviz-v0.1.20) (2026-05-28)
+
+
+### Features
+
+* **GeospatialPage:** add etymology lineage overlay and conditional timeline scrubber display for enhanced user interaction ([4d59470](https://github.com/vialab/WiktionaryViz/commit/4d594708b4955669d5c29b8a5ed885b9f8a71440))
+* **GeospatialPage:** enable scroll wheel zoom and set wheel pixels per zoom level for improved map interaction ([d9210ab](https://github.com/vialab/WiktionaryViz/commit/d9210aba4f4d52a0d1b9c6352592cc21b4d0bf90))
+* **mapUtils.ts:** add language metadata retrieval and enhance coordinate lookup logic for improved accuracy and flexibility ([c59cceb](https://github.com/vialab/WiktionaryViz/commit/c59cceb1f339b21fb99a6d3da4f130580b1ad44e))
+
 ## [0.1.19](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.18...wiktionaryviz-v0.1.19) (2026-05-21)
 
 
