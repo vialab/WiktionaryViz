@@ -320,7 +320,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
         center={[0, 0]}
         zoom={2}
         minZoom={2}
-        scrollWheelZoom={false}
+        scrollWheelZoom={true}
+        wheelPxPerZoomLevel={240}
         className="relative w-full h-full"
         style={{ background: '#0b0f1a' }}
         id="map-root"
