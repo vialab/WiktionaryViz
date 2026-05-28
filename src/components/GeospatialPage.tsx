@@ -13,8 +13,7 @@ import TranslationMarkers, { TranslationMarker } from './geospatial/TranslationM
 import LineageCountryHighlights from './geospatial/LineageCountryHighlights'
 import EtymologyLineagePath from './geospatial/EtymologyLineagePath'
 import TimelineScrubber from './geospatial/TimelineScrubber.tsx'
-import ExportGeoJSONButton from './geospatial/ExportGeoJSONButton'
-import ScreenshotButton from './geospatial/ScreenshotButton'
+import GeospatialSettingsMenu from './geospatial/GeospatialSettingsMenu'
 import ProtoLanguageZones from './geospatial/ProtoLanguageZones'
 import LanguageFamiliesBubbles from './geospatial/LanguageFamiliesBubbles'
 import DescendantLineagePaths from './geospatial/DescendantLineagePaths'
@@ -329,9 +328,13 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           if (instance) setMapInstance(instance)
         }}
       >
-        {/* Export current map data as GeoJSON */}
-        <ScreenshotButton mapInstance={mapInstance} word={word} language={language} />
-        <ExportGeoJSONButton markers={markers} lineage={lineage} />
+        <GeospatialSettingsMenu
+          markers={markers}
+          lineage={lineage}
+          word={word}
+          language={language}
+          mapInstance={mapInstance}
+        />
         <LayersControl position="topright">
           {/* Base Layers */}
           <LayersControl.BaseLayer checked name="Dark (CartoDB)">
