@@ -2,6 +2,24 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.22](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.21...wiktionaryviz-v0.1.22) (2026-06-03)
+
+
+### Features
+
+* **DescendantLineagePaths.tsx:** disable bubbling mouse events on CircleMarker for better event handling ([9474c55](https://github.com/vialab/WiktionaryViz/commit/9474c55de30be0218497dc2e14b186f43d59ec00))
+* **DescendantLineagePaths:** implement language name resolution for descendant paths to enhance user experience ([abbc6a3](https://github.com/vialab/WiktionaryViz/commit/abbc6a34652402c5e34d71ab5ed7db0f495c5bba))
+* **EtymologyLineagePath:** add getTrailingPosition function to improve arrow positioning during animation ([1d6c1b5](https://github.com/vialab/WiktionaryViz/commit/1d6c1b58ed5363523508eec6576ddf223203eeff))
+* **EtymologyLineagePath:** add isPlaying, segmentDurationMs, and dwellMs props to manage animation behavior ([fbcd1f8](https://github.com/vialab/WiktionaryViz/commit/fbcd1f8ddb59186c8916357a5cccafc3c5eec4ab))
+* **GeospatialPage:** adjust section height to account for header space for better layout ([913d33b](https://github.com/vialab/WiktionaryViz/commit/913d33bbaaf22ea5a9d92a3ce3ecfa6924ed1676))
+* **GeospatialPage:** enhance playback control by adjusting current index and playing state based on playable segments ([fbcd1f8](https://github.com/vialab/WiktionaryViz/commit/fbcd1f8ddb59186c8916357a5cccafc3c5eec4ab))
+
+
+### Bug Fixes
+
+* **EtymologyLineagePath:** add missing line to maintain code consistency ([abbc6a3](https://github.com/vialab/WiktionaryViz/commit/abbc6a34652402c5e34d71ab5ed7db0f495c5bba))
+* **EtymologyLineagePath:** update marker positions to use getTrailingPosition for smoother animations ([1d6c1b5](https://github.com/vialab/WiktionaryViz/commit/1d6c1b58ed5363523508eec6576ddf223203eeff))
+
 ## [0.1.21](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.20...wiktionaryviz-v0.1.21) (2026-05-28)
 
 
