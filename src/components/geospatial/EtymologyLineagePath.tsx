@@ -23,6 +23,12 @@ export interface EtymologyLineagePathProps {
   lineage: EtymologyNode | null
   /** Index (0-based) of current timeline focus; controls partial rendering. */
   currentIndex?: number
+  /** Whether the lineage is actively playing. Enables the active edge animation. */
+  isPlaying?: boolean
+  /** Duration in milliseconds for the currently animating segment. */
+  segmentDurationMs?: number
+  /** Dwell duration in milliseconds between segments. Threaded for timeline coordination. */
+  dwellMs?: number
   /** When true, force display of all popups (end-of-playback overview). */
   showAllPopups?: boolean
 }
@@ -38,7 +44,6 @@ export interface EtymologyLineagePathProps {
  *
  * TODO (Popup / Tooltip Automation):
  *  - [ ] Provide imperative handle (forwardRef) exposing openPopupForIndex / closeAllTooltips to support playback control in GeospatialPage.
- *  - [ ] (Already done) Mode to leave all tooltips open after completion.
  *
  * TODO (Animation Phasing):
  *  - [ ] Split rendering into two layers: (a) already-complete segments, (b) currently animating segment with stroke-dasharray animation.
@@ -51,9 +56,10 @@ const AnimatedSegment: FC<{
   start: [number, number]
   end: [number, number]
   growMs: number
+  dwellMs?: number
   angle: number
   proto?: boolean
-}> = ({ start, end, growMs, angle, proto }) => {
+}> = ({ start, end, growMs, dwellMs, angle, proto }) => {
   const polyRef = useRef<L.Polyline | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
   const map = useMap()
@@ -62,6 +68,7 @@ const AnimatedSegment: FC<{
   useEffect(() => {
     const poly = polyRef.current
     if (!poly) return
+    let frameId = 0
     try {
       const latLngs = poly.getLatLngs() as L.LatLng[]
       if (latLngs.length < 2) return
@@ -74,13 +81,16 @@ const AnimatedSegment: FC<{
       pathEl.style.strokeDashoffset = `${dist}`
       pathEl.style.setProperty('--seg-len', `${dist}`)
       pathEl.style.setProperty('--grow-ms', `${growMs}ms`)
-      void pathEl.getBoundingClientRect()
+      if (dwellMs !== undefined) {
+        pathEl.style.setProperty('--dwell-ms', `${dwellMs}ms`)
+      }
       pathEl.classList.add('etymology-segment-animating')
       setMounted(true)
       const startTime = performance.now()
       let lastLatLng: [number, number] = [...start]
       const animate = (now: number) => {
         const progress = Math.min(1, (now - startTime) / growMs)
+        pathEl.style.strokeDashoffset = `${dist * (1 - progress)}`
         // Keep the arrow slightly behind the growing edge so it does not sit on the node.
         const [lat, lng] = getTrailingPosition(map, start, end, progress)
         if (markerRef.current) {
@@ -96,13 +106,18 @@ const AnimatedSegment: FC<{
           }
         }
         lastLatLng = [lat, lng]
-        if (progress < 1) requestAnimationFrame(animate)
+        if (progress < 1) {
+          frameId = requestAnimationFrame(animate)
+        }
       }
-      requestAnimationFrame(animate)
+      frameId = requestAnimationFrame(animate)
     } catch {
       // ignore
     }
-  }, [growMs, map, start, end])
+    return () => {
+      if (frameId) cancelAnimationFrame(frameId)
+    }
+  }, [growMs, map, start, end, dwellMs])
 
   return (
     <>
@@ -138,12 +153,14 @@ const AnimatedSegment: FC<{
 }
 
 const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
-  ({ lineage, currentIndex, showAllPopups }) => {
+  ({ lineage, currentIndex, isPlaying = false, segmentDurationMs, dwellMs, showAllPopups }) => {
     const map = useMap()
-    const elements: React.ReactNode[] = []
+    const completedSegments: React.ReactNode[] = []
+    const activeSegments: React.ReactNode[] = []
     let node: EtymologyNode | null = lineage
     let idx = 0
     const active = typeof currentIndex === 'number' ? currentIndex : undefined
+    const activeEdgeIndex = isPlaying && active !== undefined ? active + 1 : undefined
 
     while (node) {
       const { word, lang_code, romanization, position, expansion } = node
@@ -153,7 +170,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
         const visible = active === undefined || idx <= active // only show nodes up to active
         if (visible) {
           const tooltipPermanent = showAllPopups || isActive
-          elements.push(
+          completedSegments.push(
             <CircleMarker
               key={`circle-${word}-${lang_code}`}
               center={center}
@@ -186,15 +203,15 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
           const start = center
           const end = normalizePosition(node.next.position)
           const nextIndex = idx + 1
-          const edgeActive = active !== undefined && nextIndex === active // edge leading to active node animates
-          const alreadyPast = active === undefined || nextIndex < active
+          const edgeActive = activeEdgeIndex === nextIndex
+          const alreadyPast = active === undefined || nextIndex <= active
           // Precompute for whichever branch uses them
           const angle = calculateBearing(start, end)
           if (alreadyPast) {
             // Static drawn segment
             const edgeStyle = edgeStyleBetween(lang_code, node.next.lang_code)
             const dash = edgeStyle.dashArray
-            elements.push(
+            completedSegments.push(
               <Polyline
                 key={`polyline-static-${word}-${node.next.word}`}
                 positions={[start, end]}
@@ -207,7 +224,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
               />,
             )
             // Arrow at end of completed segment
-            elements.push(
+            completedSegments.push(
               <Marker
                 key={`arrow-static-${word}-${node.next.word}`}
                 position={getTrailingPosition(map, start, end, 1)}
@@ -222,12 +239,15 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
             )
           } else if (edgeActive) {
             const protoEdge = isProto(lang_code) || isProto(node.next.lang_code)
-            elements.push(
+            activeSegments.push(
               <AnimatedSegment
                 key={`polyline-anim-${word}-${node.next.word}`}
                 start={start}
                 end={end}
-                growMs={Math.min(900, 400 + Math.hypot(start[0] - end[0], start[1] - end[1]) * 60)}
+                growMs={
+                  segmentDurationMs ?? Math.min(900, 400 + Math.hypot(start[0] - end[0], start[1] - end[1]) * 60)
+                }
+                dwellMs={dwellMs}
                 angle={angle}
                 proto={protoEdge}
               />,
@@ -241,7 +261,12 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
       idx++
     }
     if (!lineage) return null
-    return <>{elements}</>
+    return (
+      <>
+        {completedSegments}
+        {activeSegments}
+      </>
+    )
   },
 )
 

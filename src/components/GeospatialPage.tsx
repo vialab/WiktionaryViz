@@ -98,8 +98,9 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
         }
         setLineage(root)
         // Reset playback-related state for new lineage
-        setCurrentIndex(undefined)
-        setIsPlaying(false)
+        const hasPlayableSegments = flattenLineage(root).length > 1
+        setCurrentIndex(hasPlayableSegments ? 0 : undefined)
+        setIsPlaying(hasPlayableSegments)
         setShowAllPopups(false)
       })
     }
@@ -384,6 +385,9 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
               <EtymologyLineagePath
                 lineage={lineage}
                 currentIndex={currentIndex}
+                isPlaying={isPlaying}
+                segmentDurationMs={playSpeed}
+                dwellMs={dwellDurationRef.current}
                 showAllPopups={showAllPopups}
               />
             </LayerGroup>
