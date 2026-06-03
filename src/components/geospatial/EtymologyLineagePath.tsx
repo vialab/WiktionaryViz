@@ -45,6 +45,7 @@ export interface EtymologyLineagePathProps {
  *  - [ ] Provide per-segment duration + dwell pause prop to coordinate with TimelineScrubber.
  *  - [ ] Optionally use requestAnimationFrame for smoother growth animation rather than CSS-only for long great-circle paths.
  */
+
 // Internal component to animate a single segment (active edge)
 const AnimatedSegment: FC<{
   start: [number, number]

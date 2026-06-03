@@ -2,14 +2,17 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Pane, LayerGroup, Polyline, CircleMarker, Tooltip, useMap } from 'react-leaflet'
 import * as L from 'leaflet'
 import type { LatLngExpression } from 'leaflet'
+import { getLanguage } from '@ladjs/country-language'
 import useLanguoidData from '@/hooks/useLanguoidData'
 import { normalizePosition, getCoordinatesForLanguage } from '@/utils/mapUtils'
 import { apiUrl } from '@/utils/apiBase'
 import { flattenPathsFromTree, fallbackPoint } from './descendantPathHelpers'
+import type { AggregatedTreeNode } from './descendantPathHelpers'
 
 type DescNode = {
   word?: string
   lang_code?: string | null
+  romanization?: string | null
   expansion?: string | null
   aggregated?: boolean
   count?: number
@@ -32,10 +35,6 @@ type RenderPoint = {
 
 const nodeKey = (word?: string, langCode?: string | null) => `${word ?? ''}|${langCode ?? ''}`
 
-const reversePath = (path: DescPath) => [...path].reverse()
-
-const pathKey = (path: DescPath) => path.map(node => nodeKey(node.word, node.lang_code)).join('>')
-
 const mergeExpandedPaths = (basePath: DescPath, expandedPaths: DescPath[], clickedIndex: number) => {
   const prefix = basePath.slice(0, clickedIndex + 1)
   const nextPaths = expandedPaths
@@ -43,6 +42,51 @@ const mergeExpandedPaths = (basePath: DescPath, expandedPaths: DescPath[], click
     .filter(path => path.length > prefix.length)
 
   return nextPaths.length ? nextPaths : [basePath]
+}
+
+const hashString = (value: string) => {
+  let hash = 0
+  for (let index = 0; index < value.length; index++) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0
+  }
+  return hash
+}
+
+const stablePathBase = (path: DescPath): [number, number] => {
+  const signature = path.map(node => nodeKey(node.word, node.lang_code)).join('>')
+  const hash = hashString(signature)
+  const lat = (hash % 12000) / 100 - 60
+  const lng = ((Math.floor(hash / 12000) % 30000) / 100) - 150
+  return [lat, lng]
+}
+
+const getLanguageLabel = (langCode: string | null | undefined, languoidData: ReturnType<typeof useLanguoidData>) => {
+  if (!langCode) return null
+  const normalizedCode = langCode.toLowerCase()
+  const match = languoidData.find(entry => entry.iso639P3code?.toLowerCase() === normalizedCode)
+  if (match?.name && match.name.trim()) {
+    return match.name
+  }
+  return langCode
+}
+
+const resolveLanguageName = async (langCode: string | null | undefined, languoidData: ReturnType<typeof useLanguoidData>) => {
+  if (!langCode) return null
+
+  const direct = getLanguageLabel(langCode, languoidData)
+  if (direct && direct !== langCode) return direct
+
+  return await new Promise<string | null>(resolve => {
+    getLanguage(langCode, (error, data) => {
+      if (error || !data) {
+        resolve(direct)
+        return
+      }
+
+      const name = Array.isArray(data.name) ? data.name[0] : data.name
+      resolve(typeof name === 'string' && name.trim() ? name : direct)
+    })
+  })
 }
 
 /*
@@ -103,6 +147,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
   const [selected, setSelected] = useState<number | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [playbackRate, setPlaybackRate] = useState(1)
+  const [languageNames, setLanguageNames] = useState<Record<string, string>>({})
   const polyRefs = useRef<Record<number, L.Polyline | null>>({})
   const playbackRunRef = useRef(0)
   const expandedNodeKeysRef = useRef<Set<string>>(new Set())
@@ -148,7 +193,6 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
           return
         }
         const json = await res.json()
-        const ancestryPaths = (json.paths || []) as DescPath[]
         const roots = (json.roots || []) as RootCandidate[]
         const nextSelectedRoot = (() => {
           if (selectedRootCandidate) {
@@ -159,13 +203,12 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
           return (json.selected_root as RootCandidate) || roots[0] || null
         })()
 
-        const rootKey = nodeKey(nextSelectedRoot?.word, nextSelectedRoot?.lang_code)
-        const matchedPath = ancestryPaths.find(path => nodeKey(path[path.length - 1]?.word, path[path.length - 1]?.lang_code) === rootKey)
-        const normalizedPaths = detailMode === 'full'
-          ? ancestryPaths.map(reversePath).filter(path => path.length > 0)
-          : [reversePath(matchedPath || ancestryPaths[0] || [])].filter(path => path.length > 0)
         if (!cancelled) {
-          setPaths(normalizedPaths)
+          const rootNode: DescNode = {
+            word: nextSelectedRoot?.word || json.root || rootWord,
+            lang_code: nextSelectedRoot?.lang_code || json.root_lang || rootLang || null,
+          }
+          setPaths([[rootNode]])
           setLastLoadMs(typeof json?.meta?.elapsed_ms === 'number' ? json.meta.elapsed_ms : null)
           setRootCandidates(roots)
           setSelectedRootCandidate(nextSelectedRoot)
@@ -198,7 +241,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
       cancelled = true
       controller.abort()
     }
-  }, [rootWord, rootLang, map, languoidData, selectedRootCandidateKey, mode, detailMode])
+  }, [rootWord, rootLang, map, languoidData, selectedRootCandidate, selectedRootCandidateKey, mode, detailMode])
 
   const expandNode = async (node: DescNode, basePath: DescPath, clickedIndex: number, pathIndex: number) => {
     if (!node.word) return
@@ -283,9 +326,33 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paths, languoidData])
 
+  useEffect(() => {
+    let cancelled = false
+
+    ;(async () => {
+      const uniqueCodes = new Set<string>()
+      for (const path of paths) {
+        for (const node of path) {
+          if (node.lang_code) uniqueCodes.add(node.lang_code)
+        }
+      }
+
+      const next: Record<string, string> = {}
+      for (const code of Array.from(uniqueCodes)) {
+        const resolved = await resolveLanguageName(code, languoidData)
+        if (resolved) next[code] = resolved
+        if (cancelled) return
+      }
+
+      if (!cancelled) setLanguageNames(next)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [paths, languoidData])
+
   const pointsForPath = (p: DescPath, pathIndex: number): RenderPoint[] => {
-    const center = map.getCenter()
-    const mapCenter: [number, number] = [center.lat, center.lng]
     const resolved: Array<[number, number] | null> = p.map(n => {
       const lc = n.lang_code || ''
       const cached = coordsMap[lc]
@@ -327,7 +394,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
       } else if (nextRealIndex >= 0 && resolved[nextRealIndex]) {
         synth = fallbackPoint(resolved[nextRealIndex]!, pathIndex, pointIndex, -1)
       } else {
-        synth = fallbackPoint(mapCenter, pathIndex, pointIndex, 1)
+        synth = fallbackPoint(stablePathBase(p), pathIndex, pointIndex, 1)
       }
 
       return {
@@ -381,9 +448,9 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
         pathEl.style.strokeDasharray = `${dist}`
         pathEl.style.strokeDashoffset = `${dist}`
         void pathEl.getBoundingClientRect()
-        pathEl.classList.add('etymology-segment-animating')
+        pathEl.classList.add('descendant-segment-animating')
         await sleep(Math.max(120, Math.round(playSpeed * playbackRate)) + 120)
-        pathEl.classList.remove('etymology-segment-animating')
+        pathEl.classList.remove('descendant-segment-animating')
       } catch {
         // ignore
       }
@@ -426,12 +493,14 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
               {coords.length >= 2 ? (
                 <Polyline
                   positions={coords}
+                  interactive={false}
+                  bubblingMouseEvents={false}
                   pathOptions={{
                     color: baseColor,
                     weight: isActive ? 3.6 : hasAggregatedNode ? 2.6 : 2.2,
                     opacity: isActive ? 0.98 : hasAggregatedNode ? 0.72 : hasFallbackNode ? 0.68 : 0.6,
                     dashArray: hasAggregatedNode ? '6 4' : hasFallbackNode ? '3 5' : undefined,
-                    className: `etymology-segment${isActive ? ' etymology-segment-active' : ''}`,
+                    className: `descendant-segment${isActive ? ' descendant-segment-active' : ''}`,
                   }}
                   ref={ref => {
                     polyRefs.current[idx] = ref as unknown as L.Polyline | null
@@ -448,7 +517,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
                 <CircleMarker
                   key={`c-${idx}-${i}`}
                   center={point.position}
-                  radius={selected === idx ? 6 : point.aggregated ? 5.5 : point.fallback ? 4.5 : 3.5}
+                  radius={selected === idx ? 7 : point.aggregated ? 6 : point.fallback ? 4.5 : 4.5}
                   pathOptions={{
                     fillColor: point.aggregated ? '#fbbf24' : point.fallback ? '#60a5fa' : '#f97316',
                     color: point.aggregated ? '#a16207' : point.fallback ? '#1d4ed8' : '#92400e',
@@ -464,9 +533,15 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
                 >
                   {(selected === idx || i === points.length - 1) && (
                     <Tooltip direction="top" offset={[0, -6]} permanent={false}>
-                      <div style={{ fontSize: 12, fontWeight: 700 }}>
-                        {p[i]?.expansion ?? p[i]?.word}
-                        {point.aggregated && typeof point.count === 'number' ? <span style={{ marginLeft: 6, opacity: 0.85 }}>({point.count})</span> : null}
+                      <div className="leading-tight" style={{ fontSize: 12, fontWeight: 700 }}>
+                        <strong>{languageNames[p[i]?.lang_code ?? ''] ?? getLanguageLabel(p[i]?.lang_code, languoidData) ?? p[i]?.lang_code}</strong>
+                        <span className="ml-1 text-xs opacity-80">{p[i]?.expansion ?? p[i]?.word}</span>
+                        {p[i]?.romanization && (
+                          <span className="ml-1 text-xs opacity-80">{p[i]?.romanization}</span>
+                        )}
+                        {point.aggregated && typeof point.count === 'number' ? (
+                          <span style={{ marginLeft: 6, opacity: 0.85 }}>({point.count})</span>
+                        ) : null}
                         {point.fallback ? <span style={{ marginLeft: 6, opacity: 0.78 }}>[fallback]</span> : null}
                       </div>
                     </Tooltip>
