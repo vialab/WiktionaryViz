@@ -214,17 +214,6 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
           setSelectedRootCandidate(nextSelectedRoot)
           setResolvedRoot(nextSelectedRoot?.word || json.root || null)
           setResolvedRootLang(nextSelectedRoot?.lang_code || json.root_lang || null)
-          try {
-            const nextRootLang = nextSelectedRoot?.lang_code || json.root_lang || null
-            if (nextRootLang && map && languoidData && languoidData.length) {
-              const pos = await getCoordinatesForLanguage(nextRootLang, languoidData)
-              if (pos && !cancelled) {
-                map.flyTo([pos.lat, pos.lng], Math.max(3, map.getZoom()), { duration: 0.8 })
-              }
-            }
-          } catch {
-            // ignore
-          }
         }
       } catch (e) {
         if ((e as Error)?.name === 'AbortError') return
@@ -517,6 +506,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
                 <CircleMarker
                   key={`c-${idx}-${i}`}
                   center={point.position}
+                  bubblingMouseEvents={false}
                   radius={selected === idx ? 7 : point.aggregated ? 6 : point.fallback ? 4.5 : 4.5}
                   pathOptions={{
                     fillColor: point.aggregated ? '#fbbf24' : point.fallback ? '#60a5fa' : '#f97316',
