@@ -4,6 +4,21 @@ import { normalizePosition, createArrowIcon, calculateBearing } from '@/utils/ma
 import { isProto, edgeStyleBetween } from '@/utils/visualConstants'
 import type { EtymologyNode } from '@/types/etymology'
 
+const getTrailingPosition = (
+  map: L.Map,
+  start: [number, number],
+  end: [number, number],
+  progress: number,
+  trailingProgress = 0.1,
+): [number, number] => {
+  const clamped = Math.max(0, Math.min(1, progress - trailingProgress))
+  const projectedStart = map.project(start)
+  const projectedEnd = map.project(end)
+  const interpolatedPoint = projectedStart.add(projectedEnd.subtract(projectedStart).multiplyBy(clamped))
+  const latLng = map.unproject(interpolatedPoint)
+  return [latLng.lat, latLng.lng]
+}
+
 export interface EtymologyLineagePathProps {
   lineage: EtymologyNode | null
   /** Index (0-based) of current timeline focus; controls partial rendering. */
@@ -65,9 +80,8 @@ const AnimatedSegment: FC<{
       let lastLatLng: [number, number] = [...start]
       const animate = (now: number) => {
         const progress = Math.min(1, (now - startTime) / growMs)
-        // Linear interpolation in lat/lng; acceptable for visualization (not exact great-circle).
-        const lat = start[0] + (end[0] - start[0]) * progress
-        const lng = start[1] + (end[1] - start[1]) * progress
+        // Keep the arrow slightly behind the growing edge so it does not sit on the node.
+        const [lat, lng] = getTrailingPosition(map, start, end, progress)
         if (markerRef.current) {
           markerRef.current.setLatLng([lat, lng])
           // Dynamically rotate arrow to local bearing to mitigate long-segment distortion.
@@ -107,7 +121,7 @@ const AnimatedSegment: FC<{
           ref={ref => {
             markerRef.current = ref as unknown as L.Marker | null
           }}
-          position={start}
+          position={getTrailingPosition(map, start, end, 1)}
           // Initial angle; will be updated frame-by-frame.
           icon={createArrowIcon(angle, {
             size: 28,
@@ -124,6 +138,7 @@ const AnimatedSegment: FC<{
 
 const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
   ({ lineage, currentIndex, showAllPopups }) => {
+    const map = useMap()
     const elements: React.ReactNode[] = []
     let node: EtymologyNode | null = lineage
     let idx = 0
@@ -136,6 +151,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
         const isActive = active === idx
         const visible = active === undefined || idx <= active // only show nodes up to active
         if (visible) {
+          const tooltipPermanent = showAllPopups || isActive
           elements.push(
             <CircleMarker
               key={`circle-${word}-${lang_code}`}
@@ -148,21 +164,19 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
               fillOpacity={isActive ? 0.9 : 0.7}
               className={isActive ? 'etymology-node-active node-pulse' : 'etymology-node'}
             >
-              {(showAllPopups || isActive) && (
-                <Tooltip
-                  permanent={showAllPopups || isActive}
-                  direction="top"
-                  offset={[0, -6]}
-                  className={showAllPopups ? 'etymology-tooltip-final' : 'etymology-tooltip-active'}
-                >
-                  <div className="leading-tight">
-                    <strong>{expansion || word}</strong>
-                    {romanization && (
-                      <span className="ml-1 text-xs opacity-80">{romanization}</span>
-                    )}
-                  </div>
-                </Tooltip>
-              )}
+              <Tooltip
+                permanent={tooltipPermanent}
+                direction="top"
+                offset={[0, -6]}
+                className={showAllPopups ? 'etymology-tooltip-final' : 'etymology-tooltip-active'}
+              >
+                <div className="leading-tight">
+                  <strong>{expansion || word}</strong>
+                  {romanization && (
+                    <span className="ml-1 text-xs opacity-80">{romanization}</span>
+                  )}
+                </div>
+              </Tooltip>
             </CircleMarker>,
           )
         }
@@ -195,7 +209,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
             elements.push(
               <Marker
                 key={`arrow-static-${word}-${node.next.word}`}
-                position={end}
+                position={getTrailingPosition(map, start, end, 1)}
                 icon={createArrowIcon(angle, {
                   size: 22,
                   color: isProto(lang_code) || isProto(node.next.lang_code) ? '#e11d48' : '#3b82f6',
