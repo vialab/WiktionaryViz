@@ -17,7 +17,6 @@ import json
 import heapq
 from collections import defaultdict
 from tqdm import tqdm
-from functools import lru_cache
 
 # File paths
 JSONL_FILE_PATH = "data/wiktionary_data.jsonl"
@@ -30,6 +29,58 @@ MOST_DESCENDANTS_OUTPUT_PATH = "data/most_descendants.json"
 SIGN_LANG_CODES = {
     "ase", "icl", "isg", "gsg", "fsl", "dgs", "bfi", "sfb", "vgt", "rsl", "tsl",
 }
+
+def compute_descendant_counts(descendant_links: dict) -> dict:
+    """Count the descendants reachable from each node in the descendant graph.
+
+    Returns a ``{node: count}`` mapping. On an acyclic graph the count equals the
+    node's subtree size (each child contributes ``1 + count(child)``), matching the
+    previous recursive implementation exactly. The difference is robustness:
+
+    * **Iterative** (explicit stack) so arbitrarily deep chains can't raise
+      ``RecursionError`` — CPython's default limit is ~1000 frames, and real
+      Wiktionary etymology chains exceed that.
+    * **Cycle-safe**: edges into a node already on the current DFS path (including
+      self-loops) are back-edges and are skipped, so cycles like ``A→B→A`` — which
+      the old ``child != root_key`` guard did NOT catch — terminate with a finite
+      count instead of overflowing the stack.
+    * **Deterministic**: nodes and children are visited in sorted order, so results
+      don't depend on hash-randomized ``set``/``dict`` iteration order.
+
+    This counter feeds the offline, non-critical "most descendants" stat; a cyclic
+    etymology dump must never be able to crash the index build (and thus FastAPI
+    startup) again.
+    """
+    counts: dict = {}  # node -> finished descendant count (memo)
+    for start in sorted(descendant_links.keys()):
+        if start in counts:
+            continue
+        stack = [(start, iter(sorted(descendant_links.get(start, ()))))]
+        on_path = {start}
+        while stack:
+            node, children = stack[-1]
+            descend = False
+            for child in children:
+                if child in on_path or child in counts:
+                    # Back-edge (cycle/self-loop) or already-counted node: don't
+                    # recurse. Its contribution is added at finalization below.
+                    continue
+                stack.append((child, iter(sorted(descendant_links.get(child, ())))))
+                on_path.add(child)
+                descend = True
+                break
+            if descend:
+                continue
+            # All children exhausted -> finalize this node in post-order.
+            total = 0
+            for child in descendant_links.get(node, ()):
+                if child in counts:  # back-edges aren't in counts -> contribute 0
+                    total += counts[child] + 1
+            counts[node] = total
+            on_path.discard(node)
+            stack.pop()
+    return counts
+
 
 def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None:
     """
@@ -148,27 +199,30 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
     ]
     save_json(most_translations_output, MOST_TRANSLATIONS_OUTPUT_PATH)
 
-    # ✅ Most descendants (with memory-safe cache)
-    @lru_cache(maxsize=None)
-    def count_descendants_cached(root_key: str) -> int:
-        """Memoized descendant counter to avoid repeated deep recursion."""
-        children = descendant_links.get(root_key, [])
-        return sum(count_descendants_cached(child) + 1 for child in children if child != root_key)
+    # ✅ Most descendants (cycle-safe, iterative — see compute_descendant_counts).
+    # This stat is non-critical. A failure here must never abort the index build,
+    # because build_index.py runs at FastAPI startup with check=True: a non-zero
+    # exit fails app startup and crash-loops the container. On error we log and
+    # write an empty file so startup can still complete.
+    try:
+        descendant_counts = compute_descendant_counts(descendant_links)
+        descendant_count_heap = []
+        for key in tqdm(all_entry_keys, desc="Counting descendants"):
+            count = descendant_counts.get(key, 0)
+            if count > 0:
+                word, lang_code = key.rsplit("_", 1)
+                heapq.heappush(descendant_count_heap, (count, word, lang_code))
+                if len(descendant_count_heap) > TOP_N:
+                    heapq.heappop(descendant_count_heap)
 
-    descendant_count_heap = []
-    for key in tqdm(all_entry_keys, desc="Counting descendants"):
-        count = count_descendants_cached(key)
-        if count > 0:
-            word, lang_code = key.rsplit("_", 1)
-            heapq.heappush(descendant_count_heap, (count, word, lang_code))
-            if len(descendant_count_heap) > TOP_N:
-                heapq.heappop(descendant_count_heap)
-
-    most_descendants_sorted = sorted(descendant_count_heap, reverse=True)
-    most_descendants_output = [
-        {"word": word, "lang_code": lang_code, "descendant_count": count}
-        for count, word, lang_code in most_descendants_sorted
-    ]
+        most_descendants_sorted = sorted(descendant_count_heap, reverse=True)
+        most_descendants_output = [
+            {"word": word, "lang_code": lang_code, "descendant_count": count}
+            for count, word, lang_code in most_descendants_sorted
+        ]
+    except Exception as exc:  # pragma: no cover - defensive guard
+        print(f"[WARN] Failed to compute most-descendants stat; writing empty file: {exc}")
+        most_descendants_output = []
     save_json(most_descendants_output, MOST_DESCENDANTS_OUTPUT_PATH)
 
     print(f"Indexed {record_count} records.")
