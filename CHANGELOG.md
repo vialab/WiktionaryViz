@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.23](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.22...wiktionaryviz-v0.1.23) (2026-06-04)
+
+
+### Bug Fixes
+
+* **build_index:** make descendant counting cycle-safe and iterative ([#27](https://github.com/vialab/WiktionaryViz/issues/27)) ([3aa3ec6](https://github.com/vialab/WiktionaryViz/commit/3aa3ec6dffe957e74aa4ee17d63d5c5471e1266b))
+
 ## [0.1.22](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.21...wiktionaryviz-v0.1.22) (2026-06-03)
 
 
