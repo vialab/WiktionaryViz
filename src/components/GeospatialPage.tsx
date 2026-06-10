@@ -57,12 +57,16 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   const [guideOpen, setGuideOpen] = useState(true)
   const [guideLayer, setGuideLayer] = useState<GuideLayerKey | null>(null)
   const [guideStep, setGuideStep] = useState(0)
-  const [showTranslations, setShowTranslations] = useState(true)
+  const [showTranslations, setShowTranslations] = useState(false)
   const [showProtoZones, setShowProtoZones] = useState(false)
   const [showDescendantPaths, setShowDescendantPaths] = useState(false)
+  const [etymologyRequested, setEtymologyRequested] = useState(false)
   const dwellDurationRef = useRef<number>(1200) // ms pause after each transition for reading (extended for readability)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
   // Track visibility of LayersControl overlays that render non-Leaflet DOM (bubbles SVG)
+  const [translationGroup, setTranslationGroup] = useState<L.LayerGroup | null>(null)
+  const [protoZonesGroup, setProtoZonesGroup] = useState<L.LayerGroup | null>(null)
+  const [descendantPathsGroup, setDescendantPathsGroup] = useState<L.LayerGroup | null>(null)
   const [showLanguageFamilies, setShowLanguageFamilies] = useState(false)
   const [languageFamiliesGroup, setLanguageFamiliesGroup] = useState<L.LayerGroup | null>(null)
   const [showEtymologyLineage, setShowEtymologyLineage] = useState(false)
@@ -88,9 +92,14 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     setGuideOpen(true)
     setGuideLayer(null)
     setGuideStep(0)
-    setShowTranslations(true)
+    setShowTranslations(false)
     setShowProtoZones(false)
     setShowDescendantPaths(false)
+    setEtymologyRequested(false)
+    setShowEtymologyLineage(false)
+    setCurrentIndex(undefined)
+    setIsPlaying(false)
+    setShowAllPopups(false)
   }, [word, language])
 
   useEffect(() => {
@@ -102,12 +111,71 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     setShowLanguageFamilies(guideLayer === 'families')
     setShowEtymologyLineage(guideLayer === 'etymology')
 
-    if (guideLayer !== 'etymology') {
+    if (guideLayer === 'etymology') {
+      setEtymologyRequested(true)
+    } else {
       setCurrentIndex(undefined)
       setIsPlaying(false)
       setShowAllPopups(false)
     }
   }, [guideLayer])
+
+  useEffect(() => {
+    const map = mapInstance
+    const group = translationGroup
+    if (!map || !group) return
+    const onAdd = (e: L.LayersControlEvent) => {
+      if (e.layer === group) setShowTranslations(true)
+    }
+    const onRemove = (e: L.LayersControlEvent) => {
+      if (e.layer === group) setShowTranslations(false)
+    }
+    map.on('overlayadd', onAdd)
+    map.on('overlayremove', onRemove)
+    setShowTranslations(map.hasLayer(group))
+    return () => {
+      map.off('overlayadd', onAdd)
+      map.off('overlayremove', onRemove)
+    }
+  }, [mapInstance, translationGroup])
+
+  useEffect(() => {
+    const map = mapInstance
+    const group = protoZonesGroup
+    if (!map || !group) return
+    const onAdd = (e: L.LayersControlEvent) => {
+      if (e.layer === group) setShowProtoZones(true)
+    }
+    const onRemove = (e: L.LayersControlEvent) => {
+      if (e.layer === group) setShowProtoZones(false)
+    }
+    map.on('overlayadd', onAdd)
+    map.on('overlayremove', onRemove)
+    setShowProtoZones(map.hasLayer(group))
+    return () => {
+      map.off('overlayadd', onAdd)
+      map.off('overlayremove', onRemove)
+    }
+  }, [mapInstance, protoZonesGroup])
+
+  useEffect(() => {
+    const map = mapInstance
+    const group = descendantPathsGroup
+    if (!map || !group) return
+    const onAdd = (e: L.LayersControlEvent) => {
+      if (e.layer === group) setShowDescendantPaths(true)
+    }
+    const onRemove = (e: L.LayersControlEvent) => {
+      if (e.layer === group) setShowDescendantPaths(false)
+    }
+    map.on('overlayadd', onAdd)
+    map.on('overlayremove', onRemove)
+    setShowDescendantPaths(map.hasLayer(group))
+    return () => {
+      map.off('overlayadd', onAdd)
+      map.off('overlayremove', onRemove)
+    }
+  }, [mapInstance, descendantPathsGroup])
 
   useEffect(() => {
     if (Array.isArray(wordData?.translations) && languoidData.length) {
@@ -130,19 +198,31 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
         }
         setLineage(root)
         // Reset playback-related state for new lineage
-        const hasPlayableSegments = flattenLineage(root).length > 1
-        setCurrentIndex(hasPlayableSegments ? 0 : undefined)
-        setIsPlaying(hasPlayableSegments)
+        setCurrentIndex(undefined)
+        setIsPlaying(false)
         setShowAllPopups(false)
         setGuideOpen(true)
         setGuideLayer(null)
         setGuideStep(0)
-        setShowTranslations(true)
+        setShowTranslations(false)
         setShowProtoZones(false)
         setShowDescendantPaths(false)
+        setEtymologyRequested(false)
+        setShowEtymologyLineage(false)
       })
     }
   }, [wordData, languoidData])
+
+  useEffect(() => {
+    if (!lineage || !etymologyRequested || !showEtymologyLineage || guideOpen) return
+    const nodes = flattenLineage(lineage)
+    if (nodes.length < 1) return
+    if (currentIndex !== undefined) return
+
+    setCurrentIndex(0)
+    setIsPlaying(true)
+    setShowAllPopups(false)
+  }, [currentIndex, etymologyRequested, guideOpen, lineage, showEtymologyLineage])
 
   // Playback effect (optimized with dwell pause and popup lifecycle).
   useEffect(() => {
@@ -341,7 +421,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
       if (e.layer === group) setShowEtymologyLineage(true)
     }
     const onRemove = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setShowEtymologyLineage(false)
+      if (e.layer === group) {
+        setShowEtymologyLineage(false)
+        setIsPlaying(false)
+        setCurrentIndex(undefined)
+        setShowAllPopups(false)
+      }
     }
     map.on('overlayadd', onAdd)
     map.on('overlayremove', onRemove)
@@ -397,19 +482,19 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           {/* TODO [LOW LEVEL]: Add a file/URL loader for GeoJSON and render via GeoJSON component with style options. */}
           {/* Country highlighting now limited to lineage-related countries only (no global hover). */}
           {/* General Etymology Markers Layer */}
-          <LayersControl.Overlay checked name="Translations">
-            <MarkerClusterGroup>
+          <LayersControl.Overlay checked={showTranslations} name="Translations">
+            <MarkerClusterGroup ref={instance => setTranslationGroup(instance)}>
               {showTranslations && <TranslationMarkers markers={markers} />}
             </MarkerClusterGroup>
           </LayersControl.Overlay>
           {/* Proto-Language Zones overlay from public/proto_regions.geojson */}
-          <LayersControl.Overlay name="Proto-Language Zones">
-            <LayerGroup>
+          <LayersControl.Overlay checked={showProtoZones} name="Proto-Language Zones">
+            <LayerGroup ref={instance => setProtoZonesGroup(instance)}>
               {showProtoZones && <ProtoLanguageZones path="/proto_regions.geojson" />}
             </LayerGroup>
           </LayersControl.Overlay>
           {/* Language Families polygons from Glottolog-derived hulls */}
-          <LayersControl.Overlay name="Language Families">
+          <LayersControl.Overlay checked={showLanguageFamilies} name="Language Families">
             <LayerGroup ref={instance => setLanguageFamiliesGroup(instance)}>
               {showLanguageFamilies && (
                 <LanguageFamiliesBubbles path="/language_families.geojson" />
@@ -417,7 +502,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
             </LayerGroup>
           </LayersControl.Overlay>
           {/* Etymology Lineage Path Layer (includes associated country highlights) */}
-          <LayersControl.Overlay checked name="Etymology Lineage Path">
+          <LayersControl.Overlay checked={showEtymologyLineage} name="Etymology Lineage Path">
             <LayerGroup ref={instance => setEtymologyLineageGroup(instance)}>
               {showEtymologyLineage && (
                 <>
@@ -435,8 +520,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
             </LayerGroup>
           </LayersControl.Overlay>
           {/* Descendant paths from ancestor (all branches) */}
-          <LayersControl.Overlay name="Descendant Paths">
-            <LayerGroup>
+          <LayersControl.Overlay checked={showDescendantPaths} name="Descendant Paths">
+            <LayerGroup ref={instance => setDescendantPathsGroup(instance)}>
               {showDescendantPaths && (
                 <DescendantLineagePaths
                   rootWord={word || (lineage?.word ?? '')}
@@ -473,7 +558,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           open={guideOpen}
           selectedLayer={guideLayer}
           stepIndex={guideStep}
-          onChooseLayer={layer => {
+          onChooseLayer={(layer: GuideLayerKey) => {
             setGuideLayer(layer)
             setGuideStep(0)
             setGuideOpen(true)
@@ -489,6 +574,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           onRestart={() => {
             setGuideLayer(null)
             setGuideStep(0)
+            setEtymologyRequested(false)
+            setShowEtymologyLineage(false)
+            setCurrentIndex(undefined)
+            setIsPlaying(false)
+            setShowAllPopups(false)
           }}
         />
       </MapContainer>
