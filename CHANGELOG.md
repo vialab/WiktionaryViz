@@ -2,6 +2,26 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.24](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.23...wiktionaryviz-v0.1.24) (2026-06-10)
+
+
+### Features
+
+* **EtymologyLineagePath:** add endpoint marker visibility on animation completion to enhance user experience ([b7acecc](https://github.com/vialab/WiktionaryViz/commit/b7aceccfd4c50cc0e7c0aec7e432eec90a4a2e91))
+* **GeospatialGuideOverlay:** add detailed layer information, best use cases, and practical hints to guide users in exploring the map layers ([5dab9fe](https://github.com/vialab/WiktionaryViz/commit/5dab9fe6a2d0b5c2991c6bd1e2175cb47d3f707c))
+* **GeospatialGuideOverlay:** add guide overlay component to assist users in exploring geospatial layers with step-by-step instructions ([d6281c3](https://github.com/vialab/WiktionaryViz/commit/d6281c3510d1731b05e20250a871e42f3cf49516))
+* **GeospatialPage:** enhance geospatial guide with recommendations and context for layers to improve user experience ([5dab9fe](https://github.com/vialab/WiktionaryViz/commit/5dab9fe6a2d0b5c2991c6bd1e2175cb47d3f707c))
+* **GeospatialPage:** integrate GeospatialGuideOverlay for enhanced user guidance on map layers ([d6281c3](https://github.com/vialab/WiktionaryViz/commit/d6281c3510d1731b05e20250a871e42f3cf49516))
+* **GeospatialPage:** refactor state management for translations and overlays to improve clarity and functionality ([2c76b7d](https://github.com/vialab/WiktionaryViz/commit/2c76b7d6b91c867ec67a2aafa0d8c5f7863ae7e0))
+
+
+### Bug Fixes
+
+* **GeospatialGuideOverlay:** update label from "Recommended for this page" to "Recommended for this word" for better context ([66feba0](https://github.com/vialab/WiktionaryViz/commit/66feba076a75d12f9a633ac9403cf6005888b14c))
+* **GeospatialPage:** improve recommendation reason wording for clarity ([66feba0](https://github.com/vialab/WiktionaryViz/commit/66feba076a75d12f9a633ac9403cf6005888b14c))
+* **GeospatialPage:** update overlay handling to correctly manage visibility and playback state for translations, proto zones, and descendant paths ([2c76b7d](https://github.com/vialab/WiktionaryViz/commit/2c76b7d6b91c867ec67a2aafa0d8c5f7863ae7e0))
+* **styles:** remove pulsing animation from .country-focused class per user request ([8cf54b3](https://github.com/vialab/WiktionaryViz/commit/8cf54b35696ac246236f43dc95e627f17285440a))
+
 ## [0.1.23](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.22...wiktionaryviz-v0.1.23) (2026-06-04)
 
 
