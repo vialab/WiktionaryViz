@@ -17,6 +17,7 @@ import GeospatialSettingsMenu from './geospatial/GeospatialSettingsMenu'
 import ProtoLanguageZones from './geospatial/ProtoLanguageZones'
 import LanguageFamiliesBubbles from './geospatial/LanguageFamiliesBubbles'
 import DescendantLineagePaths from './geospatial/DescendantLineagePaths'
+import GeospatialGuideOverlay, { type GuideLayerKey } from './geospatial/GeospatialGuideOverlay'
 import type { EtymologyNode } from '@/types/etymology'
 import type { Translation } from '@/utils/mapUtils'
 
@@ -53,6 +54,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   const [playSpeed, setPlaySpeed] = useState<number>(800) // ms per step
   const [loop, setLoop] = useState<boolean>(false)
   const [showAllPopups, setShowAllPopups] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(true)
+  const [guideLayer, setGuideLayer] = useState<GuideLayerKey | null>(null)
+  const [guideStep, setGuideStep] = useState(0)
+  const [showTranslations, setShowTranslations] = useState(true)
+  const [showProtoZones, setShowProtoZones] = useState(false)
+  const [showDescendantPaths, setShowDescendantPaths] = useState(false)
   const dwellDurationRef = useRef<number>(1200) // ms pause after each transition for reading (extended for readability)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
   // Track visibility of LayersControl overlays that render non-Leaflet DOM (bubbles SVG)
@@ -76,6 +83,31 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   //  - [ ] Introduce distinct animation vs dwell durations (currently combined into playSpeed + dwell).
   //  - [ ] Provide a user toggle (e.g., "Show all tooltips at end").
   //  - [ ] If user scrubs manually, explicitly cancel pending dwell (interval cancellation partly covers this; verify behavior).
+
+  useEffect(() => {
+    setGuideOpen(true)
+    setGuideLayer(null)
+    setGuideStep(0)
+    setShowTranslations(true)
+    setShowProtoZones(false)
+    setShowDescendantPaths(false)
+  }, [word, language])
+
+  useEffect(() => {
+    if (!guideLayer) return
+
+    setShowTranslations(guideLayer === 'translations')
+    setShowProtoZones(guideLayer === 'protoZones')
+    setShowDescendantPaths(guideLayer === 'descendants')
+    setShowLanguageFamilies(guideLayer === 'families')
+    setShowEtymologyLineage(guideLayer === 'etymology')
+
+    if (guideLayer !== 'etymology') {
+      setCurrentIndex(undefined)
+      setIsPlaying(false)
+      setShowAllPopups(false)
+    }
+  }, [guideLayer])
 
   useEffect(() => {
     if (Array.isArray(wordData?.translations) && languoidData.length) {
@@ -102,6 +134,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
         setCurrentIndex(hasPlayableSegments ? 0 : undefined)
         setIsPlaying(hasPlayableSegments)
         setShowAllPopups(false)
+        setGuideOpen(true)
+        setGuideLayer(null)
+        setGuideStep(0)
+        setShowTranslations(true)
+        setShowProtoZones(false)
+        setShowDescendantPaths(false)
       })
     }
   }, [wordData, languoidData])
@@ -361,13 +399,13 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           {/* General Etymology Markers Layer */}
           <LayersControl.Overlay checked name="Translations">
             <MarkerClusterGroup>
-              <TranslationMarkers markers={markers} />
+              {showTranslations && <TranslationMarkers markers={markers} />}
             </MarkerClusterGroup>
           </LayersControl.Overlay>
           {/* Proto-Language Zones overlay from public/proto_regions.geojson */}
           <LayersControl.Overlay name="Proto-Language Zones">
             <LayerGroup>
-              <ProtoLanguageZones path="/proto_regions.geojson" />
+              {showProtoZones && <ProtoLanguageZones path="/proto_regions.geojson" />}
             </LayerGroup>
           </LayersControl.Overlay>
           {/* Language Families polygons from Glottolog-derived hulls */}
@@ -381,21 +419,30 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           {/* Etymology Lineage Path Layer (includes associated country highlights) */}
           <LayersControl.Overlay checked name="Etymology Lineage Path">
             <LayerGroup ref={instance => setEtymologyLineageGroup(instance)}>
-              <LineageCountryHighlights lineage={lineage} currentIndex={currentIndex} />
-              <EtymologyLineagePath
-                lineage={lineage}
-                currentIndex={currentIndex}
-                isPlaying={isPlaying}
-                segmentDurationMs={playSpeed}
-                dwellMs={dwellDurationRef.current}
-                showAllPopups={showAllPopups}
-              />
+              {showEtymologyLineage && (
+                <>
+                  <LineageCountryHighlights lineage={lineage} currentIndex={currentIndex} />
+                  <EtymologyLineagePath
+                    lineage={lineage}
+                    currentIndex={currentIndex}
+                    isPlaying={isPlaying}
+                    segmentDurationMs={playSpeed}
+                    dwellMs={dwellDurationRef.current}
+                    showAllPopups={showAllPopups}
+                  />
+                </>
+              )}
             </LayerGroup>
           </LayersControl.Overlay>
           {/* Descendant paths from ancestor (all branches) */}
           <LayersControl.Overlay name="Descendant Paths">
             <LayerGroup>
-              <DescendantLineagePaths rootWord={word || (lineage?.word ?? '')} rootLang={language || (lineage?.lang_code ?? '')} />
+              {showDescendantPaths && (
+                <DescendantLineagePaths
+                  rootWord={word || (lineage?.word ?? '')}
+                  rootLang={language || (lineage?.lang_code ?? '')}
+                />
+              )}
             </LayerGroup>
           </LayersControl.Overlay>
           {/* TODO (Timeline UI): After implementing, mount timeline scrubber outside LayersControl for fixed positioning. */}
@@ -422,6 +469,28 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
             }}
           />
         )}
+        <GeospatialGuideOverlay
+          open={guideOpen}
+          selectedLayer={guideLayer}
+          stepIndex={guideStep}
+          onChooseLayer={layer => {
+            setGuideLayer(layer)
+            setGuideStep(0)
+            setGuideOpen(true)
+          }}
+          onNextStep={() => {
+            if (guideStep === 0) {
+              setGuideStep(1)
+              return
+            }
+            setGuideOpen(false)
+          }}
+          onClose={() => setGuideOpen(false)}
+          onRestart={() => {
+            setGuideLayer(null)
+            setGuideStep(0)
+          }}
+        />
       </MapContainer>
     </section>
   )
