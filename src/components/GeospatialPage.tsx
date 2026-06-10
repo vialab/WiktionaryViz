@@ -56,7 +56,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   const [showAllPopups, setShowAllPopups] = useState(false)
   const [guideOpen, setGuideOpen] = useState(true)
   const [guideLayer, setGuideLayer] = useState<GuideLayerKey | null>(null)
-  const [guideStep, setGuideStep] = useState(0)
   const [showTranslations, setShowTranslations] = useState(false)
   const [showProtoZones, setShowProtoZones] = useState(false)
   const [showDescendantPaths, setShowDescendantPaths] = useState(false)
@@ -91,7 +90,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   useEffect(() => {
     setGuideOpen(true)
     setGuideLayer(null)
-    setGuideStep(0)
     setShowTranslations(false)
     setShowProtoZones(false)
     setShowDescendantPaths(false)
@@ -203,7 +201,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
         setShowAllPopups(false)
         setGuideOpen(true)
         setGuideLayer(null)
-        setGuideStep(0)
         setShowTranslations(false)
         setShowProtoZones(false)
         setShowDescendantPaths(false)
@@ -451,7 +448,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
         className="relative w-full h-full"
         style={{ background: '#0b0f1a' }}
         id="map-root"
-        ref={instance => {
+        ref={(instance: L.Map | null) => {
           if (instance) setMapInstance(instance)
         }}
       >
@@ -483,19 +480,19 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           {/* Country highlighting now limited to lineage-related countries only (no global hover). */}
           {/* General Etymology Markers Layer */}
           <LayersControl.Overlay checked={showTranslations} name="Translations">
-            <MarkerClusterGroup ref={instance => setTranslationGroup(instance)}>
+            <MarkerClusterGroup ref={(instance: unknown) => setTranslationGroup(instance as L.LayerGroup | null)}>
               {showTranslations && <TranslationMarkers markers={markers} />}
             </MarkerClusterGroup>
           </LayersControl.Overlay>
           {/* Proto-Language Zones overlay from public/proto_regions.geojson */}
           <LayersControl.Overlay checked={showProtoZones} name="Proto-Language Zones">
-            <LayerGroup ref={instance => setProtoZonesGroup(instance)}>
+            <LayerGroup ref={(instance: L.LayerGroup | null) => setProtoZonesGroup(instance)}>
               {showProtoZones && <ProtoLanguageZones path="/proto_regions.geojson" />}
             </LayerGroup>
           </LayersControl.Overlay>
           {/* Language Families polygons from Glottolog-derived hulls */}
           <LayersControl.Overlay checked={showLanguageFamilies} name="Language Families">
-            <LayerGroup ref={instance => setLanguageFamiliesGroup(instance)}>
+            <LayerGroup ref={(instance: L.LayerGroup | null) => setLanguageFamiliesGroup(instance)}>
               {showLanguageFamilies && (
                 <LanguageFamiliesBubbles path="/language_families.geojson" />
               )}
@@ -503,7 +500,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           </LayersControl.Overlay>
           {/* Etymology Lineage Path Layer (includes associated country highlights) */}
           <LayersControl.Overlay checked={showEtymologyLineage} name="Etymology Lineage Path">
-            <LayerGroup ref={instance => setEtymologyLineageGroup(instance)}>
+            <LayerGroup ref={(instance: L.LayerGroup | null) => setEtymologyLineageGroup(instance)}>
               {showEtymologyLineage && (
                 <>
                   <LineageCountryHighlights lineage={lineage} currentIndex={currentIndex} />
@@ -521,7 +518,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           </LayersControl.Overlay>
           {/* Descendant paths from ancestor (all branches) */}
           <LayersControl.Overlay checked={showDescendantPaths} name="Descendant Paths">
-            <LayerGroup ref={instance => setDescendantPathsGroup(instance)}>
+            <LayerGroup ref={(instance: L.LayerGroup | null) => setDescendantPathsGroup(instance)}>
               {showDescendantPaths && (
                 <DescendantLineagePaths
                   rootWord={word || (lineage?.word ?? '')}
@@ -557,23 +554,14 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
         <GeospatialGuideOverlay
           open={guideOpen}
           selectedLayer={guideLayer}
-          stepIndex={guideStep}
           onChooseLayer={(layer: GuideLayerKey) => {
             setGuideLayer(layer)
-            setGuideStep(0)
             setGuideOpen(true)
           }}
-          onNextStep={() => {
-            if (guideStep === 0) {
-              setGuideStep(1)
-              return
-            }
-            setGuideOpen(false)
-          }}
+          onCloseGuide={() => setGuideOpen(false)}
           onClose={() => setGuideOpen(false)}
           onRestart={() => {
             setGuideLayer(null)
-            setGuideStep(0)
             setEtymologyRequested(false)
             setShowEtymologyLineage(false)
             setCurrentIndex(undefined)

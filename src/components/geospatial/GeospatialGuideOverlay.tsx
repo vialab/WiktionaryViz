@@ -5,7 +5,7 @@ export type GuideLayerKey = 'translations' | 'etymology' | 'descendants' | 'prot
 type GuideLayerInfo = {
   title: string
   summary: string
-  steps: [string, string]
+  steps: string[]
 }
 
 const guideLayers: Record<GuideLayerKey, GuideLayerInfo> = {
@@ -54,9 +54,8 @@ const guideLayers: Record<GuideLayerKey, GuideLayerInfo> = {
 interface Props {
   open: boolean
   selectedLayer: GuideLayerKey | null
-  stepIndex: number
   onChooseLayer: (layer: GuideLayerKey) => void
-  onNextStep: () => void
+  onCloseGuide: () => void
   onClose: () => void
   onRestart: () => void
 }
@@ -66,16 +65,14 @@ const layerOrder: GuideLayerKey[] = ['translations', 'etymology', 'descendants',
 const GeospatialGuideOverlay: FC<Props> = ({
   open,
   selectedLayer,
-  stepIndex,
   onChooseLayer,
-  onNextStep,
+  onCloseGuide,
   onClose,
   onRestart,
 }) => {
   if (!open) return null
 
   const selected = selectedLayer ? guideLayers[selectedLayer] : null
-  const currentStep = selected ? selected.steps[Math.min(stepIndex, selected.steps.length - 1)] : null
 
   return (
     <div className="absolute inset-0 z-[12000] flex items-center justify-center bg-slate-950/75 px-4 py-6 backdrop-blur-sm">
@@ -122,25 +119,15 @@ const GeospatialGuideOverlay: FC<Props> = ({
             </div>
           </div>
         ) : (
-          <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="border-b border-slate-800/80 px-6 py-6 lg:border-b-0 lg:border-r">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                    Selected layer
-                  </p>
-                  <h3 className="mt-2 text-2xl font-semibold text-white">{selected.title}</h3>
-                </div>
-                <div className="text-right text-sm text-slate-400">
-                  Step {Math.min(stepIndex + 1, selected.steps.length)} of {selected.steps.length}
-                </div>
-              </div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                Selected layer
+              </p>
+              <h3 className="mt-2 text-2xl font-semibold text-white">{selected.title}</h3>
 
               <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
-                <h4 className="text-xl font-semibold text-white">
-                  {stepIndex === 0 ? 'What you are looking at' : 'How to keep going'}
-                </h4>
-                <p className="mt-3 text-sm leading-6 text-slate-300">{currentStep}</p>
+                <p className="text-sm leading-6 text-slate-300">{selected.summary}</p>
               </div>
 
               <div className="mt-5 flex flex-wrap gap-3">
@@ -151,10 +138,10 @@ const GeospatialGuideOverlay: FC<Props> = ({
                   Choose another layer
                 </button>
                 <button
-                  onClick={onNextStep}
+                  onClick={onCloseGuide}
                   className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
                 >
-                  {stepIndex === 0 ? 'Continue' : 'Finish guide'}
+                  Start exploring
                 </button>
               </div>
             </div>
@@ -162,26 +149,12 @@ const GeospatialGuideOverlay: FC<Props> = ({
             <div className="space-y-4 bg-slate-950/80 px-6 py-6">
               <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  What to expect
-                </p>
-                <p className="mt-3 text-sm leading-6 text-slate-300">{selected.summary}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Guide steps
+                  Layer guide
                 </p>
                 <ol className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
                   {selected.steps.map((step, index) => (
                     <li key={step} className="flex gap-3">
-                      <span
-                        className={`mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full border text-[11px] font-semibold ${
-                          index === stepIndex
-                            ? 'border-cyan-300 bg-cyan-400 text-slate-950'
-                            : index < stepIndex
-                              ? 'border-emerald-400 bg-emerald-400/20 text-emerald-200'
-                              : 'border-slate-700 bg-slate-900 text-slate-400'
-                        }`}
-                      >
+                      <span className="mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full border border-cyan-300 bg-cyan-400 text-[11px] font-semibold text-slate-950">
                         {index + 1}
                       </span>
                       <div>
