@@ -64,11 +64,14 @@ const AnimatedSegment: FC<{
   const markerRef = useRef<L.Marker | null>(null)
   const map = useMap()
   const [mounted, setMounted] = useState(false)
+  const [showEndpoint, setShowEndpoint] = useState(false)
 
   useEffect(() => {
     const poly = polyRef.current
     if (!poly) return
     let frameId = 0
+    setMounted(false)
+    setShowEndpoint(false)
     try {
       const latLngs = poly.getLatLngs() as L.LatLng[]
       if (latLngs.length < 2) return
@@ -108,6 +111,8 @@ const AnimatedSegment: FC<{
         lastLatLng = [lat, lng]
         if (progress < 1) {
           frameId = requestAnimationFrame(animate)
+        } else {
+          setShowEndpoint(true)
         }
       }
       frameId = requestAnimationFrame(animate)
@@ -146,6 +151,18 @@ const AnimatedSegment: FC<{
             outlineWidth: 2,
           })}
           interactive={false}
+        />
+      )}
+      {showEndpoint && (
+        <CircleMarker
+          center={end}
+          radius={7}
+          fillColor={proto ? '#e11d48' : '#3388ff'}
+          color={proto ? '#e11d48' : '#3388ff'}
+          weight={1}
+          opacity={1}
+          fillOpacity={0.8}
+          className={proto ? 'etymology-node proto-endpoint' : 'etymology-node endpoint'}
         />
       )}
     </>
