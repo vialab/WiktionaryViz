@@ -98,7 +98,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
         ? 'translations'
         : 'protoZones'
   const recommendationReason = translationHeavy
-    ? `There are ${translationCount} translation markers across ${lineageNodeCount} lineage node${lineageNodeCount === 1 ? '' : 's'}, so the translations layer gives the broader first view.`
+    ? `There are ${translationCount} translation markers and ${lineageNodeCount} lineage node${lineageNodeCount === 1 ? '' : 's'}. The translations layer gives the broader first view.`
     : hasPlayableLineage
       ? `This word already has a timeline path with ${lineageNodeCount} node${lineageNodeCount === 1 ? '' : 's'}, so the etymology layer gives the richest first look.`
       : translationCount > 0

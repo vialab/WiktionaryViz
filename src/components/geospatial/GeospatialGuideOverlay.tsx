@@ -181,7 +181,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-200/80">
-                      Recommended for this page
+                      Recommended for this word
                     </p>
                     <h3 className="mt-2 text-xl font-semibold text-white">{recommended.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-300">{recommendationReason}</p>
@@ -237,48 +237,39 @@ const GeospatialGuideOverlay: FC<Props> = ({
           ) : (
             <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="border-b border-slate-800/80 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                Selected layer
-              </p>
-              <h3 className="mt-2 text-2xl font-semibold text-white">{selected.title}</h3>
-
-              {selectedLayer === recommendedLayer && (
-                <div className="mt-4 inline-flex rounded-full border border-cyan-300/60 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
-                  Recommended for this page
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                  Selected layer
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <h3 className="text-2xl font-semibold text-white">{selected.title}</h3>
+                  {selectedLayer === recommendedLayer && (
+                    <div className="inline-flex rounded-full border border-cyan-300/60 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+                      Recommended for this word
+                    </div>
+                  )}
                 </div>
-              )}
 
-              <p className="mt-4 text-sm font-medium text-slate-300">{selected.bestFor}</p>
+                <p className="mt-4 text-sm leading-6 text-slate-300">{selected.summary}</p>
 
-              <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
-                <p className="text-sm leading-6 text-slate-300">{selected.summary}</p>
-              </div>
-
-              {selectedLayer === recommendedLayer && (
-                <div className="mt-4 rounded-2xl border border-cyan-400/30 bg-cyan-400/10 p-4 text-sm leading-6 text-slate-200">
-                  {recommendationReason}
+                <div className="mt-4 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                  Best for
                 </div>
-              )}
+                <p className="mt-1 text-sm font-medium text-slate-300">{selected.bestFor}</p>
 
-              <div className="mt-4 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                Best for
-              </div>
-              <p className="mt-1 text-sm font-medium text-slate-300">{selected.bestFor}</p>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                <button
-                  onClick={onRestart}
-                  className="rounded-full border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
-                >
-                  Choose another layer
-                </button>
-                <button
-                  onClick={onCloseGuide}
-                  className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
-                >
-                  Start exploring
-                </button>
-              </div>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <button
+                    onClick={onRestart}
+                    className="rounded-full border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                  >
+                    Choose another layer
+                  </button>
+                  <button
+                    onClick={onCloseGuide}
+                    className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                  >
+                    Start exploring
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4 bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6">
@@ -312,7 +303,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
                       : selectedLayer === 'descendants'
                         ? 'Use the branch controls to expand deeper paths once the guide is dismissed.'
                         : selectedLayer === 'protoZones'
-                          ? 'Compare the proto-region backdrop with the active lineage or translation layer.'
+                          ? 'Compare the proto-region backdrop with an active lineage or translation layer.'
                           : 'Use the family context to orient yourself before switching to a more specific layer.'}
                 </p>
                     </div>
