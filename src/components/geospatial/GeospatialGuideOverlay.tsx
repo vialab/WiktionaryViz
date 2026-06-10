@@ -5,55 +5,71 @@ export type GuideLayerKey = 'translations' | 'etymology' | 'descendants' | 'prot
 type GuideLayerInfo = {
   title: string
   summary: string
+  bestFor: string
   steps: string[]
+  accent: string
 }
 
 const guideLayers: Record<GuideLayerKey, GuideLayerInfo> = {
   translations: {
     title: 'Translations',
     summary: 'Marker clusters show where the current word appears in the translation map.',
+    bestFor: 'Quickly seeing where this word appears geographically.',
     steps: [
       'Start here if you want the quickest overview of where the word lands geographically.',
       'Hover markers to inspect the translation popups and compare clusters.',
     ],
+    accent: 'from-cyan-400/30 via-cyan-500/10 to-slate-900',
   },
   etymology: {
     title: 'Etymology lineage path',
     summary: 'This path walks backward through ancestors and highlights the active timeline node.',
+    bestFor: 'Tracing the word through time and watching the lineage animate.',
     steps: [
       'Use this when you want to trace the word through time and see how the lineage unfolds.',
       'Use the timeline scrubber to step through the path or play the sequence automatically.',
     ],
+    accent: 'from-amber-400/30 via-cyan-500/10 to-slate-900',
   },
   descendants: {
     title: 'Descendant paths',
     summary: 'This layer expands outward from a root candidate and reveals branching descendants.',
+    bestFor: 'Exploring how the lineage branches outward from a root.',
     steps: [
       'Choose this if you want to inspect the family tree structure instead of the backward lineage.',
       'Click into deeper branches to expand more descendant paths and compare the branches.',
     ],
+    accent: 'from-emerald-400/30 via-cyan-500/10 to-slate-900',
   },
   protoZones: {
     title: 'Proto-language zones',
     summary: 'Proto regions give broad historical context for where a family may have been centered.',
+    bestFor: 'Getting a wide historical geography before drilling into a specific path.',
     steps: [
       'Pick this when you want a geography-first introduction before digging into the lineage.',
       'Compare the proto region with the lineage and translation layers for broader context.',
     ],
+    accent: 'from-violet-400/30 via-cyan-500/10 to-slate-900',
   },
   families: {
     title: 'Language families',
     summary: 'Family bubbles provide a higher-level structural view of the map and its clusters.',
+    bestFor: 'Orienting yourself with the broadest map structure first.',
     steps: [
       'This is the broadest starting point if you want to orient yourself before drilling down.',
       'Use the family context to narrow your search before switching to a specific path layer.',
     ],
+    accent: 'from-fuchsia-400/30 via-cyan-500/10 to-slate-900',
   },
 }
 
 interface Props {
   open: boolean
   selectedLayer: GuideLayerKey | null
+  recommendedLayer: GuideLayerKey | null
+  recommendationReason: string
+  guideContext: string
+  availability: Record<GuideLayerKey, boolean>
   onChooseLayer: (layer: GuideLayerKey) => void
   onCloseGuide: () => void
   onClose: () => void
@@ -65,6 +81,10 @@ const layerOrder: GuideLayerKey[] = ['translations', 'etymology', 'descendants',
 const GeospatialGuideOverlay: FC<Props> = ({
   open,
   selectedLayer,
+  recommendedLayer,
+  recommendationReason,
+  guideContext,
+  availability,
   onChooseLayer,
   onCloseGuide,
   onClose,
@@ -73,11 +93,28 @@ const GeospatialGuideOverlay: FC<Props> = ({
   if (!open) return null
 
   const selected = selectedLayer ? guideLayers[selectedLayer] : null
+  const recommended = recommendedLayer ? guideLayers[recommendedLayer] : null
+  const activeStage = selected ? 1 : 0
+
+  const stages = [
+    {
+      title: 'Choose layer',
+      description: 'Pick the most useful view for this word.',
+    },
+    {
+      title: 'Read overview',
+      description: 'See what the layer adds before you dismiss the guide.',
+    },
+    {
+      title: 'Explore map',
+      description: 'Close the guide and interact with the active layer.',
+    },
+  ]
 
   return (
-    <div className="absolute inset-0 z-[12000] flex items-center justify-center bg-slate-950/75 px-4 py-6 backdrop-blur-sm">
-      <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-700/80 bg-slate-950/95 shadow-2xl shadow-cyan-950/30">
-        <div className="border-b border-slate-800/80 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/50 px-6 py-5">
+    <div className="absolute inset-0 z-[12000] flex items-center justify-center bg-slate-950/75 px-6 py-6 backdrop-blur-sm sm:px-8 sm:py-8 lg:px-12 lg:py-10">
+      <div className="flex max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-slate-950/95 shadow-2xl shadow-cyan-950/30 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)]">
+        <div className="shrink-0 border-b border-slate-800/80 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/50 px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="max-w-3xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-cyan-300/80">
@@ -87,7 +124,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
                 Choose the first layer to explore
               </h2>
               <p className="mt-3 text-sm leading-6 text-slate-300 md:text-base">
-                Pick a layer and the map will focus it for you, then walk you through what it shows.
+                {guideContext}
               </p>
             </div>
             <button
@@ -97,38 +134,136 @@ const GeospatialGuideOverlay: FC<Props> = ({
               Skip guide
             </button>
           </div>
+
+          <div className="mt-5 grid gap-2 md:grid-cols-3">
+            {stages.map((stage, index) => {
+              const isActive = index === activeStage
+              const isComplete = index < activeStage
+              return (
+                <div
+                  key={stage.title}
+                  className={`rounded-2xl border px-4 py-3 transition ${
+                    isActive
+                      ? 'border-cyan-300 bg-cyan-400/10'
+                      : isComplete
+                        ? 'border-emerald-400/60 bg-emerald-400/10'
+                        : 'border-slate-800 bg-slate-900/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold ${
+                        isActive
+                          ? 'border-cyan-300 bg-cyan-400 text-slate-950'
+                          : isComplete
+                            ? 'border-emerald-400 bg-emerald-400/20 text-emerald-200'
+                            : 'border-slate-700 bg-slate-950 text-slate-400'
+                      }`}
+                    >
+                      {index + 1}
+                    </span>
+                    <div>
+                      <div className="text-sm font-semibold text-white">{stage.title}</div>
+                      <div className="text-xs leading-5 text-slate-400">{stage.description}</div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
-        {!selected ? (
-          <div className="px-6 py-6">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {!selected ? (
+            <div className="space-y-5 px-4 py-4 sm:px-6 sm:py-6">
+            {recommendedLayer && recommended && availability[recommendedLayer] && (
+              <div className="rounded-2xl border border-cyan-400/40 bg-cyan-400/10 p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-200/80">
+                      Recommended for this page
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold text-white">{recommended.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">{recommendationReason}</p>
+                  </div>
+                  <button
+                    onClick={() => onChooseLayer(recommendedLayer)}
+                    className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                  >
+                    Start recommended layer
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {layerOrder.map(layer => {
                 const info = guideLayers[layer]
+                const ready = availability[layer]
+                const isRecommended = layer === recommendedLayer
                 return (
                   <button
                     key={layer}
                     onClick={() => onChooseLayer(layer)}
+                    disabled={!ready}
                     className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-left transition hover:border-cyan-400 hover:bg-slate-800/90"
                   >
-                    <div className="text-lg font-semibold text-white">{info.title}</div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="text-lg font-semibold text-white">{info.title}</div>
+                      {isRecommended && (
+                        <span className="rounded-full border border-cyan-300/60 bg-cyan-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200">
+                          Recommended
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-3 text-sm leading-6 text-slate-300">{info.summary}</p>
-                    <div className="mt-4 text-sm font-medium text-cyan-300">Start with this layer</div>
+                    <div className="mt-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      Best for
+                    </div>
+                    <p className="mt-1 text-sm leading-6 text-slate-200">{info.bestFor}</p>
+                    <div className="mt-4 flex items-center justify-between gap-3 text-sm font-medium">
+                      <span className={ready ? 'text-cyan-300' : 'text-slate-500'}>
+                        {ready ? 'Ready now' : 'Waiting for data'}
+                      </span>
+                      <span className="text-slate-400">
+                        {ready ? 'Start with this layer' : 'Unavailable until data loads'}
+                      </span>
+                    </div>
                   </button>
                 )
               })}
             </div>
-          </div>
-        ) : (
-          <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="border-b border-slate-800/80 px-6 py-6 lg:border-b-0 lg:border-r">
+            </div>
+          ) : (
+            <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="border-b border-slate-800/80 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
                 Selected layer
               </p>
               <h3 className="mt-2 text-2xl font-semibold text-white">{selected.title}</h3>
 
+              {selectedLayer === recommendedLayer && (
+                <div className="mt-4 inline-flex rounded-full border border-cyan-300/60 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+                  Recommended for this page
+                </div>
+              )}
+
+              <p className="mt-4 text-sm font-medium text-slate-300">{selected.bestFor}</p>
+
               <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
                 <p className="text-sm leading-6 text-slate-300">{selected.summary}</p>
               </div>
+
+              {selectedLayer === recommendedLayer && (
+                <div className="mt-4 rounded-2xl border border-cyan-400/30 bg-cyan-400/10 p-4 text-sm leading-6 text-slate-200">
+                  {recommendationReason}
+                </div>
+              )}
+
+              <div className="mt-4 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                Best for
+              </div>
+              <p className="mt-1 text-sm font-medium text-slate-300">{selected.bestFor}</p>
 
               <div className="mt-5 flex flex-wrap gap-3">
                 <button
@@ -144,12 +279,12 @@ const GeospatialGuideOverlay: FC<Props> = ({
                   Start exploring
                 </button>
               </div>
-            </div>
+              </div>
 
-            <div className="space-y-4 bg-slate-950/80 px-6 py-6">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <div className="space-y-4 bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Layer guide
+                  How to read it
                 </p>
                 <ol className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
                   {selected.steps.map((step, index) => (
@@ -163,10 +298,28 @@ const GeospatialGuideOverlay: FC<Props> = ({
                     </li>
                   ))}
                 </ol>
-              </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                  Practical hint
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  {selectedLayer === 'etymology'
+                    ? 'Leave the guide, then let the timeline play or scrub through nodes to watch the path unfold.'
+                    : selectedLayer === 'translations'
+                      ? 'Close the guide and inspect clusters and tooltips to compare how the word appears in each area.'
+                      : selectedLayer === 'descendants'
+                        ? 'Use the branch controls to expand deeper paths once the guide is dismissed.'
+                        : selectedLayer === 'protoZones'
+                          ? 'Compare the proto-region backdrop with the active lineage or translation layer.'
+                          : 'Use the family context to orient yourself before switching to a more specific layer.'}
+                </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
       </div>
     </div>
   )

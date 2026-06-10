@@ -77,6 +77,34 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
   const lastAutoZoomInRef = useRef<number | null>(null) // last zoom level we auto-raised to
   const lastIndexRef = useRef<number | null>(null) // previous index to compute segment distance
   // const [highlightedCountries, setHighlightedCountries] = useState<string[]>([]); // replaced by LineageCountryHighlights overlay
+  const lineageNodes = lineage ? flattenLineage(lineage) : []
+  const hasPlayableLineage = lineageNodes.length > 1
+  const translationCount = markers.length
+  const lineageNodeCount = lineageNodes.length
+  const translationBreadth = translationCount / Math.max(1, lineageNodeCount)
+  const guideAvailability: Record<GuideLayerKey, boolean> = {
+    translations: translationCount > 0,
+    etymology: hasPlayableLineage,
+    descendants: hasPlayableLineage,
+    protoZones: true,
+    families: true,
+  }
+  const translationHeavy = translationCount >= 25 && translationBreadth >= 10
+  const recommendedLayer: GuideLayerKey = translationHeavy
+    ? 'translations'
+    : hasPlayableLineage
+      ? 'etymology'
+      : translationCount > 0
+        ? 'translations'
+        : 'protoZones'
+  const recommendationReason = translationHeavy
+    ? `There are ${translationCount} translation markers across ${lineageNodeCount} lineage node${lineageNodeCount === 1 ? '' : 's'}, so the translations layer gives the broader first view.`
+    : hasPlayableLineage
+      ? `This word already has a timeline path with ${lineageNodeCount} node${lineageNodeCount === 1 ? '' : 's'}, so the etymology layer gives the richest first look.`
+      : translationCount > 0
+        ? `There are ${translationCount} translation marker${translationCount === 1 ? '' : 's'} loaded, so the translations layer gives a quick geographic overview.`
+        : 'No translation markers are loaded yet, so start with a broader geographic layer.'
+  const guideContext = `${translationCount} translation marker${translationCount === 1 ? '' : 's'} available.${hasPlayableLineage ? ` A playable lineage with ${lineageNodes.length} nodes is available.` : ' No playable lineage is available yet.'}`
   // TODO (Timeline Scrubber & Playback State):
   //  - [ ] Derive highlightedCountries (Set) from full lineage once computed; derive focusedCountries from currentIndex.
   //  - [ ] Provide callback to <EtymologyLineagePath /> for node click -> setCurrentIndex.
@@ -480,7 +508,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
           {/* Country highlighting now limited to lineage-related countries only (no global hover). */}
           {/* General Etymology Markers Layer */}
           <LayersControl.Overlay checked={showTranslations} name="Translations">
-            <MarkerClusterGroup ref={(instance: unknown) => setTranslationGroup(instance as L.LayerGroup | null)}>
+            <MarkerClusterGroup ref={(instance: L.LayerGroup | null) => setTranslationGroup(instance)}>
               {showTranslations && <TranslationMarkers markers={markers} />}
             </MarkerClusterGroup>
           </LayersControl.Overlay>
@@ -554,6 +582,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
         <GeospatialGuideOverlay
           open={guideOpen}
           selectedLayer={guideLayer}
+          recommendedLayer={recommendedLayer}
+          recommendationReason={recommendationReason}
+          guideContext={guideContext}
+          availability={guideAvailability}
           onChooseLayer={(layer: GuideLayerKey) => {
             setGuideLayer(layer)
             setGuideOpen(true)
