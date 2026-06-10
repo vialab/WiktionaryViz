@@ -179,7 +179,8 @@ body {
 
 /* Future focused animation placeholder */
 .country-focused {
-  animation: pulse-focused 1.6s ease-in-out infinite;
+  /* pulsing removed per user request */
+  animation: none;
 }
 
 @keyframes pulse-focused {
