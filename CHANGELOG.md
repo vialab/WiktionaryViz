@@ -2,6 +2,17 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.25](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.24...wiktionaryviz-v0.1.25) (2026-06-11)
+
+
+### Features
+
+* **App.tsx:** add geospatial guide button and handler to improve user experience ([cab0cb4](https://github.com/vialab/WiktionaryViz/commit/cab0cb4627a6c3ecc2ddc79aee296959424e0412))
+* **GeospatialGuideOverlay.tsx:** add tooltip for recommended layers to enhance user experience by providing additional context when hovering over recommendations ([fe41c7e](https://github.com/vialab/WiktionaryViz/commit/fe41c7e96491ba3aa2475b1ad60dd58c458437d5))
+* **GeospatialGuideOverlay:** enhance user guidance with detailed usage instructions and how it works sections for selected layers to improve user experience and understanding of features ([eb36dc3](https://github.com/vialab/WiktionaryViz/commit/eb36dc399b4f5530666322cc121ee17d73589564))
+* **GeospatialPage.tsx:** register guide open handler to manage guide state ([cab0cb4](https://github.com/vialab/WiktionaryViz/commit/cab0cb4627a6c3ecc2ddc79aee296959424e0412))
+* **Navbar.tsx:** add optional guide button to navbar for better navigation ([cab0cb4](https://github.com/vialab/WiktionaryViz/commit/cab0cb4627a6c3ecc2ddc79aee296959424e0412))
+
 ## [0.1.24](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.23...wiktionaryviz-v0.1.24) (2026-06-10)
 
 
