@@ -69,7 +69,6 @@ interface Props {
   selectedLayer: GuideLayerKey | null
   recommendedLayer: GuideLayerKey | null
   recommendationReason: string
-  guideContext: string
   availability: Record<GuideLayerKey, boolean>
   onChooseLayer: (layer: GuideLayerKey) => void
   onCloseGuide: () => void

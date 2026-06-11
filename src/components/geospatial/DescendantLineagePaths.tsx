@@ -124,29 +124,25 @@ const resolveLanguageName = async (langCode: string | null | undefined, languoid
  * - TODO: Add performance instrumentation (request size, traversal duration, cache hit rate).
  */
 
-const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; playSpeed?: number }> = ({
+const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> = ({
   rootWord,
   rootLang,
-  playSpeed = 900,
 }) => {
   const map = useMap()
   const languoidData = useLanguoidData()
   const [paths, setPaths] = useState<DescPath[]>([])
-  const [mode, setMode] = useState<'auto' | 'root'>('auto')
-  const [detailMode, setDetailMode] = useState<'overview' | 'full'>('overview')
-  const [rootCandidates, setRootCandidates] = useState<RootCandidate[]>([])
+  const [, setRootCandidates] = useState<RootCandidate[]>([])
   const [selectedRootCandidate, setSelectedRootCandidate] = useState<RootCandidate | null>(null)
   const selectedRootCandidateKey = selectedRootCandidate
     ? `${selectedRootCandidate.word ?? ''}|${selectedRootCandidate.lang_code ?? ''}`
     : ''
-  const [resolvedRoot, setResolvedRoot] = useState<string | null>(null)
-  const [resolvedRootLang, setResolvedRootLang] = useState<string | null>(null)
-  const [lastLoadMs, setLastLoadMs] = useState<number | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const [, setResolvedRoot] = useState<string | null>(null)
+  const [, setResolvedRootLang] = useState<string | null>(null)
+  const [, setLastLoadMs] = useState<number | null>(null)
+  const [, setLoading] = useState(false)
+  const [, setLoadError] = useState<string | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [playbackRate, setPlaybackRate] = useState(1)
+  const [, setIsPlaying] = useState(false)
   const [languageNames, setLanguageNames] = useState<Record<string, string>>({})
   const polyRefs = useRef<Record<number, L.Polyline | null>>({})
   const playbackRunRef = useRef(0)
@@ -163,19 +159,6 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
     expandedNodeKeysRef.current = new Set()
     ;(async () => {
       try {
-        if (mode === 'root') {
-          const baseNode: DescNode = { word: rootWord, lang_code: rootLang || null }
-          if (!cancelled) {
-            setPaths([[baseNode]])
-            setRootCandidates([])
-            setSelectedRootCandidate(null)
-            setResolvedRoot(rootWord)
-            setResolvedRootLang(rootLang || null)
-            setLastLoadMs(0)
-          }
-          return
-        }
-
         const url = apiUrl(
           `/ancestor-roots?${new URLSearchParams({
             word: rootWord,
@@ -230,7 +213,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
       cancelled = true
       controller.abort()
     }
-  }, [rootWord, rootLang, map, languoidData, selectedRootCandidate, selectedRootCandidateKey, mode, detailMode])
+  }, [rootWord, rootLang, map, languoidData, selectedRootCandidate, selectedRootCandidateKey])
 
   const expandNode = async (node: DescNode, basePath: DescPath, clickedIndex: number, pathIndex: number) => {
     if (!node.word) return
@@ -406,7 +389,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; pla
   useEffect(() => {
     stopPlayback()
     setSelected(null)
-  }, [rootWord, rootLang, mode, detailMode])
+  }, [rootWord, rootLang])
 
   return (
     <Pane name="descendant-paths" style={{ zIndex: 565 }}>
