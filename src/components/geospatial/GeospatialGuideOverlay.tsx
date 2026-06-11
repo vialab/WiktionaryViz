@@ -91,7 +91,6 @@ const GeospatialGuideOverlay: FC<Props> = ({
   onRestart,
 }) => {
   const selected = selectedLayer ? guideLayers[selectedLayer] : null
-  const recommended = recommendedLayer ? guideLayers[recommendedLayer] : null
   const [hoveredRecommendation, setHoveredRecommendation] = useState<GuideLayerKey | null>(null)
 
   const recommendationTooltip =
@@ -211,6 +210,42 @@ const GeospatialGuideOverlay: FC<Props> = ({
                     </div>
                     <p className="mt-1 text-sm leading-6 text-slate-200">{selected.bestFor}</p>
 
+                    <div className="mt-5 space-y-4">
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                          How it works
+                        </div>
+                        <p className="mt-2 text-sm leading-6 text-slate-300">
+                          {selectedLayer === 'etymology'
+                            ? 'The lineage animates node by node, showing how the word changes across time.'
+                            : selectedLayer === 'translations'
+                              ? 'Translations are grouped by geography so you can compare where the word appears.'
+                              : selectedLayer === 'descendants'
+                                ? 'The view expands outward from a root and reveals descendant branches as you explore.'
+                                : selectedLayer === 'protoZones'
+                                  ? 'The proto-zone layer frames the lineage inside a broader historical region.'
+                                  : 'The family layer groups languages into broader families for a higher-level view.'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                          How to use it
+                        </div>
+                        <p className="mt-2 text-sm leading-6 text-slate-300">
+                          {selectedLayer === 'etymology'
+                            ? 'Use the timeline scrubber to step through each node or press play to watch the path animate.'
+                            : selectedLayer === 'translations'
+                              ? 'Hover the markers and open popups to compare the spread across regions.'
+                              : selectedLayer === 'descendants'
+                                ? 'Click into branches to reveal deeper descendant paths and inspect the structure.'
+                                : selectedLayer === 'protoZones'
+                                  ? 'Compare the backdrop with the active lineage to understand the broader setting.'
+                                  : 'Use the family overview first, then switch to a more specific layer when you want detail.'}
+                        </p>
+                      </div>
+                    </div>
+
                     <div className="mt-5 flex flex-wrap gap-3">
                       <button
                         onClick={onRestart}
@@ -228,33 +263,17 @@ const GeospatialGuideOverlay: FC<Props> = ({
                   </div>
 
                   <div className="space-y-4 bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6">
-                    <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                      <ol className="space-y-3 text-sm leading-6 text-slate-300">
-                        {selected.steps.map((step, index) => (
-                          <li key={step} className="flex gap-3">
-                            <span className="mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full border border-cyan-300 bg-cyan-400 text-[11px] font-semibold text-slate-950">
-                              {index + 1}
-                            </span>
-                            <div>
-                              <div className="font-medium text-white">{step}</div>
-                            </div>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                      <p className="text-sm leading-6 text-slate-300">
-                        {selectedLayer === 'etymology'
-                          ? 'Leave the guide, then let the timeline play or scrub through nodes to watch the path unfold.'
-                          : selectedLayer === 'translations'
-                            ? 'Close the guide and inspect clusters and tooltips to compare how the word appears in each area.'
-                            : selectedLayer === 'descendants'
-                              ? 'Use the branch controls to expand deeper paths once the guide is dismissed.'
-                              : selectedLayer === 'protoZones'
-                                ? 'Compare the proto-region backdrop with an active lineage or translation layer.'
-                                : 'Use the family context to orient yourself before switching to a more specific layer.'}
-                      </p>
+                    <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+                      <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-slate-600/80 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),rgba(15,23,42,0.95))] px-4 text-center">
+                        <div>
+                          <div className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200/90">
+                            Preview demo gif
+                          </div>
+                          <div className="mt-3 text-sm leading-6 text-slate-300">
+                            This space will later show a short preview of the layer in action.
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
