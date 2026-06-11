@@ -1,13 +1,25 @@
 interface NavbarProps {
   title: string
   onTitleClick: () => void
+  showGuideButton?: boolean
+  onGuideClick?: () => void
 }
 
-const Navbar: React.FC<NavbarProps> = ({ title, onTitleClick }) => (
-  <nav className="navbar">
+const Navbar: React.FC<NavbarProps> = ({ title, onTitleClick, showGuideButton, onGuideClick }) => (
+  <nav className="navbar flex items-center justify-between gap-4">
     <h1 className="navbar-title cursor-pointer text-left text-3xl" onClick={onTitleClick}>
       {title}
     </h1>
+    {showGuideButton && onGuideClick && (
+      <button
+        type="button"
+        onClick={onGuideClick}
+        aria-label="Open geospatial guide"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-600/80 bg-slate-800/90 text-sm font-semibold text-slate-100 transition hover:border-cyan-300 hover:bg-slate-700"
+      >
+        ?
+      </button>
+    )}
   </nav>
 )
 // TODO [HIGH LEVEL]: Add a toggle for Public vs Expert mode to simplify UI for non-experts.

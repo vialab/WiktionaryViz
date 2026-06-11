@@ -9,6 +9,7 @@ function App() {
   const [word2, setWord2] = useState<string>('')
   const [language1, setLanguage1] = useState('')
   const [language2, setLanguage2] = useState('')
+  const [geospatialGuideOpenHandler, setGeospatialGuideOpenHandler] = useState<(() => void) | null>(null)
 
   // TODO [HIGH LEVEL]: Support shareable, state-preserving URLs that encode current view, filters, words, languages, and selections.
   // Rationale: Participants 4, 6 asked for reproducibility and easy sharing. Enable deep-linking to exact visualization states.
@@ -26,7 +27,12 @@ function App() {
     <div className="flex flex-col min-h-screen bg-[#1F1F1FFF] text-[#F5F5F5]">
       {/* Navbar */}
       <header className="bg-[#1C1C1E] shadow-md p-3 z-50 fixed top-0 w-full">
-        <Navbar title="WiktionaryViz" onTitleClick={() => setVisibleSection('landing-page')} />
+        <Navbar
+          title="WiktionaryViz"
+          onTitleClick={() => setVisibleSection('landing-page')}
+          showGuideButton={visibleSection === 'geospatial'}
+          onGuideClick={() => geospatialGuideOpenHandler?.()}
+        />
       </header>
 
       {/* Main content takes up remaining space */}
@@ -44,7 +50,13 @@ function App() {
             language2={language2}
           />
         )}
-        {visibleSection === 'geospatial' && <GeospatialPage word={word1} language={language1} />}
+        {visibleSection === 'geospatial' && (
+          <GeospatialPage
+            word={word1}
+            language={language1}
+            onGuideOpenRegister={setGeospatialGuideOpenHandler}
+          />
+        )}
         {/* TODO [HIGH LEVEL]: Add a "Lecture/Presentation" mode that scripts camera pans/zooms and reveals, with narration hooks. */}
         {/* TODO [LOW LEVEL]: Provide a presentation controller component to step through saved view states across pages. */}
       </main>

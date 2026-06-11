@@ -1,4 +1,5 @@
 import { FC } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 
 export type GuideLayerKey = 'translations' | 'etymology' | 'descendants' | 'protoZones' | 'families'
 
@@ -90,8 +91,6 @@ const GeospatialGuideOverlay: FC<Props> = ({
   onClose,
   onRestart,
 }) => {
-  if (!open) return null
-
   const selected = selectedLayer ? guideLayers[selectedLayer] : null
   const recommended = recommendedLayer ? guideLayers[recommendedLayer] : null
   const activeStage = selected ? 1 : 0
@@ -112,9 +111,23 @@ const GeospatialGuideOverlay: FC<Props> = ({
   ]
 
   return (
-    <div className="absolute inset-0 z-[12000] flex items-center justify-center bg-slate-950/75 px-6 py-6 backdrop-blur-sm sm:px-8 sm:py-8 lg:px-12 lg:py-10">
-      <div className="flex max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-slate-950/95 shadow-2xl shadow-cyan-950/30 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)]">
-        <div className="shrink-0 border-b border-slate-800/80 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/50 px-4 py-4 sm:px-6 sm:py-5">
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="absolute inset-0 z-[12000] flex items-center justify-center bg-slate-950/75 px-6 py-6 backdrop-blur-sm sm:px-8 sm:py-8 lg:px-12 lg:py-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.16, ease: 'easeOut' }}
+        >
+          <motion.div
+            className="flex max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-slate-950/95 shadow-2xl shadow-cyan-950/30 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)]"
+            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 8 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+          >
+            <div className="shrink-0 border-b border-slate-800/80 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/50 px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="max-w-3xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-cyan-300/80">
@@ -173,9 +186,9 @@ const GeospatialGuideOverlay: FC<Props> = ({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {!selected ? (
-            <div className="space-y-5 px-4 py-4 sm:px-6 sm:py-6">
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {!selected ? (
+                <div className="space-y-5 px-4 py-4 sm:px-6 sm:py-6">
             {recommendedLayer && recommended && availability[recommendedLayer] && (
               <div className="rounded-2xl border border-cyan-400/40 bg-cyan-400/10 p-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -233,10 +246,10 @@ const GeospatialGuideOverlay: FC<Props> = ({
                 )
               })}
             </div>
-            </div>
-          ) : (
-            <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="border-b border-slate-800/80 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r">
+                </div>
+              ) : (
+                <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+                  <div className="border-b border-slate-800/80 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
                   Selected layer
                 </p>
@@ -270,10 +283,10 @@ const GeospatialGuideOverlay: FC<Props> = ({
                     Start exploring
                   </button>
                 </div>
-              </div>
+                  </div>
 
-              <div className="space-y-4 bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6">
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <div className="space-y-4 bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6">
+                    <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
                   How to read it
                 </p>
@@ -289,9 +302,9 @@ const GeospatialGuideOverlay: FC<Props> = ({
                     </li>
                   ))}
                 </ol>
-                </div>
+                    </div>
 
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                    <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
                   Practical hint
                 </p>
@@ -311,8 +324,10 @@ const GeospatialGuideOverlay: FC<Props> = ({
                 </div>
               )}
             </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 

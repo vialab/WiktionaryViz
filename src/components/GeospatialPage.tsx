@@ -38,13 +38,14 @@ interface WordData {
 interface GeospatialPageProps {
   word: string
   language: string
+  onGuideOpenRegister?: (openGuide: (() => void) | null) => void
 }
 
 /**
  * GeospatialPage visualizes translations and etymology lineage on a map.
  * Uses modular components for maintainability and performance.
  */
-const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
+const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuideOpenRegister }) => {
   const wordData = useWordData(word, language) as WordData | null
   const languoidData = useLanguoidData()
   const [markers, setMarkers] = useState<TranslationMarker[]>([])
@@ -127,6 +128,17 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language }) => {
     setIsPlaying(false)
     setShowAllPopups(false)
   }, [word, language])
+
+  useEffect(() => {
+    onGuideOpenRegister?.(() => () => {
+      setGuideLayer(null)
+      setGuideOpen(true)
+    })
+
+    return () => {
+      onGuideOpenRegister?.(null)
+    }
+  }, [onGuideOpenRegister])
 
   useEffect(() => {
     if (!guideLayer) return
