@@ -105,7 +105,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
       : translationCount > 0
         ? `There are ${translationCount} translation marker${translationCount === 1 ? '' : 's'} loaded, so the translations layer gives a quick geographic overview.`
         : 'No translation markers are loaded yet, so start with a broader geographic layer.'
-  const guideContext = `${translationCount} translation marker${translationCount === 1 ? '' : 's'} available.${hasPlayableLineage ? ` A playable lineage with ${lineageNodes.length} nodes is available.` : ' No playable lineage is available yet.'}`
   // TODO (Timeline Scrubber & Playback State):
   //  - [ ] Derive highlightedCountries (Set) from full lineage once computed; derive focusedCountries from currentIndex.
   //  - [ ] Provide callback to <EtymologyLineagePath /> for node click -> setCurrentIndex.
@@ -596,7 +595,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           selectedLayer={guideLayer}
           recommendedLayer={recommendedLayer}
           recommendationReason={recommendationReason}
-          guideContext={guideContext}
           availability={guideAvailability}
           onChooseLayer={(layer: GuideLayerKey) => {
             setGuideLayer(layer)

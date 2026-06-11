@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 
 export type GuideLayerKey = 'translations' | 'etymology' | 'descendants' | 'protoZones' | 'families'
@@ -84,7 +84,6 @@ const GeospatialGuideOverlay: FC<Props> = ({
   selectedLayer,
   recommendedLayer,
   recommendationReason,
-  guideContext,
   availability,
   onChooseLayer,
   onCloseGuide,
@@ -93,22 +92,10 @@ const GeospatialGuideOverlay: FC<Props> = ({
 }) => {
   const selected = selectedLayer ? guideLayers[selectedLayer] : null
   const recommended = recommendedLayer ? guideLayers[recommendedLayer] : null
-  const activeStage = selected ? 1 : 0
+  const [hoveredRecommendation, setHoveredRecommendation] = useState<GuideLayerKey | null>(null)
 
-  const stages = [
-    {
-      title: 'Choose layer',
-      description: 'Pick the most useful view for this word.',
-    },
-    {
-      title: 'Read overview',
-      description: 'See what the layer adds before you dismiss the guide.',
-    },
-    {
-      title: 'Explore map',
-      description: 'Close the guide and interact with the active layer.',
-    },
-  ]
+  const recommendationTooltip =
+    hoveredRecommendation != null ? recommendationReason : null
 
   return (
     <AnimatePresence>
@@ -121,204 +108,153 @@ const GeospatialGuideOverlay: FC<Props> = ({
           transition={{ duration: 0.16, ease: 'easeOut' }}
         >
           <motion.div
-            className="flex max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-slate-950/95 shadow-2xl shadow-cyan-950/30 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)]"
+            className="flex min-h-[36rem] max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-slate-950/95 shadow-2xl shadow-cyan-950/30 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]"
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
           >
             <div className="shrink-0 border-b border-slate-800/80 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/50 px-4 py-4 sm:px-6 sm:py-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-cyan-300/80">
-                Guide mode
-              </p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">
-                Choose the first layer to explore
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-300 md:text-base">
-                {guideContext}
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="inline-flex items-center justify-center rounded-full border border-slate-700/80 bg-slate-900/80 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
-            >
-              Skip guide
-            </button>
-          </div>
-
-          <div className="mt-5 grid gap-2 md:grid-cols-3">
-            {stages.map((stage, index) => {
-              const isActive = index === activeStage
-              const isComplete = index < activeStage
-              return (
-                <div
-                  key={stage.title}
-                  className={`rounded-2xl border px-4 py-3 transition ${
-                    isActive
-                      ? 'border-cyan-300 bg-cyan-400/10'
-                      : isComplete
-                        ? 'border-emerald-400/60 bg-emerald-400/10'
-                        : 'border-slate-800 bg-slate-900/60'
-                  }`}
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="max-w-3xl">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-cyan-300/80">
+                    Guide mode
+                  </p>
+                  <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">
+                    Choose the first layer to explore
+                  </h2>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="inline-flex items-center justify-center rounded-full border border-slate-700/80 bg-slate-900/80 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
                 >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold ${
-                        isActive
-                          ? 'border-cyan-300 bg-cyan-400 text-slate-950'
-                          : isComplete
-                            ? 'border-emerald-400 bg-emerald-400/20 text-emerald-200'
-                            : 'border-slate-700 bg-slate-950 text-slate-400'
-                      }`}
-                    >
-                      {index + 1}
-                    </span>
-                    <div>
-                      <div className="text-sm font-semibold text-white">{stage.title}</div>
-                      <div className="text-xs leading-5 text-slate-400">{stage.description}</div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              {!selected ? (
-                <div className="space-y-5 px-4 py-4 sm:px-6 sm:py-6">
-            {recommendedLayer && recommended && availability[recommendedLayer] && (
-              <div className="rounded-2xl border border-cyan-400/40 bg-cyan-400/10 p-4">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-200/80">
-                      Recommended for this word
-                    </p>
-                    <h3 className="mt-2 text-xl font-semibold text-white">{recommended.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">{recommendationReason}</p>
-                  </div>
-                  <button
-                    onClick={() => onChooseLayer(recommendedLayer)}
-                    className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
-                  >
-                    Start recommended layer
-                  </button>
-                </div>
+                  Skip guide
+                </button>
               </div>
-            )}
-
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {layerOrder.map(layer => {
-                const info = guideLayers[layer]
-                const ready = availability[layer]
-                const isRecommended = layer === recommendedLayer
-                return (
-                  <button
-                    key={layer}
-                    onClick={() => onChooseLayer(layer)}
-                    disabled={!ready}
-                    className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-left transition hover:border-cyan-400 hover:bg-slate-800/90"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="text-lg font-semibold text-white">{info.title}</div>
-                      {isRecommended && (
-                        <span className="rounded-full border border-cyan-300/60 bg-cyan-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200">
-                          Recommended
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-3 text-sm leading-6 text-slate-300">{info.summary}</p>
-                    <div className="mt-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                      Best for
-                    </div>
-                    <p className="mt-1 text-sm leading-6 text-slate-200">{info.bestFor}</p>
-                    <div className="mt-4 flex items-center justify-between gap-3 text-sm font-medium">
-                      <span className={ready ? 'text-cyan-300' : 'text-slate-500'}>
-                        {ready ? 'Ready now' : 'Waiting for data'}
-                      </span>
-                      <span className="text-slate-400">
-                        {ready ? 'Start with this layer' : 'Unavailable until data loads'}
-                      </span>
-                    </div>
-                  </button>
-                )
-              })}
             </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto lg:min-h-[28rem]">
+              {!selected ? (
+                <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-6">
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {layerOrder.map(layer => {
+                      const info = guideLayers[layer]
+                      const ready = availability[layer]
+                      const isRecommended = layer === recommendedLayer
+                      return (
+                        <button
+                          key={layer}
+                          onClick={() => onChooseLayer(layer)}
+                          disabled={!ready}
+                          className="group rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-left transition hover:border-cyan-400 hover:bg-slate-800/90"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="text-lg font-semibold text-white">{info.title}</div>
+                            {isRecommended && (
+                              <div className="relative">
+                                <span
+                                  className="rounded-full border border-cyan-300/60 bg-cyan-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200"
+                                  onMouseEnter={() => setHoveredRecommendation(layer)}
+                                  onMouseLeave={() => setHoveredRecommendation(null)}
+                                >
+                                  Recommended
+                                </span>
+                                {hoveredRecommendation === layer && recommendationTooltip && (
+                                  <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-700 bg-slate-950/95 px-3 py-2 text-left text-xs leading-5 text-slate-200 shadow-xl shadow-black/30">
+                                    {recommendationTooltip}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <p className="mt-3 text-sm leading-6 text-slate-300">{info.summary}</p>
+                          <div className="mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100">
+                            Best for
+                          </div>
+                          <p className="max-h-0 overflow-hidden text-sm leading-6 text-slate-200 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100">
+                            {info.bestFor}
+                          </p>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               ) : (
                 <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
                   <div className="border-b border-slate-800/80 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Selected layer
-                </p>
-                <div className="mt-2 flex flex-wrap items-center gap-3">
-                  <h3 className="text-2xl font-semibold text-white">{selected.title}</h3>
-                  {selectedLayer === recommendedLayer && (
-                    <div className="inline-flex rounded-full border border-cyan-300/60 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
-                      Recommended for this word
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                      Selected layer
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <h3 className="text-2xl font-semibold text-white">{selected.title}</h3>
+                      {selectedLayer === recommendedLayer && (
+                        <div className="relative">
+                          <span
+                            className="inline-flex rounded-full border border-cyan-300/60 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200"
+                            onMouseEnter={() => setHoveredRecommendation(selectedLayer)}
+                            onMouseLeave={() => setHoveredRecommendation(null)}
+                          >
+                            Recommended for this word
+                          </span>
+                          {hoveredRecommendation === selectedLayer && recommendationTooltip && (
+                            <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-700 bg-slate-950/95 px-3 py-2 text-left text-xs leading-5 text-slate-200 shadow-xl shadow-black/30">
+                              {recommendationTooltip}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                <p className="mt-4 text-sm leading-6 text-slate-300">{selected.summary}</p>
+                    <p className="mt-4 text-sm leading-6 text-slate-300">{selected.summary}</p>
+                    <div className="mt-3 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                      Best for
+                    </div>
+                    <p className="mt-1 text-sm leading-6 text-slate-200">{selected.bestFor}</p>
 
-                <div className="mt-4 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Best for
-                </div>
-                <p className="mt-1 text-sm font-medium text-slate-300">{selected.bestFor}</p>
-
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <button
-                    onClick={onRestart}
-                    className="rounded-full border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
-                  >
-                    Choose another layer
-                  </button>
-                  <button
-                    onClick={onCloseGuide}
-                    className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
-                  >
-                    Start exploring
-                  </button>
-                </div>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <button
+                        onClick={onRestart}
+                        className="rounded-full border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                      >
+                        Choose another layer
+                      </button>
+                      <button
+                        onClick={onCloseGuide}
+                        className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                      >
+                        Start exploring
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-4 bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6">
                     <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  How to read it
-                </p>
-                <ol className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
-                  {selected.steps.map((step, index) => (
-                    <li key={step} className="flex gap-3">
-                      <span className="mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full border border-cyan-300 bg-cyan-400 text-[11px] font-semibold text-slate-950">
-                        {index + 1}
-                      </span>
-                      <div>
-                        <div className="font-medium text-white">{step}</div>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
+                      <ol className="space-y-3 text-sm leading-6 text-slate-300">
+                        {selected.steps.map((step, index) => (
+                          <li key={step} className="flex gap-3">
+                            <span className="mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full border border-cyan-300 bg-cyan-400 text-[11px] font-semibold text-slate-950">
+                              {index + 1}
+                            </span>
+                            <div>
+                              <div className="font-medium text-white">{step}</div>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
                     </div>
 
                     <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Practical hint
-                </p>
-                <p className="mt-3 text-sm leading-6 text-slate-300">
-                  {selectedLayer === 'etymology'
-                    ? 'Leave the guide, then let the timeline play or scrub through nodes to watch the path unfold.'
-                    : selectedLayer === 'translations'
-                      ? 'Close the guide and inspect clusters and tooltips to compare how the word appears in each area.'
-                      : selectedLayer === 'descendants'
-                        ? 'Use the branch controls to expand deeper paths once the guide is dismissed.'
-                        : selectedLayer === 'protoZones'
-                          ? 'Compare the proto-region backdrop with an active lineage or translation layer.'
-                          : 'Use the family context to orient yourself before switching to a more specific layer.'}
-                </p>
+                      <p className="text-sm leading-6 text-slate-300">
+                        {selectedLayer === 'etymology'
+                          ? 'Leave the guide, then let the timeline play or scrub through nodes to watch the path unfold.'
+                          : selectedLayer === 'translations'
+                            ? 'Close the guide and inspect clusters and tooltips to compare how the word appears in each area.'
+                            : selectedLayer === 'descendants'
+                              ? 'Use the branch controls to expand deeper paths once the guide is dismissed.'
+                              : selectedLayer === 'protoZones'
+                                ? 'Compare the proto-region backdrop with an active lineage or translation layer.'
+                                : 'Use the family context to orient yourself before switching to a more specific layer.'}
+                      </p>
                     </div>
                   </div>
                 </div>
