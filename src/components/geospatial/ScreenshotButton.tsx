@@ -37,33 +37,6 @@ const ScreenshotButton: React.FC<ScreenshotButtonProps> = ({ word, language, map
     setCapturing(true)
 
     try {
-      // First try leaflet-image if a Leaflet map instance is available.
-      if (mapInstance) {
-        try {
-          // @ts-expect-error leaflet-image has no type declarations
-          const leafletImageMod = await import('leaflet-image')
-          const leafletImage =
-            (leafletImageMod && (leafletImageMod as any).default) || leafletImageMod
-
-          const canvas: HTMLCanvasElement = await new Promise((resolve, reject) => {
-            try {
-              leafletImage(mapInstance as any, (err: any, canv: HTMLCanvasElement) => {
-                if (err) reject(err)
-                else resolve(canv)
-              })
-            } catch (e) {
-              reject(e)
-            }
-          })
-
-          setPreviewDataUrl(canvas.toDataURL('image/png'))
-          return
-        } catch (leafletErr) {
-          // eslint-disable-next-line no-console
-          console.warn('leaflet-image capture failed, falling back to html2canvas', leafletErr)
-        }
-      }
-
       const capturePromise = html2canvas(target, {
         useCORS: true,
         backgroundColor: null,
