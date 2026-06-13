@@ -23,7 +23,7 @@ body {
   /* allow normal page scrolling; fixed header is already positioned */
   overflow: auto;
   /* Prevent unwanted scrollbars */
-  background-color: #282c34;
+  background-color: #0f172a;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

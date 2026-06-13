@@ -7,7 +7,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ title, onTitleClick, showGuideButton, onGuideClick }) => (
   <nav className="navbar flex items-center justify-between gap-4">
-    <h1 className="navbar-title cursor-pointer text-left text-3xl" onClick={onTitleClick}>
+    <h1 className="navbar-title cursor-pointer text-left text-3xl text-slate-100 transition hover:text-slate-50" onClick={onTitleClick}>
       {title}
     </h1>
     {showGuideButton && onGuideClick && (

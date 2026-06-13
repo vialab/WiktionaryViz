@@ -135,14 +135,14 @@ export default function LandingPage({
   }
 
   return (
-    <section className="flex items-center justify-center py-12 px-4 min-h-[calc(100vh-4rem)]">
+    <section className="flex items-center justify-center bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 py-12 px-4 min-h-[calc(100vh-4rem)]">
       <div className="w-full max-w-2xl mx-auto text-center">
         {/* Header / identity (use div to avoid global header CSS) */}
         <div role="banner" className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold text-yellow-400 leading-tight">
+          <h1 className="text-3xl md:text-4xl font-semibold text-slate-100 leading-tight">
             WiktionaryViz
           </h1>
-          <p className="mt-3 text-gray-300 text-base md:text-lg max-w-xl mx-auto">
+          <p className="mt-3 text-slate-300 text-base md:text-lg max-w-xl mx-auto">
             Explore how words evolve across time and languages.
           </p>
         </div>
@@ -153,7 +153,7 @@ export default function LandingPage({
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.45, ease: 'easeOut' }}
-          className="bg-neutral-900/60 backdrop-blur-sm border border-neutral-800 rounded-lg shadow-lg p-6 md:p-8"
+          className="bg-slate-950/70 backdrop-blur-sm border border-slate-800 rounded-2xl shadow-2xl shadow-cyan-950/20 p-6 md:p-8"
         >
           <h2 id="search-heading" className="sr-only">
             Search a word
@@ -162,7 +162,7 @@ export default function LandingPage({
           {/* Compare mode is intentionally disabled for now. */}
           <div className="mb-4 flex items-center justify-between opacity-40">
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-300">Compare mode</span>
+              <span className="text-sm text-slate-300">Compare mode</span>
 
               <button
                 type="button"
@@ -170,14 +170,14 @@ export default function LandingPage({
                 aria-checked={false}
                 aria-disabled="true"
                 disabled
-                className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full bg-neutral-700 transition-colors focus:outline-none"
+                className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full bg-slate-700 transition-colors focus:outline-none"
               >
                 <span className="sr-only">Compare mode disabled</span>
                 <motion.span
                   initial={{ left: 4 }}
                   animate={{ left: 4 }}
                   transition={{ type: 'spring', stiffness: 700, damping: 30 }}
-                  className="pointer-events-none absolute top-0.5 left-1 h-5 w-5 rounded-full bg-white shadow-md"
+                  className="pointer-events-none absolute top-0.5 left-1 h-5 w-5 rounded-full bg-slate-100 shadow-md"
                 />
               </button>
             </div>
@@ -200,18 +200,18 @@ export default function LandingPage({
                     <WordLanguageInput
                       word={word}
                       onWordChange={setWord}
-                      inputBaseStyles="w-full px-4 py-3 rounded-none bg-transparent text-gray-100 placeholder-gray-400 focus:outline-none"
+                      inputBaseStyles="w-full px-4 py-3 rounded-none bg-transparent text-slate-100 placeholder-slate-400 focus:outline-none"
                       placeholder="Enter a word or phrase…"
                     />
                   </div>
 
                   {word && word.trim().length > 0 && (
-                    <div className="w-40 md:w-44 flex items-center px-2 border-l border-neutral-800 bg-neutral-800">
+                    <div className="w-40 md:w-44 flex items-center px-2 border-l border-slate-800 bg-slate-900">
                       {langsLoading ? (
-                        <p className="text-[#B79F58]">Loading…</p>
+                        <p className="text-cyan-300">Loading…</p>
                       ) : (
                         <select
-                          className="w-full h-11 bg-neutral-800 text-gray-100 px-2 focus:outline-none appearance-none"
+                          className="w-full h-11 bg-slate-900 text-slate-100 px-2 focus:outline-none appearance-none"
                           value={language}
                           onChange={e => setLanguage(e.target.value)}
                           aria-label="Language"
@@ -237,15 +237,15 @@ export default function LandingPage({
               <div className="flex items-end">
                 <button
                   type="submit"
-                  className={`w-full inline-flex items-center justify-center px-4 py-3 rounded-lg font-semibold transition-transform focus:outline-none focus:ring-2 focus:ring-yellow-400
-                    ${isLoading ? 'bg-yellow-300 text-neutral-900 cursor-not-allowed opacity-90' : 'bg-yellow-500 hover:bg-yellow-400 text-neutral-900'}`}
+                  className={`w-full inline-flex items-center justify-center px-4 py-3 rounded-lg font-semibold transition-transform focus:outline-none focus:ring-2 focus:ring-slate-500
+                    ${isLoading ? 'bg-slate-600 text-slate-100 cursor-not-allowed opacity-90' : 'bg-slate-700 hover:bg-slate-600 text-slate-100'}`}
                   disabled={isLoading}
                   aria-disabled={isLoading}
                 >
                   {isLoading ? (
                     <>
                       <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-neutral-900"
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-100"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -280,17 +280,17 @@ export default function LandingPage({
           <div className="flex items-center justify-between mb-3">
             <button
               onClick={handleInspire}
-              className="px-3 py-1.5 bg-yellow-500 text-neutral-900 rounded-md text-sm font-medium hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="px-3 py-1.5 bg-slate-700 text-slate-100 rounded-md text-sm font-medium hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500"
               disabled={isLoading || interestingLoading}
             >
               Inspire me
             </button>
             {inspireLabel ? (
-              <span className="text-sm text-gray-300">
+              <span className="text-sm text-slate-300">
                 {inspireWord} — {inspireLabel}
               </span>
             ) : (
-              <span className="text-sm text-gray-400">Get a random interesting word</span>
+              <span className="text-sm text-slate-400">Get a random interesting word</span>
             )}
           </div>
           {/* Intentionally omitted the "Try exploring a word from..." suggestion component.
