@@ -133,9 +133,6 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
   const [paths, setPaths] = useState<DescPath[]>([])
   const [, setRootCandidates] = useState<RootCandidate[]>([])
   const [selectedRootCandidate, setSelectedRootCandidate] = useState<RootCandidate | null>(null)
-  const selectedRootCandidateKey = selectedRootCandidate
-    ? `${selectedRootCandidate.word ?? ''}|${selectedRootCandidate.lang_code ?? ''}`
-    : ''
   const [, setResolvedRoot] = useState<string | null>(null)
   const [, setResolvedRootLang] = useState<string | null>(null)
   const [, setLastLoadMs] = useState<number | null>(null)
@@ -149,7 +146,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
   const expandedNodeKeysRef = useRef<Set<string>>(new Set())
   const activeBranchRef = useRef<{ pathIndex: number; nodeIndex: number } | null>(null)
 
-  // Fetch paths from backend
+  // Fetch the resolved root and its descendant paths from the backend.
   useEffect(() => {
     if (!rootWord) return
     let cancelled = false
@@ -160,7 +157,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
     ;(async () => {
       try {
         const url = apiUrl(
-          `/ancestor-roots?${new URLSearchParams({
+          `/descendant-paths-resolved?${new URLSearchParams({
             word: rootWord,
             lang_code: rootLang || '',
           }).toString()}`,
@@ -191,7 +188,8 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
             word: nextSelectedRoot?.word || json.root || rootWord,
             lang_code: nextSelectedRoot?.lang_code || json.root_lang || rootLang || null,
           }
-          setPaths([[rootNode]])
+          const resolvedPaths = Array.isArray(json.paths) ? (json.paths as DescPath[]) : []
+          setPaths(resolvedPaths.length ? resolvedPaths : [[rootNode]])
           setLastLoadMs(typeof json?.meta?.elapsed_ms === 'number' ? json.meta.elapsed_ms : null)
           setRootCandidates(roots)
           setSelectedRootCandidate(nextSelectedRoot)
@@ -213,7 +211,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
       cancelled = true
       controller.abort()
     }
-  }, [rootWord, rootLang, map, languoidData, selectedRootCandidate, selectedRootCandidateKey])
+  }, [rootWord, rootLang])
 
   const expandNode = async (node: DescNode, basePath: DescPath, clickedIndex: number, pathIndex: number) => {
     if (!node.word) return
