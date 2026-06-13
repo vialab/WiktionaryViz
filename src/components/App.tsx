@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Navbar from '@/components/Navbar'
 import LandingPage from '@/components/LandingPage'
 import GeospatialPage from '@/components/GeospatialPage'
+
+type ThemeMode = 'dark' | 'light'
 
 function App() {
   const [visibleSection, setVisibleSection] = useState<string>('landing-page')
@@ -10,6 +12,18 @@ function App() {
   const [language1, setLanguage1] = useState('')
   const [language2, setLanguage2] = useState('')
   const [geospatialGuideOpenHandler, setGeospatialGuideOpenHandler] = useState<(() => void) | null>(null)
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    if (typeof window === 'undefined') return 'dark'
+    const storedTheme = window.localStorage.getItem('wiktionaryviz-theme')
+    return storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'dark'
+  })
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    document.body.dataset.theme = theme
+    document.documentElement.style.colorScheme = theme
+    window.localStorage.setItem('wiktionaryviz-theme', theme)
+  }, [theme])
 
   // TODO [HIGH LEVEL]: Support shareable, state-preserving URLs that encode current view, filters, words, languages, and selections.
   // Rationale: Participants 4, 6 asked for reproducibility and easy sharing. Enable deep-linking to exact visualization states.
@@ -24,14 +38,16 @@ function App() {
   // TODO [LOW LEVEL]: Implement a lightweight preset registry and a bookmarks context with localStorage persistence.
 
   return (
-    <div className="flex flex-col min-h-screen bg-neutral-950 text-slate-100">
+    <div className={theme === 'light' ? 'flex min-h-screen flex-col bg-white text-slate-900' : 'flex min-h-screen flex-col bg-neutral-950 text-slate-100'}>
       {/* Navbar */}
-      <header className="bg-neutral-950/95 shadow-md shadow-black/20 p-3 z-50 fixed top-0 w-full backdrop-blur-sm">
+      <header className={theme === 'light' ? 'fixed top-0 z-50 w-full border-b border-slate-200/80 bg-white/90 p-3 shadow-sm backdrop-blur-sm' : 'fixed top-0 z-50 w-full bg-neutral-950/95 p-3 shadow-md shadow-black/20 backdrop-blur-sm'}>
         <Navbar
           title="WiktionaryViz"
           onTitleClick={() => setVisibleSection('landing-page')}
           showGuideButton={visibleSection === 'geospatial'}
           onGuideClick={() => geospatialGuideOpenHandler?.()}
+          theme={theme}
+          onToggleTheme={() => setTheme(current => (current === 'dark' ? 'light' : 'dark'))}
         />
       </header>
 
@@ -39,6 +55,7 @@ function App() {
       <main className="flex-1 flex flex-col items-center mt-16">
         {visibleSection === 'landing-page' && (
           <LandingPage
+            theme={theme}
             setVisibleSection={setVisibleSection}
             setWord1={setWord1}
             setWord2={setWord2}
@@ -55,6 +72,7 @@ function App() {
             word={word1}
             language={language1}
             onGuideOpenRegister={setGeospatialGuideOpenHandler}
+            theme={theme}
           />
         )}
         {/* TODO [HIGH LEVEL]: Add a "Lecture/Presentation" mode that scripts camera pans/zooms and reveals, with narration hooks. */}

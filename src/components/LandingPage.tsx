@@ -5,6 +5,7 @@ import { useAvailableLanguages } from '@/hooks/useAvailableLanguages'
 import { useInterestingWord } from '@/hooks/useInterestingWord'
 
 interface LandingPageProps {
+  theme?: 'dark' | 'light'
   // new preferred props
   initialWord?: string
   initialLanguage?: string
@@ -37,6 +38,7 @@ interface LandingPageProps {
  * - Accessible and keyboard-friendly
  */
 export default function LandingPage({
+  theme = 'dark',
   initialWord,
   initialLanguage = 'English',
   suggestedWords = ['world', 'love', 'sun', 'orange'],
@@ -51,6 +53,7 @@ export default function LandingPage({
   const [word, setWord] = useState<string>(initialWord ?? word1 ?? '')
   // prefer any legacy controlled language props when provided (fall back to initialLanguage)
   const [language, setLanguage] = useState<string>(language1 || initialLanguage)
+  const isLight = theme === 'light'
 
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -135,14 +138,14 @@ export default function LandingPage({
   }
 
   return (
-    <section className="flex items-center justify-center bg-gradient-to-b from-neutral-950 via-slate-900 to-neutral-950 py-12 px-4 min-h-[calc(100vh-4rem)]">
+    <section className={isLight ? 'flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gradient-to-b from-white via-slate-50 to-slate-100 px-4 py-12' : 'flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gradient-to-b from-neutral-950 via-slate-900 to-neutral-950 px-4 py-12'}>
       <div className="w-full max-w-2xl mx-auto text-center">
         {/* Header / identity (use div to avoid global header CSS) */}
         <div role="banner" className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold text-slate-100 leading-tight">
+          <h1 className={isLight ? 'text-3xl font-semibold leading-tight text-slate-900 md:text-4xl' : 'text-3xl font-semibold leading-tight text-slate-100 md:text-4xl'}>
             WiktionaryViz
           </h1>
-          <p className="mt-3 text-slate-300 text-base md:text-lg max-w-xl mx-auto">
+          <p className={isLight ? 'mx-auto mt-3 max-w-xl text-base text-slate-600 md:text-lg' : 'mx-auto mt-3 max-w-xl text-base text-slate-300 md:text-lg'}>
             Explore how words evolve across time and languages.
           </p>
         </div>
@@ -153,16 +156,16 @@ export default function LandingPage({
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.45, ease: 'easeOut' }}
-          className="bg-neutral-950/70 backdrop-blur-sm border border-slate-800 rounded-2xl shadow-2xl shadow-black/20 p-6 md:p-8"
+          className={isLight ? 'rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-2xl shadow-blue-100/50 backdrop-blur-sm md:p-8' : 'rounded-2xl border border-slate-800 bg-neutral-950/70 p-6 shadow-2xl shadow-black/20 backdrop-blur-sm md:p-8'}
         >
           <h2 id="search-heading" className="sr-only">
             Search a word
           </h2>
 
           {/* Compare mode is intentionally disabled for now. */}
-          <div className="mb-4 flex items-center justify-between opacity-40">
+          <div className={isLight ? 'mb-4 flex items-center justify-between opacity-40' : 'mb-4 flex items-center justify-between opacity-40'}>
             <div className="flex items-center gap-3">
-              <span className="text-sm text-slate-300">Compare mode</span>
+              <span className={isLight ? 'text-sm text-slate-500' : 'text-sm text-slate-300'}>Compare mode</span>
 
               <button
                 type="button"
@@ -170,14 +173,14 @@ export default function LandingPage({
                 aria-checked={false}
                 aria-disabled="true"
                 disabled
-                className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full bg-slate-700 transition-colors focus:outline-none"
+                className={isLight ? 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full bg-slate-200 transition-colors focus:outline-none' : 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full bg-slate-700 transition-colors focus:outline-none'}
               >
                 <span className="sr-only">Compare mode disabled</span>
                 <motion.span
                   initial={{ left: 4 }}
                   animate={{ left: 4 }}
                   transition={{ type: 'spring', stiffness: 700, damping: 30 }}
-                  className="pointer-events-none absolute top-0.5 left-1 h-5 w-5 rounded-full bg-slate-100 shadow-md"
+                  className={isLight ? 'pointer-events-none absolute top-0.5 left-1 h-5 w-5 rounded-full bg-white shadow-md' : 'pointer-events-none absolute top-0.5 left-1 h-5 w-5 rounded-full bg-slate-100 shadow-md'}
                 />
               </button>
             </div>
@@ -195,23 +198,23 @@ export default function LandingPage({
             <div className="flex flex-col gap-3">
               <div>
                 <label className="sr-only">Word and language</label>
-                <div className="flex items-stretch w-full rounded-lg overflow-hidden border border-neutral-800 bg-neutral-900">
+                <div className={isLight ? 'flex w-full items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white' : 'flex w-full items-stretch overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900'}>
                   <div className="flex-1">
                     <WordLanguageInput
                       word={word}
                       onWordChange={setWord}
-                      inputBaseStyles="w-full px-4 py-3 rounded-none bg-transparent text-slate-100 placeholder-slate-400 focus:outline-none"
+                      inputBaseStyles={isLight ? 'w-full rounded-none bg-transparent px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none' : 'w-full rounded-none bg-transparent px-4 py-3 text-slate-100 placeholder-slate-400 focus:outline-none'}
                       placeholder="Enter a word or phrase…"
                     />
                   </div>
 
                   {word && word.trim().length > 0 && (
-                    <div className="w-40 md:w-44 flex items-center px-2 border-l border-slate-800 bg-slate-900">
+                    <div className={isLight ? 'flex w-40 items-center border-l border-slate-200 bg-white px-2 md:w-44' : 'flex w-40 items-center border-l border-slate-800 bg-slate-900 px-2 md:w-44'}>
                       {langsLoading ? (
-                        <p className="text-slate-300">Loading…</p>
+                        <p className={isLight ? 'text-slate-500' : 'text-slate-300'}>Loading…</p>
                       ) : (
                         <select
-                          className="w-full h-11 bg-slate-900 text-slate-100 px-2 focus:outline-none appearance-none"
+                          className={isLight ? 'h-11 w-full appearance-none bg-white px-2 text-slate-900 focus:outline-none' : 'h-11 w-full appearance-none bg-slate-900 px-2 text-slate-100 focus:outline-none'}
                           value={language}
                           onChange={e => setLanguage(e.target.value)}
                           aria-label="Language"
@@ -237,15 +240,15 @@ export default function LandingPage({
               <div className="flex items-end">
                 <button
                   type="submit"
-                  className={`w-full inline-flex items-center justify-center px-4 py-3 rounded-lg font-semibold transition-transform focus:outline-none focus:ring-2 focus:ring-slate-500
-                    ${isLoading ? 'bg-slate-600 text-slate-100 cursor-not-allowed opacity-90' : 'bg-slate-700 hover:bg-slate-600 text-slate-100'}`}
+                  className={`w-full inline-flex items-center justify-center rounded-lg px-4 py-3 font-semibold transition-transform focus:outline-none focus:ring-2 ${isLight ? 'focus:ring-blue-400' : 'focus:ring-slate-500'}
+                    ${isLoading ? (isLight ? 'bg-blue-200 text-slate-600 cursor-not-allowed opacity-90' : 'bg-slate-600 text-slate-100 cursor-not-allowed opacity-90') : (isLight ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-slate-700 text-slate-100 hover:bg-slate-600')}`}
                   disabled={isLoading}
                   aria-disabled={isLoading}
                 >
                   {isLoading ? (
                     <>
                       <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-100"
+                        className={isLight ? 'animate-spin -ml-1 mr-3 h-5 w-5 text-white' : 'animate-spin -ml-1 mr-3 h-5 w-5 text-slate-100'}
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -280,17 +283,17 @@ export default function LandingPage({
           <div className="flex items-center justify-between mb-3">
             <button
               onClick={handleInspire}
-              className="px-3 py-1.5 bg-slate-700 text-slate-100 rounded-md text-sm font-medium hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500"
+              className={isLight ? 'rounded-md bg-white px-3 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400' : 'rounded-md bg-slate-700 px-3 py-1.5 text-sm font-medium text-slate-100 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500'}
               disabled={isLoading || interestingLoading}
             >
               Inspire me
             </button>
             {inspireLabel ? (
-              <span className="text-sm text-slate-300">
+              <span className={isLight ? 'text-sm text-slate-600' : 'text-sm text-slate-300'}>
                 {inspireWord} — {inspireLabel}
               </span>
             ) : (
-              <span className="text-sm text-slate-400">Get a random interesting word</span>
+              <span className={isLight ? 'text-sm text-slate-500' : 'text-sm text-slate-400'}>Get a random interesting word</span>
             )}
           </div>
           {/* Intentionally omitted the "Try exploring a word from..." suggestion component.

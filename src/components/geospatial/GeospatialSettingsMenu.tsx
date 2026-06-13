@@ -12,6 +12,7 @@ interface GeospatialSettingsMenuProps {
   word?: string
   language?: string
   mapInstance?: L.Map | null
+  theme?: 'dark' | 'light'
 }
 
 const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
@@ -20,7 +21,9 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   word,
   language,
   mapInstance,
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light'
   const [open, setOpen] = useState(false)
   const [capturing, setCapturing] = useState(false)
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
@@ -216,7 +219,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     } finally {
       setCapturing(false)
     }
-  }, [mapInstance, tryFindTarget])
+  }, [tryFindTarget])
 
   const handleDownload = useCallback(() => {
     if (!previewDataUrl) return
@@ -269,7 +272,9 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Open map settings"
-        className="inline-flex items-center gap-2 rounded-full border border-slate-500/40 bg-slate-700/90 px-4 py-2 text-sm font-medium text-white shadow backdrop-blur transition hover:bg-slate-600"
+        className={isLight
+          ? 'inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm backdrop-blur transition hover:border-blue-300 hover:bg-slate-50'
+          : 'inline-flex items-center gap-2 rounded-full border border-slate-500/40 bg-slate-700/90 px-4 py-2 text-sm font-medium text-white shadow backdrop-blur transition hover:bg-slate-600'}
       >
         <Settings size={16} />
         Settings
@@ -279,13 +284,15 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
         <div
           role="menu"
           aria-label="Map settings"
-          className="absolute bottom-full left-0 mb-2 w-80 rounded-xl border border-slate-700/80 bg-slate-950/95 p-3 shadow-2xl backdrop-blur"
+          className={isLight
+            ? 'absolute bottom-full left-0 mb-2 w-80 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-2xl shadow-blue-100/50 backdrop-blur'
+            : 'absolute bottom-full left-0 mb-2 w-80 rounded-xl border border-slate-700/80 bg-slate-950/95 p-3 shadow-2xl backdrop-blur'}
         >
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <span className="text-sm font-semibold text-indigo-300">Map Settings</span>
+          <div className={isLight ? 'flex items-center justify-between border-b border-slate-200 pb-2' : 'flex items-center justify-between border-b border-slate-800 pb-2'}>
+            <span className={isLight ? 'text-sm font-semibold text-blue-700' : 'text-sm font-semibold text-indigo-300'}>Map Settings</span>
             <button
               onClick={closeMenu}
-              className="text-xs text-slate-400 transition hover:text-slate-100"
+              className={isLight ? 'text-xs text-slate-500 transition hover:text-slate-800' : 'text-xs text-slate-400 transition hover:text-slate-100'}
               aria-label="Close settings menu"
             >
               ✕
@@ -294,18 +301,18 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
 
           <div className="space-y-3 pt-3">
             <section className="space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
                 Export GeoJSON
               </div>
-              <fieldset className="space-y-2 rounded-lg border border-slate-800 bg-slate-900/60 p-2">
+              <fieldset className={isLight ? 'space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2' : 'space-y-2 rounded-lg border border-slate-800 bg-slate-900/60 p-2'}>
                 <legend className="sr-only">Include layers</legend>
                 {exportLayerToggles.map(item => (
-                  <label key={item.key} className="flex items-center gap-2 text-sm text-slate-200">
+                  <label key={item.key} className={isLight ? 'flex items-center gap-2 text-sm text-slate-700' : 'flex items-center gap-2 text-sm text-slate-200'}>
                     <input
                       type="checkbox"
                       checked={options[item.key] !== false}
                       onChange={onChange(item.key)}
-                      className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-indigo-400"
+                      className={isLight ? 'h-4 w-4 rounded border-slate-300 bg-white text-blue-600' : 'h-4 w-4 rounded border-slate-600 bg-slate-900 text-indigo-400'}
                     />
                     <span>{item.label}</span>
                   </label>
@@ -313,23 +320,23 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
               </fieldset>
               <button
                 onClick={handleExport}
-                className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
+                className={isLight ? 'inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-500' : 'inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-700'}
               >
                 Download GeoJSON
               </button>
             </section>
 
-            <section className="space-y-2 border-t border-slate-800 pt-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <section className={isLight ? 'space-y-2 border-t border-slate-200 pt-3' : 'space-y-2 border-t border-slate-800 pt-3'}>
+              <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
                 Screenshot
               </div>
-              <p className="text-xs leading-5 text-slate-400">
+              <p className={isLight ? 'text-xs leading-5 text-slate-500' : 'text-xs leading-5 text-slate-400'}>
                 Capture the current map view and open a preview before downloading.
               </p>
               <button
                 onClick={handleCapture}
                 disabled={capturing}
-                className="inline-flex w-full items-center justify-center rounded-lg bg-slate-700/90 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:bg-slate-700/60"
+                className={isLight ? 'inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300' : 'inline-flex w-full items-center justify-center rounded-lg bg-slate-700/90 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:bg-slate-700/60'}
               >
                 {capturing ? 'Capturing…' : 'Capture Screenshot'}
               </button>
@@ -342,14 +349,14 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/60 p-4"
+          className={isLight ? 'fixed inset-0 z-[11000] flex items-center justify-center bg-slate-900/20 p-4' : 'fixed inset-0 z-[11000] flex items-center justify-center bg-black/60 p-4'}
         >
-          <div className="max-h-[90vh] max-w-[90vw] overflow-auto rounded-lg bg-neutral-900 shadow-lg">
-            <div className="flex items-center justify-between border-b border-neutral-800 p-3">
-              <span className="text-sm text-gray-200">Screenshot Preview</span>
+          <div className={isLight ? 'max-h-[90vh] max-w-[90vw] overflow-auto rounded-lg bg-white shadow-lg shadow-blue-100/60' : 'max-h-[90vh] max-w-[90vw] overflow-auto rounded-lg bg-neutral-900 shadow-lg'}>
+            <div className={isLight ? 'flex items-center justify-between border-b border-slate-200 p-3' : 'flex items-center justify-between border-b border-neutral-800 p-3'}>
+              <span className={isLight ? 'text-sm text-slate-700' : 'text-sm text-gray-200'}>Screenshot Preview</span>
               <button
                 onClick={() => setPreviewDataUrl(null)}
-                className="text-sm text-gray-400 hover:text-gray-200"
+                className={isLight ? 'text-sm text-slate-500 hover:text-slate-800' : 'text-sm text-gray-400 hover:text-gray-200'}
                 aria-label="Close preview"
               >
                 ✕
@@ -368,19 +375,17 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
               )}
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-neutral-800 p-3">
+            <div className={isLight ? 'flex justify-end gap-2 border-t border-slate-200 p-3' : 'flex justify-end gap-2 border-t border-neutral-800 p-3'}>
               <button
                 onClick={() => setPreviewDataUrl(null)}
-                className="rounded bg-slate-700/90 px-3 py-1 text-sm text-white transition hover:bg-slate-600"
+                className={isLight ? 'rounded bg-slate-900 px-3 py-1 text-sm text-white transition hover:bg-slate-800' : 'rounded bg-slate-700/90 px-3 py-1 text-sm text-white transition hover:bg-slate-600'}
               >
                 Close
               </button>
               <button
                 onClick={handleDownload}
                 disabled={!!error}
-                className={`${
-                  error ? 'cursor-not-allowed bg-gray-600' : 'bg-green-600 hover:bg-green-700'
-                } rounded px-3 py-1 text-sm text-white`}
+                className={`rounded px-3 py-1 text-sm text-white ${error ? 'cursor-not-allowed bg-gray-600' : 'bg-green-600 hover:bg-green-700'}`}
               >
                 Download
               </button>

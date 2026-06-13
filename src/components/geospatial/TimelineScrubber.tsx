@@ -15,6 +15,7 @@ interface TimelineScrubberProps {
   loop?: boolean
   onToggleLoop?: () => void
   onReset?: () => void // full reset (stop + show full)
+  theme?: 'dark' | 'light'
 }
 
 // Simple horizontal scrubber with markers for each node.
@@ -30,6 +31,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
     loop = true,
     onToggleLoop,
     onReset,
+    theme = 'dark',
   } = props
   // TODO (API Extension): Expose callbacks (onStepShow / onStepHide / onComplete) for parent coordination.
   // TODO (Accessibility): Announce active node change via aria-live region for screen readers during autoplay.
@@ -40,6 +42,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const isLight = theme === 'light'
 
   const handleRange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10)
@@ -84,7 +87,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
   if (!nodes.length) return null
   return (
     <div
-      className="fixed left-1/2 -translate-x-1/2 bottom-2 z-[600] w-[72%] max-w-4xl px-4 pt-3 pb-5 bg-slate-800/80 backdrop-blur rounded border border-slate-600/60 shadow-lg space-y-2 text-xs select-none"
+      className={isLight ? 'fixed bottom-2 left-1/2 z-[600] w-[72%] max-w-4xl -translate-x-1/2 select-none space-y-2 rounded border border-slate-200 bg-white/90 px-4 pb-5 pt-3 text-xs shadow-lg shadow-blue-100/60 backdrop-blur' : 'fixed left-1/2 bottom-2 z-[600] w-[72%] max-w-4xl -translate-x-1/2 space-y-2 rounded border border-slate-600/60 bg-slate-800/80 px-4 pb-5 pt-3 text-xs select-none backdrop-blur shadow-lg'}
       style={{ pointerEvents: 'auto' }}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
@@ -93,21 +96,21 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
       onClick={stop}
       ref={containerRef}
     >
-      <div className="flex items-center justify-between text-slate-300 gap-4 flex-wrap">
+      <div className={isLight ? 'flex flex-wrap items-center justify-between gap-4 text-slate-700' : 'flex flex-wrap items-center justify-between gap-4 text-slate-300'}>
         <div className="flex items-center gap-3">
           <button
             onClick={onTogglePlay}
-            className="px-2 py-1 rounded bg-slate-700/60 hover:bg-slate-600 text-slate-200 text-xs font-medium border border-slate-500/50"
+            className={isLight ? 'rounded border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:border-blue-300 hover:bg-slate-50' : 'rounded border border-slate-500/50 bg-slate-700/60 px-2 py-1 text-xs font-medium text-slate-200 hover:bg-slate-600'}
             title={isPlaying ? 'Pause playback' : 'Play lineage'}
           >
             {isPlaying ? 'Pause' : 'Play'}
           </button>
-          <label className="flex items-center gap-1 text-[11px] text-slate-400">
+          <label className={isLight ? 'flex items-center gap-1 text-[11px] text-slate-500' : 'flex items-center gap-1 text-[11px] text-slate-400'}>
             Speed
             <select
               value={speed}
               onChange={e => onSpeedChange?.(parseInt(e.target.value, 10))}
-              className="bg-slate-700/60 border border-slate-500/50 rounded px-1 py-0.5 text-slate-200 text-xs focus:outline-none"
+              className={isLight ? 'rounded border border-slate-200 bg-white px-1 py-0.5 text-xs text-slate-700 focus:outline-none' : 'rounded border border-slate-500/50 bg-slate-700/60 px-1 py-0.5 text-xs text-slate-200 focus:outline-none'}
             >
               <option value={1200}>Slow</option>
               <option value={800}>Normal</option>
@@ -117,7 +120,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
           </label>
           <button
             onClick={onToggleLoop}
-            className={`px-2 py-1 rounded text-xs font-medium border ${loop ? 'bg-slate-500/20 border-slate-300 text-slate-100' : 'bg-slate-700/60 border-slate-500/50 text-slate-300 hover:bg-slate-600'}`}
+            className={`px-2 py-1 rounded text-xs font-medium border ${loop ? (isLight ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-slate-500/20 border-slate-300 text-slate-100') : (isLight ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50' : 'bg-slate-700/60 border-slate-500/50 text-slate-300 hover:bg-slate-600')}`}
             title={loop ? 'Loop enabled (click to disable)' : 'Loop disabled (click to enable)'}
           >
             Loop
@@ -126,7 +129,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
         <div className="flex items-center gap-3 ml-auto">
           <button
             onClick={handleReset}
-            className="text-slate-400 hover:text-slate-200 transition"
+            className={isLight ? 'text-slate-500 transition hover:text-slate-800' : 'text-slate-400 transition hover:text-slate-200'}
             title="Show full lineage"
           >
             Full
@@ -147,7 +150,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
           }}
         >
           {/* Custom track */}
-          <div className="h-2 w-full rounded-full bg-slate-600/40 overflow-hidden">
+          <div className={isLight ? 'h-2 w-full overflow-hidden rounded-full bg-slate-200' : 'h-2 w-full overflow-hidden rounded-full bg-slate-600/40'}>
             {(() => {
               const progress = ((currentIndex ?? maxIndex) / (maxIndex || 1)) * 100
               interface ExtendedStyle extends React.CSSProperties {
@@ -159,7 +162,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
               }
               return (
                 <div
-                  className={`h-full bg-slate-300/70 ${isPlaying ? 'transition-[width] duration-[var(--play-speed)] linear' : ''}`}
+                  className={`h-full ${isLight ? 'bg-blue-500/70' : 'bg-slate-300/70'} ${isPlaying ? 'transition-[width] duration-[var(--play-speed)] linear' : ''}`}
                   style={style}
                 />
               )
@@ -173,7 +176,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
               return (
                 <div
                   key={i}
-                  className={`absolute -translate-x-1/2 w-[2px] h-4 ${active ? 'bg-slate-300' : 'bg-slate-600'}`}
+                  className={`absolute -translate-x-1/2 w-[2px] h-4 ${active ? (isLight ? 'bg-blue-500' : 'bg-slate-300') : 'bg-slate-600'}`}
                   style={{ left: `${pct}%` }}
                   title={`${n.word} (${n.lang_code})`}
                 />
@@ -182,7 +185,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
           </div>
           {/* Thumb */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-slate-300 border-2 border-slate-100 shadow -translate-x-1/2 cursor-grab active:cursor-grabbing"
+            className={isLight ? 'absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border-2 border-blue-200 bg-blue-500 shadow active:cursor-grabbing' : 'absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-slate-300 border-2 border-slate-100 shadow -translate-x-1/2 cursor-grab active:cursor-grabbing'}
             style={{ left: `${((currentIndex ?? maxIndex) / (maxIndex || 1)) * 100}%` }}
             onMouseDown={e => {
               e.stopPropagation()
@@ -215,9 +218,9 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
         </div>
         <div className="w-28 text-right">
           {currentIndex === undefined ? (
-            <span className="text-slate-400">All ({nodes.length})</span>
+            <span className={isLight ? 'text-slate-500' : 'text-slate-400'}>All ({nodes.length})</span>
           ) : (
-            <span className="text-slate-300">
+            <span className={isLight ? 'text-slate-700' : 'text-slate-300'}>
               {currentIndex + 1} / {nodes.length}
             </span>
           )}

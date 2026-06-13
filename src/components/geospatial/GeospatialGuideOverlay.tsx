@@ -74,6 +74,7 @@ interface Props {
   onCloseGuide: () => void
   onClose: () => void
   onRestart: () => void
+  theme?: 'dark' | 'light'
 }
 
 const layerOrder: GuideLayerKey[] = ['translations', 'etymology', 'descendants', 'protoZones', 'families']
@@ -88,9 +89,11 @@ const GeospatialGuideOverlay: FC<Props> = ({
   onCloseGuide,
   onClose,
   onRestart,
+  theme = 'dark',
 }) => {
   const selected = selectedLayer ? guideLayers[selectedLayer] : null
   const [hoveredRecommendation, setHoveredRecommendation] = useState<GuideLayerKey | null>(null)
+  const isLight = theme === 'light'
 
   const recommendationTooltip =
     hoveredRecommendation != null ? recommendationReason : null
@@ -99,32 +102,32 @@ const GeospatialGuideOverlay: FC<Props> = ({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="absolute inset-0 z-[12000] flex items-center justify-center bg-slate-950/75 px-6 py-6 backdrop-blur-sm sm:px-8 sm:py-8 lg:px-12 lg:py-10"
+          className={isLight ? 'absolute inset-0 z-[12000] flex items-center justify-center bg-slate-900/15 px-6 py-6 backdrop-blur-sm sm:px-8 sm:py-8 lg:px-12 lg:py-10' : 'absolute inset-0 z-[12000] flex items-center justify-center bg-slate-950/75 px-6 py-6 backdrop-blur-sm sm:px-8 sm:py-8 lg:px-12 lg:py-10'}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.16, ease: 'easeOut' }}
         >
           <motion.div
-            className="flex min-h-[36rem] max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-neutral-950/95 shadow-2xl shadow-black/30 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]"
+            className={isLight ? 'flex min-h-[36rem] max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/97 shadow-2xl shadow-blue-100/60 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]' : 'flex min-h-[36rem] max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-neutral-950/95 shadow-2xl shadow-black/30 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]'}
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
           >
-            <div className="shrink-0 border-b border-slate-800/80 bg-gradient-to-r from-neutral-950 via-slate-900 to-slate-800/70 px-4 py-4 sm:px-6 sm:py-5">
+            <div className={isLight ? 'shrink-0 border-b border-slate-200 bg-gradient-to-r from-white via-slate-50 to-slate-100 px-4 py-4 sm:px-6 sm:py-5' : 'shrink-0 border-b border-slate-800/80 bg-gradient-to-r from-neutral-950 via-slate-900 to-slate-800/70 px-4 py-4 sm:px-6 sm:py-5'}>
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="max-w-3xl">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-slate-300/80">
+                  <p className={isLight ? 'text-[11px] font-semibold uppercase tracking-[0.38em] text-blue-700/80' : 'text-[11px] font-semibold uppercase tracking-[0.38em] text-slate-300/80'}>
                     Guide mode
                   </p>
-                  <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">
+                  <h2 className={isLight ? 'mt-2 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl' : 'mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl'}>
                     Choose the first layer to explore
                   </h2>
                 </div>
                 <button
                   onClick={onClose}
-                  className="inline-flex items-center justify-center rounded-full border border-slate-700/80 bg-slate-900/80 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                  className={isLight ? 'inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50' : 'inline-flex items-center justify-center rounded-full border border-slate-700/80 bg-slate-900/80 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800'}
                 >
                   Skip guide
                 </button>
@@ -144,32 +147,32 @@ const GeospatialGuideOverlay: FC<Props> = ({
                           key={layer}
                           onClick={() => onChooseLayer(layer)}
                           disabled={!ready}
-                          className="group rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-left transition hover:border-slate-400 hover:bg-slate-800/90"
+                          className={isLight ? 'group rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-slate-50' : 'group rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-left transition hover:border-slate-400 hover:bg-slate-800/90'}
                         >
                           <div className="flex items-start justify-between gap-3">
-                            <div className="text-lg font-semibold text-white">{info.title}</div>
+                            <div className={isLight ? 'text-lg font-semibold text-slate-900' : 'text-lg font-semibold text-white'}>{info.title}</div>
                             {isRecommended && (
                               <div className="relative">
                                 <span
-                                  className="rounded-full border border-slate-300/60 bg-slate-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-200"
+                                  className={isLight ? 'rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-700' : 'rounded-full border border-slate-300/60 bg-slate-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-200'}
                                   onMouseEnter={() => setHoveredRecommendation(layer)}
                                   onMouseLeave={() => setHoveredRecommendation(null)}
                                 >
                                   Recommended
                                 </span>
                                 {hoveredRecommendation === layer && recommendationTooltip && (
-                                  <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-700 bg-slate-950/95 px-3 py-2 text-left text-xs leading-5 text-slate-200 shadow-xl shadow-black/30">
+                                  <div className={isLight ? 'pointer-events-none absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs leading-5 text-slate-700 shadow-xl shadow-blue-100/60' : 'pointer-events-none absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-700 bg-slate-950/95 px-3 py-2 text-left text-xs leading-5 text-slate-200 shadow-xl shadow-black/30'}>
                                     {recommendationTooltip}
                                   </div>
                                 )}
                               </div>
                             )}
                           </div>
-                          <p className="mt-3 text-sm leading-6 text-slate-300">{info.summary}</p>
-                          <div className="mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100">
+                          <p className={isLight ? 'mt-3 text-sm leading-6 text-slate-600' : 'mt-3 text-sm leading-6 text-slate-300'}>{info.summary}</p>
+                          <div className={isLight ? 'mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100' : 'mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100'}>
                             Best for
                           </div>
-                          <p className="max-h-0 overflow-hidden text-sm leading-6 text-slate-200 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100">
+                          <p className={isLight ? 'max-h-0 overflow-hidden text-sm leading-6 text-slate-700 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100' : 'max-h-0 overflow-hidden text-sm leading-6 text-slate-200 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100'}>
                             {info.bestFor}
                           </p>
                         </button>
@@ -179,23 +182,23 @@ const GeospatialGuideOverlay: FC<Props> = ({
                 </div>
               ) : (
                 <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-                  <div className="border-b border-slate-800/80 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r">
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                  <div className={isLight ? 'border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r' : 'border-b border-slate-800/80 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r'}>
+                    <p className={isLight ? 'text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
                       Selected layer
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-3">
-                      <h3 className="text-2xl font-semibold text-white">{selected.title}</h3>
+                      <h3 className={isLight ? 'text-2xl font-semibold text-slate-900' : 'text-2xl font-semibold text-white'}>{selected.title}</h3>
                       {selectedLayer === recommendedLayer && (
                         <div className="relative">
                           <span
-                            className="inline-flex rounded-full border border-slate-300/60 bg-slate-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200"
+                            className={isLight ? 'inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700' : 'inline-flex rounded-full border border-slate-300/60 bg-slate-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200'}
                             onMouseEnter={() => setHoveredRecommendation(selectedLayer)}
                             onMouseLeave={() => setHoveredRecommendation(null)}
                           >
                             Recommended for this word
                           </span>
                           {hoveredRecommendation === selectedLayer && recommendationTooltip && (
-                            <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-700 bg-slate-950/95 px-3 py-2 text-left text-xs leading-5 text-slate-200 shadow-xl shadow-black/30">
+                            <div className={isLight ? 'pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs leading-5 text-slate-700 shadow-xl shadow-blue-100/60' : 'pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-700 bg-slate-950/95 px-3 py-2 text-left text-xs leading-5 text-slate-200 shadow-xl shadow-black/30'}>
                               {recommendationTooltip}
                             </div>
                           )}
@@ -203,18 +206,18 @@ const GeospatialGuideOverlay: FC<Props> = ({
                       )}
                     </div>
 
-                    <p className="mt-4 text-sm leading-6 text-slate-300">{selected.summary}</p>
-                    <div className="mt-3 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                    <p className={isLight ? 'mt-4 text-sm leading-6 text-slate-600' : 'mt-4 text-sm leading-6 text-slate-300'}>{selected.summary}</p>
+                    <div className={isLight ? 'mt-3 text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'mt-3 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
                       Best for
                     </div>
-                    <p className="mt-1 text-sm leading-6 text-slate-200">{selected.bestFor}</p>
+                    <p className={isLight ? 'mt-1 text-sm leading-6 text-slate-700' : 'mt-1 text-sm leading-6 text-slate-200'}>{selected.bestFor}</p>
 
                     <div className="mt-5 space-y-4">
                       <div>
-                        <div className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                        <div className={isLight ? 'text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
                           How it works
                         </div>
-                        <p className="mt-2 text-sm leading-6 text-slate-300">
+                        <p className={isLight ? 'mt-2 text-sm leading-6 text-slate-600' : 'mt-2 text-sm leading-6 text-slate-300'}>
                           {selectedLayer === 'etymology'
                             ? 'The lineage animates node by node, showing how the word changes across time.'
                             : selectedLayer === 'translations'
@@ -228,10 +231,10 @@ const GeospatialGuideOverlay: FC<Props> = ({
                       </div>
 
                       <div>
-                        <div className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                        <div className={isLight ? 'text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
                           How to use it
                         </div>
-                        <p className="mt-2 text-sm leading-6 text-slate-300">
+                        <p className={isLight ? 'mt-2 text-sm leading-6 text-slate-600' : 'mt-2 text-sm leading-6 text-slate-300'}>
                           {selectedLayer === 'etymology'
                             ? 'Use the timeline scrubber to step through each node or press play to watch the path animate.'
                             : selectedLayer === 'translations'
@@ -248,27 +251,27 @@ const GeospatialGuideOverlay: FC<Props> = ({
                     <div className="mt-5 flex flex-wrap gap-3">
                       <button
                         onClick={onRestart}
-                        className="rounded-full border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                        className={isLight ? 'rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50' : 'rounded-full border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800'}
                       >
                         Choose another layer
                       </button>
                       <button
                         onClick={onCloseGuide}
-                        className="rounded-full bg-slate-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
+                        className={isLight ? 'rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500' : 'rounded-full bg-slate-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-200'}
                       >
                         Start exploring
                       </button>
                     </div>
                   </div>
 
-                  <div className="space-y-4 bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6">
-                    <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
-                      <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-slate-600/80 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),rgba(15,23,42,0.95))] px-4 text-center">
+                  <div className={isLight ? 'space-y-4 bg-slate-50 px-4 py-4 sm:px-6 sm:py-6' : 'space-y-4 bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6'}>
+                    <div className={isLight ? 'overflow-hidden rounded-2xl border border-slate-200 bg-white p-3' : 'overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-3'}>
+                      <div className={isLight ? 'flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-blue-200 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.12),rgba(248,250,252,0.95))] px-4 text-center' : 'flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-slate-600/80 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),rgba(15,23,42,0.95))] px-4 text-center'}>
                         <div>
-                          <div className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-300/90">
+                          <div className={isLight ? 'text-sm font-semibold uppercase tracking-[0.28em] text-blue-700/90' : 'text-sm font-semibold uppercase tracking-[0.28em] text-slate-300/90'}>
                             Preview demo gif
                           </div>
-                          <div className="mt-3 text-sm leading-6 text-slate-300">
+                          <div className={isLight ? 'mt-3 text-sm leading-6 text-slate-600' : 'mt-3 text-sm leading-6 text-slate-300'}>
                             This space will later show a short preview of the layer in action.
                           </div>
                         </div>

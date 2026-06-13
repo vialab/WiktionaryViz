@@ -24,8 +24,18 @@ body {
   overflow: auto;
   /* Prevent unwanted scrollbars */
   background-color: #0f172a;
+  color: #f8fafc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body[data-theme='light'] {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+body[data-theme='light'] .leaflet-container .country-hovered {
+  filter: drop-shadow(0 0 2px rgba(37, 99, 235, 0.35));
 }
 
 .leaflet-marker-icon,
@@ -162,6 +172,47 @@ body {
 
 #geospatial .leaflet-top.leaflet-right .leaflet-control-layers-expanded a {
   color: #e2e8f0;
+}
+
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-left .leaflet-control-zoom,
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers {
+  border-color: rgba(203, 213, 225, 0.9);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 12px 28px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(148, 163, 184, 0.14) inset;
+}
+
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-left .leaflet-control-zoom a,
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers,
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers-list,
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers-base,
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers-overlays,
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers label,
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers-expanded a {
+  color: #334155;
+}
+
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-left .leaflet-control-zoom a:hover,
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers-toggle:hover {
+  background: rgba(219, 234, 254, 0.85);
+}
+
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-left .leaflet-control-zoom a.leaflet-disabled {
+  color: rgba(100, 116, 139, 0.55);
+  background: rgba(248, 250, 252, 0.96);
+}
+
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers-expanded {
+  background: rgba(255, 255, 255, 0.97);
+}
+
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers-separator {
+  border-top-color: rgba(203, 213, 225, 0.75);
+}
+
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers-selector {
+  accent-color: #2563eb;
 }
 
 /* Highlighted lineage countries */

@@ -39,13 +39,15 @@ interface GeospatialPageProps {
   word: string
   language: string
   onGuideOpenRegister?: (openGuide: (() => void) | null) => void
+  theme?: 'dark' | 'light'
 }
 
 /**
  * GeospatialPage visualizes translations and etymology lineage on a map.
  * Uses modular components for maintainability and performance.
  */
-const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuideOpenRegister }) => {
+const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuideOpenRegister, theme = 'dark' }) => {
+  const isLight = theme === 'light'
   const wordData = useWordData(word, language) as WordData | null
   const languoidData = useLanguoidData()
   const [markers, setMarkers] = useState<TranslationMarker[]>([])
@@ -476,7 +478,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
   return (
     <section
       id="geospatial"
-      className="w-full h-[calc(100vh-4rem)] overflow-hidden bg-gray-900 text-white"
+      className={isLight ? 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-white text-slate-900' : 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-gray-900 text-white'}
     >
       <MapContainer
         center={[0, 0]}
@@ -485,7 +487,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
         scrollWheelZoom={true}
         wheelPxPerZoomLevel={240}
         className="relative w-full h-full"
-        style={{ background: '#0b0f1a' }}
+        style={{ background: isLight ? '#f8fafc' : '#0b0f1a' }}
         id="map-root"
         ref={(instance: L.Map | null) => {
           if (instance) setMapInstance(instance)
@@ -497,10 +499,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           word={word}
           language={language}
           mapInstance={mapInstance}
+          theme={theme}
         />
         <LayersControl position="topright">
           {/* Base Layers */}
-          <LayersControl.BaseLayer checked name="Dark (CartoDB)">
+          <LayersControl.BaseLayer checked={theme === 'dark'} name="Dark (CartoDB)">
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -508,7 +511,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
               maxZoom={20}
             />
           </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Light (OSM)">
+          <LayersControl.BaseLayer checked={theme === 'light'} name="Light (OSM)">
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -588,6 +591,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
               setIsPlaying(false)
               setShowAllPopups(false)
             }}
+            theme={theme}
           />
         )}
         <GeospatialGuideOverlay
@@ -610,6 +614,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
             setIsPlaying(false)
             setShowAllPopups(false)
           }}
+          theme={theme}
         />
       </MapContainer>
     </section>
