@@ -20,7 +20,7 @@ const guideLayers: Record<GuideLayerKey, GuideLayerInfo> = {
       'Start here if you want the quickest overview of where the word lands geographically.',
       'Hover markers to inspect the translation popups and compare clusters.',
     ],
-    accent: 'from-cyan-400/30 via-cyan-500/10 to-slate-900',
+      accent: 'from-slate-200/20 via-slate-400/10 to-slate-900',
   },
   etymology: {
     title: 'Etymology lineage path',
@@ -30,7 +30,7 @@ const guideLayers: Record<GuideLayerKey, GuideLayerInfo> = {
       'Use this when you want to trace the word through time and see how the lineage unfolds.',
       'Use the timeline scrubber to step through the path or play the sequence automatically.',
     ],
-    accent: 'from-amber-400/30 via-cyan-500/10 to-slate-900',
+      accent: 'from-amber-400/20 via-slate-400/10 to-slate-900',
   },
   descendants: {
     title: 'Descendant paths',
@@ -40,7 +40,7 @@ const guideLayers: Record<GuideLayerKey, GuideLayerInfo> = {
       'Choose this if you want to inspect the family tree structure instead of the backward lineage.',
       'Click into deeper branches to expand more descendant paths and compare the branches.',
     ],
-    accent: 'from-emerald-400/30 via-cyan-500/10 to-slate-900',
+      accent: 'from-emerald-400/20 via-slate-400/10 to-slate-900',
   },
   protoZones: {
     title: 'Proto-language zones',
@@ -50,7 +50,7 @@ const guideLayers: Record<GuideLayerKey, GuideLayerInfo> = {
       'Pick this when you want a geography-first introduction before digging into the lineage.',
       'Compare the proto region with the lineage and translation layers for broader context.',
     ],
-    accent: 'from-violet-400/30 via-cyan-500/10 to-slate-900',
+      accent: 'from-violet-400/20 via-slate-400/10 to-slate-900',
   },
   families: {
     title: 'Language families',
@@ -60,7 +60,7 @@ const guideLayers: Record<GuideLayerKey, GuideLayerInfo> = {
       'This is the broadest starting point if you want to orient yourself before drilling down.',
       'Use the family context to narrow your search before switching to a specific path layer.',
     ],
-    accent: 'from-fuchsia-400/30 via-cyan-500/10 to-slate-900',
+      accent: 'from-fuchsia-400/20 via-slate-400/10 to-slate-900',
   },
 }
 
@@ -106,16 +106,16 @@ const GeospatialGuideOverlay: FC<Props> = ({
           transition={{ duration: 0.16, ease: 'easeOut' }}
         >
           <motion.div
-            className="flex min-h-[36rem] max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-slate-950/95 shadow-2xl shadow-cyan-950/30 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]"
+            className="flex min-h-[36rem] max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-neutral-950/95 shadow-2xl shadow-black/30 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]"
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
           >
-            <div className="shrink-0 border-b border-slate-800/80 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/50 px-4 py-4 sm:px-6 sm:py-5">
+            <div className="shrink-0 border-b border-slate-800/80 bg-gradient-to-r from-neutral-950 via-slate-900 to-slate-800/70 px-4 py-4 sm:px-6 sm:py-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="max-w-3xl">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-cyan-300/80">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-slate-300/80">
                     Guide mode
                   </p>
                   <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">
@@ -144,14 +144,14 @@ const GeospatialGuideOverlay: FC<Props> = ({
                           key={layer}
                           onClick={() => onChooseLayer(layer)}
                           disabled={!ready}
-                          className="group rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-left transition hover:border-cyan-400 hover:bg-slate-800/90"
+                          className="group rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-left transition hover:border-slate-400 hover:bg-slate-800/90"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="text-lg font-semibold text-white">{info.title}</div>
                             {isRecommended && (
                               <div className="relative">
                                 <span
-                                  className="rounded-full border border-cyan-300/60 bg-cyan-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200"
+                                  className="rounded-full border border-slate-300/60 bg-slate-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-200"
                                   onMouseEnter={() => setHoveredRecommendation(layer)}
                                   onMouseLeave={() => setHoveredRecommendation(null)}
                                 >
@@ -188,7 +188,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
                       {selectedLayer === recommendedLayer && (
                         <div className="relative">
                           <span
-                            className="inline-flex rounded-full border border-cyan-300/60 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200"
+                            className="inline-flex rounded-full border border-slate-300/60 bg-slate-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200"
                             onMouseEnter={() => setHoveredRecommendation(selectedLayer)}
                             onMouseLeave={() => setHoveredRecommendation(null)}
                           >
@@ -254,7 +254,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
                       </button>
                       <button
                         onClick={onCloseGuide}
-                        className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                        className="rounded-full bg-slate-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
                       >
                         Start exploring
                       </button>
@@ -265,7 +265,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
                     <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
                       <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-slate-600/80 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),rgba(15,23,42,0.95))] px-4 text-center">
                         <div>
-                          <div className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200/90">
+                          <div className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-300/90">
                             Preview demo gif
                           </div>
                           <div className="mt-3 text-sm leading-6 text-slate-300">

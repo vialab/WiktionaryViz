@@ -24,9 +24,9 @@ function App() {
   // TODO [LOW LEVEL]: Implement a lightweight preset registry and a bookmarks context with localStorage persistence.
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-900 text-slate-100">
+    <div className="flex flex-col min-h-screen bg-neutral-950 text-slate-100">
       {/* Navbar */}
-      <header className="bg-slate-900/95 shadow-md shadow-cyan-950/20 p-3 z-50 fixed top-0 w-full backdrop-blur-sm">
+      <header className="bg-neutral-950/95 shadow-md shadow-black/20 p-3 z-50 fixed top-0 w-full backdrop-blur-sm">
         <Navbar
           title="WiktionaryViz"
           onTitleClick={() => setVisibleSection('landing-page')}

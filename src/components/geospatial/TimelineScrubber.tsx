@@ -117,7 +117,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
           </label>
           <button
             onClick={onToggleLoop}
-            className={`px-2 py-1 rounded text-xs font-medium border ${loop ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300' : 'bg-slate-700/60 border-slate-500/50 text-slate-300 hover:bg-slate-600'}`}
+            className={`px-2 py-1 rounded text-xs font-medium border ${loop ? 'bg-slate-500/20 border-slate-300 text-slate-100' : 'bg-slate-700/60 border-slate-500/50 text-slate-300 hover:bg-slate-600'}`}
             title={loop ? 'Loop enabled (click to disable)' : 'Loop disabled (click to enable)'}
           >
             Loop
@@ -159,7 +159,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
               }
               return (
                 <div
-                  className={`h-full bg-cyan-400/70 ${isPlaying ? 'transition-[width] duration-[var(--play-speed)] linear' : ''}`}
+                  className={`h-full bg-slate-300/70 ${isPlaying ? 'transition-[width] duration-[var(--play-speed)] linear' : ''}`}
                   style={style}
                 />
               )
@@ -173,7 +173,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
               return (
                 <div
                   key={i}
-                  className={`absolute -translate-x-1/2 w-[2px] h-4 ${active ? 'bg-cyan-400' : 'bg-slate-600'}`}
+                  className={`absolute -translate-x-1/2 w-[2px] h-4 ${active ? 'bg-slate-300' : 'bg-slate-600'}`}
                   style={{ left: `${pct}%` }}
                   title={`${n.word} (${n.lang_code})`}
                 />
@@ -182,7 +182,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
           </div>
           {/* Thumb */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-cyan-400 border-2 border-cyan-300 shadow -translate-x-1/2 cursor-grab active:cursor-grabbing"
+            className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-slate-300 border-2 border-slate-100 shadow -translate-x-1/2 cursor-grab active:cursor-grabbing"
             style={{ left: `${((currentIndex ?? maxIndex) / (maxIndex || 1)) * 100}%` }}
             onMouseDown={e => {
               e.stopPropagation()
@@ -217,7 +217,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
           {currentIndex === undefined ? (
             <span className="text-slate-400">All ({nodes.length})</span>
           ) : (
-            <span className="text-cyan-300">
+            <span className="text-slate-300">
               {currentIndex + 1} / {nodes.length}
             </span>
           )}

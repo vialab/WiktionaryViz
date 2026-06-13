@@ -135,7 +135,7 @@ export default function LandingPage({
   }
 
   return (
-    <section className="flex items-center justify-center bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 py-12 px-4 min-h-[calc(100vh-4rem)]">
+    <section className="flex items-center justify-center bg-gradient-to-b from-neutral-950 via-slate-900 to-neutral-950 py-12 px-4 min-h-[calc(100vh-4rem)]">
       <div className="w-full max-w-2xl mx-auto text-center">
         {/* Header / identity (use div to avoid global header CSS) */}
         <div role="banner" className="mb-8">
@@ -153,7 +153,7 @@ export default function LandingPage({
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.45, ease: 'easeOut' }}
-          className="bg-slate-950/70 backdrop-blur-sm border border-slate-800 rounded-2xl shadow-2xl shadow-cyan-950/20 p-6 md:p-8"
+          className="bg-neutral-950/70 backdrop-blur-sm border border-slate-800 rounded-2xl shadow-2xl shadow-black/20 p-6 md:p-8"
         >
           <h2 id="search-heading" className="sr-only">
             Search a word
@@ -208,7 +208,7 @@ export default function LandingPage({
                   {word && word.trim().length > 0 && (
                     <div className="w-40 md:w-44 flex items-center px-2 border-l border-slate-800 bg-slate-900">
                       {langsLoading ? (
-                        <p className="text-cyan-300">Loading…</p>
+                        <p className="text-slate-300">Loading…</p>
                       ) : (
                         <select
                           className="w-full h-11 bg-slate-900 text-slate-100 px-2 focus:outline-none appearance-none"
