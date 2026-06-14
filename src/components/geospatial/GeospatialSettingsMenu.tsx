@@ -20,7 +20,6 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   lineage,
   word,
   language,
-  mapInstance,
   theme = 'dark',
 }) => {
   const isLight = theme === 'light'
