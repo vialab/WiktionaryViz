@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.26](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.25...wiktionaryviz-v0.1.26) (2026-06-14)
+
+
+### Features
+
+* **theme:** implement light and dark theme support across components and styles for improved user experience ([d4de881](https://github.com/vialab/WiktionaryViz/commit/d4de881fa900b33c3c6bbfcbe96d1fc492348802))
+
 ## [0.1.25](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.24...wiktionaryviz-v0.1.25) (2026-06-11)
 
 
