@@ -59,7 +59,8 @@ const AnimatedSegment: FC<{
   dwellMs?: number
   angle: number
   proto?: boolean
-}> = ({ start, end, growMs, dwellMs, angle, proto }) => {
+  onFrame?: (position: [number, number]) => void
+}> = ({ start, end, growMs, dwellMs, angle, proto, onFrame }) => {
   const polyRef = useRef<L.Polyline | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
   const map = useMap()
@@ -96,6 +97,7 @@ const AnimatedSegment: FC<{
         pathEl.style.strokeDashoffset = `${dist * (1 - progress)}`
         // Keep the arrow slightly behind the growing edge so it does not sit on the node.
         const [lat, lng] = getTrailingPosition(map, start, end, progress)
+        onFrame?.([lat, lng])
         if (markerRef.current) {
           markerRef.current.setLatLng([lat, lng])
           // Dynamically rotate arrow to local bearing to mitigate long-segment distortion.
@@ -122,7 +124,7 @@ const AnimatedSegment: FC<{
     return () => {
       if (frameId) cancelAnimationFrame(frameId)
     }
-  }, [growMs, map, start, end, dwellMs])
+  }, [growMs, map, start, end, dwellMs, onFrame])
 
   return (
     <>
@@ -267,6 +269,11 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
                 dwellMs={dwellMs}
                 angle={angle}
                 proto={protoEdge}
+                onFrame={position => {
+                  if (isPlaying) {
+                    map.panTo(position, { animate: false, noMoveStart: true })
+                  }
+                }}
               />,
             )
           } else {

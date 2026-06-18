@@ -399,33 +399,7 @@ RECOMMENDED IMPLEMENTATION ORDER
     Description: Turns exploratory work into a guided visual story.
 
 [ ] 12. Add offline/demo mode
-    Description: Makes thesis demos and study sessions more reliable.
-
-
-================================================================================
-MINIMUM THESIS-VIABLE FEATURE SET
-================================================================================
-
-[ ] Layer manipulation
-    Description: Users can control what geographic and linguistic data appears.
-
-[ ] Evidence inspection
-    Description: Users can click map elements and inspect source-backed linguistic evidence.
-
-[ ] Relation filtering
-    Description: Users can focus on specific etymological relationship types.
-
-[ ] Annotation
-    Description: Users can add observations, hypotheses, and explanatory notes.
-
-[ ] State-saving
-    Description: Users can save and return to specific visual configurations.
-
-[ ] Share/export
-    Description: Users can communicate or preserve their visualization state.
-
-[ ] Timeline filtering
-    Description: Users can explore linguistic change geographically across time.
+    Description: Makes thesis demos and study sessions more reliable
 
 
 ================================================================================

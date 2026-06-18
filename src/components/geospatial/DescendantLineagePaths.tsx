@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Pane, LayerGroup, Polyline, CircleMarker, Tooltip, useMap } from 'react-leaflet'
+import { Pane, LayerGroup, Polyline, CircleMarker, Tooltip } from 'react-leaflet'
 import * as L from 'leaflet'
 import type { LatLngExpression } from 'leaflet'
 import { getLanguage } from '@ladjs/country-language'
@@ -128,7 +128,6 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
   rootWord,
   rootLang,
 }) => {
-  const map = useMap()
   const languoidData = useLanguoidData()
   const [paths, setPaths] = useState<DescPath[]>([])
   const [, setRootCandidates] = useState<RootCandidate[]>([])

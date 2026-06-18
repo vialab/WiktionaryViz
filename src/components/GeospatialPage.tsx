@@ -78,7 +78,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
   // --- Dynamic zoom refs (distance-based small-jump assist) ---
   const autoZoomBaselineRef = useRef<number | null>(null) // original zoom before first auto-zoom-in
   const lastAutoZoomInRef = useRef<number | null>(null) // last zoom level we auto-raised to
-  const lastIndexRef = useRef<number | null>(null) // previous index to compute segment distance
   // const [highlightedCountries, setHighlightedCountries] = useState<string[]>([]); // replaced by LineageCountryHighlights overlay
   const lineageNodes = lineage ? flattenLineage(lineage) : []
   const hasPlayableLineage = lineageNodes.length > 1
@@ -336,16 +335,20 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
       const REVERT_SEGMENT_PX = 400 // if a hop is this large, consider zooming back out
       const MAX_AUTO_ZOOM = 5.5 // hard cap to avoid excessive zoom-in
 
-      // If this is the very first focused node after showing full lineage, ensure a minimum detail zoom.
-      if (!hasAdjustedZoomRef.current && baseZoom < MIN_DETAIL_ZOOM) {
-        hasAdjustedZoomRef.current = true
-        map.flyTo([currentPos[0], currentPos[1]], MIN_DETAIL_ZOOM, { duration: 0.9 })
-        lastIndexRef.current = currentIndex
+      const prevIndex = currentIndex > 0 ? currentIndex - 1 : null
+      const prevPos = prevIndex != null ? nodes[prevIndex]?.position : null
+
+      if (isPlaying) {
+        // Playback center motion is now owned by the active segment frame callback.
         return
       }
 
-      const prevIndex = currentIndex > 0 ? currentIndex - 1 : null
-      const prevPos = prevIndex != null ? nodes[prevIndex]?.position : null
+      // Manual scrubbing retains the existing repositioning behavior.
+      if (!hasAdjustedZoomRef.current && baseZoom < MIN_DETAIL_ZOOM) {
+        hasAdjustedZoomRef.current = true
+        map.flyTo([currentPos[0], currentPos[1]], MIN_DETAIL_ZOOM, { duration: 0.9 })
+        return
+      }
 
       // If we have a previous position, we can compute on-screen pixel distance.
       if (prevPos) {
@@ -404,7 +407,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
       // swallow map errors
     }
 
-    lastIndexRef.current = currentIndex
   }, [currentIndex, lineage, mapInstance])
 
   // Stop playback if lineage removed or user selects Full (undefined).
@@ -418,7 +420,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
       // Reset auto-zoom state so a new lineage playback starts clean.
       autoZoomBaselineRef.current = null
       lastAutoZoomInRef.current = null
-      lastIndexRef.current = null
     }
   }, [currentIndex, isPlaying])
 
