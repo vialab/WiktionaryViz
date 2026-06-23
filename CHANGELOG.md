@@ -2,6 +2,14 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.27](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.26...wiktionaryviz-v0.1.27) (2026-06-18)
+
+
+### Features
+
+* **DescendantLineagePaths.tsx:** integrate useMap hook from react-leaflet to access map instance for improved functionality and interactivity within the component ([5b0bba9](https://github.com/vialab/WiktionaryViz/commit/5b0bba949602760f634e977db0aae6d34208927b))
+* **TODO_LIST.md:** add comprehensive TODO list for WiktionaryViz project to outline core features, high-value enhancements, and export options for better project management and prioritization ([5b0bba9](https://github.com/vialab/WiktionaryViz/commit/5b0bba949602760f634e977db0aae6d34208927b))
+
 ## [0.1.26](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.25...wiktionaryviz-v0.1.26) (2026-06-14)
 
 
