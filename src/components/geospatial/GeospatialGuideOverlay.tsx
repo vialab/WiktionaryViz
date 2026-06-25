@@ -68,6 +68,7 @@ interface Props {
   open: boolean
   selectedLayer: GuideLayerKey | null
   recommendedLayer: GuideLayerKey | null
+  recommendationLoading?: boolean
   recommendationReason: string
   availability: Record<GuideLayerKey, boolean>
   onChooseLayer: (layer: GuideLayerKey) => void
@@ -83,6 +84,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
   open,
   selectedLayer,
   recommendedLayer,
+  recommendationLoading = false,
   recommendationReason,
   availability,
   onChooseLayer,
@@ -97,6 +99,187 @@ const GeospatialGuideOverlay: FC<Props> = ({
 
   const recommendationTooltip =
     hoveredRecommendation != null ? recommendationReason : null
+
+  const bodyContent = selected ? (
+    <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className={isLight ? 'border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r' : 'border-b border-slate-800/80 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r'}>
+        <p className={isLight ? 'text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
+          Selected layer
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <h3 className={isLight ? 'text-2xl font-semibold text-slate-900' : 'text-2xl font-semibold text-white'}>{selected.title}</h3>
+          {selectedLayer === recommendedLayer && (
+            <div className="relative">
+              <span
+                className={isLight ? 'inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700' : 'inline-flex rounded-full border border-slate-300/60 bg-slate-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200'}
+                onMouseEnter={() => setHoveredRecommendation(selectedLayer)}
+                onMouseLeave={() => setHoveredRecommendation(null)}
+              >
+                Recommended for this word
+              </span>
+              {hoveredRecommendation === selectedLayer && recommendationTooltip && (
+                <div className={isLight ? 'pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs leading-5 text-slate-700 shadow-xl shadow-blue-100/60' : 'pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-700 bg-slate-950/95 px-3 py-2 text-left text-xs leading-5 text-slate-200 shadow-xl shadow-black/30'}>
+                  {recommendationTooltip}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <p className={isLight ? 'mt-4 text-sm leading-6 text-slate-600' : 'mt-4 text-sm leading-6 text-slate-300'}>{selected.summary}</p>
+        <div className={isLight ? 'mt-3 text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'mt-3 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
+          Best for
+        </div>
+        <p className={isLight ? 'mt-1 text-sm leading-6 text-slate-700' : 'mt-1 text-sm leading-6 text-slate-200'}>{selected.bestFor}</p>
+
+        <div className="mt-5 space-y-4">
+          <div>
+            <div className={isLight ? 'text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
+              How it works
+            </div>
+            <p className={isLight ? 'mt-2 text-sm leading-6 text-slate-600' : 'mt-2 text-sm leading-6 text-slate-300'}>
+              {selectedLayer === 'etymology'
+                ? 'The lineage animates node by node, showing how the word changes across time.'
+                : selectedLayer === 'translations'
+                  ? 'Translations are grouped by geography so you can compare where the word appears.'
+                  : selectedLayer === 'descendants'
+                    ? 'The view expands outward from a root and reveals descendant branches as you explore.'
+                    : selectedLayer === 'protoZones'
+                      ? 'The proto-zone layer frames the lineage inside a broader historical region.'
+                      : 'The family layer groups languages into broader families for a higher-level view.'}
+            </p>
+          </div>
+
+          <div>
+            <div className={isLight ? 'text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
+              How to use it
+            </div>
+            <p className={isLight ? 'mt-2 text-sm leading-6 text-slate-600' : 'mt-2 text-sm leading-6 text-slate-300'}>
+              {selectedLayer === 'etymology'
+                ? 'Use the timeline scrubber to step through each node or press play to watch the path animate.'
+                : selectedLayer === 'translations'
+                  ? 'Hover the markers and open popups to compare the spread across regions.'
+                  : selectedLayer === 'descendants'
+                    ? 'Click into branches to reveal deeper descendant paths and inspect the structure.'
+                    : selectedLayer === 'protoZones'
+                      ? 'Compare the backdrop with the active lineage to understand the broader setting.'
+                      : 'Use the family overview first, then switch to a more specific layer when you want detail.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button
+            onClick={onRestart}
+            className={isLight ? 'rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50' : 'rounded-full border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800'}
+          >
+            Choose another layer
+          </button>
+          <button
+            onClick={onCloseGuide}
+            className={isLight ? 'rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500' : 'rounded-full bg-slate-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-200'}
+          >
+            Start exploring
+          </button>
+        </div>
+      </div>
+
+      <div className={isLight ? 'space-y-4 bg-slate-50 px-4 py-4 sm:px-6 sm:py-6' : 'space-y-4 bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6'}>
+        <div className={isLight ? 'overflow-hidden rounded-2xl border border-slate-200 bg-white p-3' : 'overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-3'}>
+          <div className={isLight ? 'flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-blue-200 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.12),rgba(248,250,252,0.95))] px-4 text-center' : 'flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-slate-600/80 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),rgba(15,23,42,0.95))] px-4 text-center'}>
+            <div>
+              <div className={isLight ? 'text-sm font-semibold uppercase tracking-[0.28em] text-blue-700/90' : 'text-sm font-semibold uppercase tracking-[0.28em] text-slate-300/90'}>
+                Preview demo gif
+              </div>
+              <div className={isLight ? 'mt-3 text-sm leading-6 text-slate-600' : 'mt-3 text-sm leading-6 text-slate-300'}>
+                This space will later show a short preview of the layer in action.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : recommendationLoading ? (
+    <div className="flex min-h-[22rem] items-center justify-center px-4 py-10 sm:px-6 sm:py-12">
+      <div className={isLight ? 'w-full max-w-xl rounded-3xl border border-slate-200 bg-white px-6 py-6 shadow-xl shadow-blue-100/50' : 'w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-900/85 px-6 py-6 shadow-xl shadow-black/30'}>
+        <div className="flex items-start gap-4">
+          <div className={isLight ? 'mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-blue-200 bg-blue-50' : 'mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-950'}>
+            <motion.div
+              className={isLight ? 'h-5 w-5 rounded-full border-2 border-blue-600 border-t-transparent' : 'h-5 w-5 rounded-full border-2 border-slate-200 border-t-transparent'}
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className={isLight ? 'text-[11px] font-semibold uppercase tracking-[0.34em] text-blue-700/80' : 'text-[11px] font-semibold uppercase tracking-[0.34em] text-slate-400'}>
+              Guide mode
+            </p>
+            <h3 className={isLight ? 'mt-2 text-2xl font-semibold tracking-tight text-slate-900' : 'mt-2 text-2xl font-semibold tracking-tight text-white'}>
+              Calculating best layer recommendation...
+            </h3>
+            <p className={isLight ? 'mt-3 text-sm leading-6 text-slate-600' : 'mt-3 text-sm leading-6 text-slate-300'}>
+              We’re loading the word data so the guide can pick the right first layer.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-6">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {layerOrder.map(layer => {
+          const info = guideLayers[layer]
+          const ready = availability[layer]
+          const isRecommended = layer === recommendedLayer
+          const disabled = !ready
+          return (
+            <button
+              key={layer}
+              onClick={() => onChooseLayer(layer)}
+              disabled={disabled}
+              aria-disabled={disabled}
+              title={disabled ? 'No data available for this layer' : undefined}
+              className={isLight
+                ? 'group rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-60'
+                : 'group rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-left transition hover:border-slate-400 hover:bg-slate-800/90 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900/40 disabled:text-slate-500 disabled:opacity-55'}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className={isLight ? 'text-lg font-semibold text-slate-900' : 'text-lg font-semibold text-white'}>{info.title}</div>
+                {isRecommended && (
+                  <div className="relative">
+                    <span
+                      className={isLight ? 'rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-700' : 'rounded-full border border-slate-300/60 bg-slate-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-200'}
+                      onMouseEnter={() => setHoveredRecommendation(layer)}
+                      onMouseLeave={() => setHoveredRecommendation(null)}
+                    >
+                      Recommended
+                    </span>
+                    {hoveredRecommendation === layer && recommendationTooltip && (
+                      <div className={isLight ? 'pointer-events-none absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs leading-5 text-slate-700 shadow-xl shadow-blue-100/60' : 'pointer-events-none absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-700 bg-slate-950/95 px-3 py-2 text-left text-xs leading-5 text-slate-200 shadow-xl shadow-black/30'}>
+                        {recommendationTooltip}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <p className={isLight ? 'mt-3 text-sm leading-6 text-slate-600' : 'mt-3 text-sm leading-6 text-slate-300'}>{info.summary}</p>
+              {disabled && (
+                <div className={isLight ? 'mt-3 inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500' : 'mt-3 inline-flex rounded-full border border-slate-700 bg-slate-800/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400'}>
+                  No data available
+                </div>
+              )}
+              <div className={isLight ? 'mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100' : 'mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100'}>
+                Best for
+              </div>
+              <p className={isLight ? 'max-h-0 overflow-hidden text-sm leading-6 text-slate-700 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100' : 'max-h-0 overflow-hidden text-sm leading-6 text-slate-200 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100'}>
+                {info.bestFor}
+              </p>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
 
   return (
     <AnimatePresence>
@@ -135,151 +318,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto lg:min-h-[28rem]">
-              {!selected ? (
-                <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-6">
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {layerOrder.map(layer => {
-                      const info = guideLayers[layer]
-                      const ready = availability[layer]
-                      const isRecommended = layer === recommendedLayer
-                      return (
-                        <button
-                          key={layer}
-                          onClick={() => onChooseLayer(layer)}
-                          disabled={!ready}
-                          className={isLight ? 'group rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-slate-50' : 'group rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-left transition hover:border-slate-400 hover:bg-slate-800/90'}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className={isLight ? 'text-lg font-semibold text-slate-900' : 'text-lg font-semibold text-white'}>{info.title}</div>
-                            {isRecommended && (
-                              <div className="relative">
-                                <span
-                                  className={isLight ? 'rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-700' : 'rounded-full border border-slate-300/60 bg-slate-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-200'}
-                                  onMouseEnter={() => setHoveredRecommendation(layer)}
-                                  onMouseLeave={() => setHoveredRecommendation(null)}
-                                >
-                                  Recommended
-                                </span>
-                                {hoveredRecommendation === layer && recommendationTooltip && (
-                                  <div className={isLight ? 'pointer-events-none absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs leading-5 text-slate-700 shadow-xl shadow-blue-100/60' : 'pointer-events-none absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-700 bg-slate-950/95 px-3 py-2 text-left text-xs leading-5 text-slate-200 shadow-xl shadow-black/30'}>
-                                    {recommendationTooltip}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <p className={isLight ? 'mt-3 text-sm leading-6 text-slate-600' : 'mt-3 text-sm leading-6 text-slate-300'}>{info.summary}</p>
-                          <div className={isLight ? 'mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100' : 'mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100'}>
-                            Best for
-                          </div>
-                          <p className={isLight ? 'max-h-0 overflow-hidden text-sm leading-6 text-slate-700 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100' : 'max-h-0 overflow-hidden text-sm leading-6 text-slate-200 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100'}>
-                            {info.bestFor}
-                          </p>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-                  <div className={isLight ? 'border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r' : 'border-b border-slate-800/80 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r'}>
-                    <p className={isLight ? 'text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
-                      Selected layer
-                    </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-3">
-                      <h3 className={isLight ? 'text-2xl font-semibold text-slate-900' : 'text-2xl font-semibold text-white'}>{selected.title}</h3>
-                      {selectedLayer === recommendedLayer && (
-                        <div className="relative">
-                          <span
-                            className={isLight ? 'inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700' : 'inline-flex rounded-full border border-slate-300/60 bg-slate-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200'}
-                            onMouseEnter={() => setHoveredRecommendation(selectedLayer)}
-                            onMouseLeave={() => setHoveredRecommendation(null)}
-                          >
-                            Recommended for this word
-                          </span>
-                          {hoveredRecommendation === selectedLayer && recommendationTooltip && (
-                            <div className={isLight ? 'pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs leading-5 text-slate-700 shadow-xl shadow-blue-100/60' : 'pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-700 bg-slate-950/95 px-3 py-2 text-left text-xs leading-5 text-slate-200 shadow-xl shadow-black/30'}>
-                              {recommendationTooltip}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    <p className={isLight ? 'mt-4 text-sm leading-6 text-slate-600' : 'mt-4 text-sm leading-6 text-slate-300'}>{selected.summary}</p>
-                    <div className={isLight ? 'mt-3 text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'mt-3 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
-                      Best for
-                    </div>
-                    <p className={isLight ? 'mt-1 text-sm leading-6 text-slate-700' : 'mt-1 text-sm leading-6 text-slate-200'}>{selected.bestFor}</p>
-
-                    <div className="mt-5 space-y-4">
-                      <div>
-                        <div className={isLight ? 'text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
-                          How it works
-                        </div>
-                        <p className={isLight ? 'mt-2 text-sm leading-6 text-slate-600' : 'mt-2 text-sm leading-6 text-slate-300'}>
-                          {selectedLayer === 'etymology'
-                            ? 'The lineage animates node by node, showing how the word changes across time.'
-                            : selectedLayer === 'translations'
-                              ? 'Translations are grouped by geography so you can compare where the word appears.'
-                              : selectedLayer === 'descendants'
-                                ? 'The view expands outward from a root and reveals descendant branches as you explore.'
-                                : selectedLayer === 'protoZones'
-                                  ? 'The proto-zone layer frames the lineage inside a broader historical region.'
-                                  : 'The family layer groups languages into broader families for a higher-level view.'}
-                        </p>
-                      </div>
-
-                      <div>
-                        <div className={isLight ? 'text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
-                          How to use it
-                        </div>
-                        <p className={isLight ? 'mt-2 text-sm leading-6 text-slate-600' : 'mt-2 text-sm leading-6 text-slate-300'}>
-                          {selectedLayer === 'etymology'
-                            ? 'Use the timeline scrubber to step through each node or press play to watch the path animate.'
-                            : selectedLayer === 'translations'
-                              ? 'Hover the markers and open popups to compare the spread across regions.'
-                              : selectedLayer === 'descendants'
-                                ? 'Click into branches to reveal deeper descendant paths and inspect the structure.'
-                                : selectedLayer === 'protoZones'
-                                  ? 'Compare the backdrop with the active lineage to understand the broader setting.'
-                                  : 'Use the family overview first, then switch to a more specific layer when you want detail.'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-3">
-                      <button
-                        onClick={onRestart}
-                        className={isLight ? 'rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50' : 'rounded-full border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800'}
-                      >
-                        Choose another layer
-                      </button>
-                      <button
-                        onClick={onCloseGuide}
-                        className={isLight ? 'rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500' : 'rounded-full bg-slate-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-200'}
-                      >
-                        Start exploring
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className={isLight ? 'space-y-4 bg-slate-50 px-4 py-4 sm:px-6 sm:py-6' : 'space-y-4 bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6'}>
-                    <div className={isLight ? 'overflow-hidden rounded-2xl border border-slate-200 bg-white p-3' : 'overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-3'}>
-                      <div className={isLight ? 'flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-blue-200 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.12),rgba(248,250,252,0.95))] px-4 text-center' : 'flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-slate-600/80 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),rgba(15,23,42,0.95))] px-4 text-center'}>
-                        <div>
-                          <div className={isLight ? 'text-sm font-semibold uppercase tracking-[0.28em] text-blue-700/90' : 'text-sm font-semibold uppercase tracking-[0.28em] text-slate-300/90'}>
-                            Preview demo gif
-                          </div>
-                          <div className={isLight ? 'mt-3 text-sm leading-6 text-slate-600' : 'mt-3 text-sm leading-6 text-slate-300'}>
-                            This space will later show a short preview of the layer in action.
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {bodyContent}
             </div>
           </motion.div>
         </motion.div>

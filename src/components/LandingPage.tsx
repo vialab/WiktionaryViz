@@ -138,7 +138,7 @@ export default function LandingPage({
   }
 
   return (
-    <section className={isLight ? 'flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gradient-to-b from-white via-slate-50 to-slate-100 px-4 py-12' : 'flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gradient-to-b from-neutral-950 via-slate-900 to-neutral-950 px-4 py-12'}>
+    <section className={isLight ? 'flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gradient-to-b from-white via-slate-50 to-slate-100 px-4 py-12' : 'flex min-h-[calc(100vh-4rem)] items-center justify-center bg-transparent px-4 py-12'}>
       <div className="w-full max-w-2xl mx-auto text-center">
         {/* Header / identity (use div to avoid global header CSS) */}
         <div role="banner" className="mb-8">

@@ -19,6 +19,7 @@ import LanguageFamiliesBubbles from './geospatial/LanguageFamiliesBubbles'
 import DescendantLineagePaths from './geospatial/DescendantLineagePaths'
 import GeospatialGuideOverlay, { type GuideLayerKey } from './geospatial/GeospatialGuideOverlay'
 import type { EtymologyNode } from '@/types/etymology'
+import type { LanguoidData } from '@/types/languoid'
 import type { Translation } from '@/utils/mapUtils'
 
 L.Marker.prototype.options.icon = L.icon({
@@ -48,8 +49,15 @@ interface GeospatialPageProps {
  */
 const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuideOpenRegister, theme = 'dark' }) => {
   const isLight = theme === 'light'
-  const wordData = useWordData(word, language) as WordData | null
-  const languoidData = useLanguoidData()
+  const { wordData, loading: wordDataLoading, resolvedKey: wordDataResolvedKey } = useWordData(word, language) as {
+    wordData: WordData | null
+    loading: boolean
+    resolvedKey: string | null
+  }
+  const { languoidData, loading: languoidDataLoading } = useLanguoidData() as {
+    languoidData: LanguoidData[]
+    loading: boolean
+  }
   const [markers, setMarkers] = useState<TranslationMarker[]>([])
   const [lineage, setLineage] = useState<EtymologyNode | null>(null)
   const [currentIndex, setCurrentIndex] = useState<number | undefined>(undefined)
@@ -99,6 +107,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
       : translationCount > 0
         ? 'translations'
         : 'protoZones'
+  const currentWordKey = `${word}::${language}`
+  const recommendationLoading =
+    guideOpen &&
+    guideLayer === null &&
+    (wordDataLoading || languoidDataLoading || wordDataResolvedKey !== currentWordKey)
   const recommendationReason = translationHeavy
     ? `There are ${translationCount} translation markers and ${lineageNodeCount} lineage node${lineageNodeCount === 1 ? '' : 's'}. The translations layer gives the broader first view.`
     : hasPlayableLineage
@@ -249,6 +262,41 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
       })
     }
   }, [wordData, languoidData])
+
+  useEffect(() => {
+    const map = mapInstance
+    if (!map) return
+
+    const layerAvailability: Array<{ label: string; enabled: boolean }> = [
+      { label: 'Translations', enabled: guideAvailability.translations },
+      { label: 'Etymology Lineage Path', enabled: guideAvailability.etymology },
+      { label: 'Descendant Paths', enabled: guideAvailability.descendants },
+      { label: 'Proto-Language Zones', enabled: guideAvailability.protoZones },
+      { label: 'Language Families', enabled: guideAvailability.families },
+    ]
+
+    const layerLabels = Array.from(
+      map.getContainer().querySelectorAll<HTMLLabelElement>('.leaflet-control-layers-overlays label'),
+    )
+
+    layerLabels.forEach(label => {
+      const labelText = label.textContent?.replace(/\s+/g, ' ').trim()
+      const availability = layerAvailability.find(item => item.label === labelText)
+      if (!availability) return
+
+      const disabled = !availability.enabled
+      label.dataset.layerDisabled = disabled ? 'true' : 'false'
+      label.setAttribute('aria-disabled', String(disabled))
+      label.title = disabled ? 'No data available for this layer' : ''
+
+      const input = label.querySelector<HTMLInputElement>('input[type="checkbox"]')
+      if (input) {
+        input.disabled = disabled
+        input.tabIndex = disabled ? -1 : 0
+        input.setAttribute('aria-disabled', String(disabled))
+      }
+    })
+  }, [mapInstance, guideAvailability])
 
   useEffect(() => {
     if (!lineage || !etymologyRequested || !showEtymologyLineage || guideOpen) return
@@ -599,6 +647,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           open={guideOpen}
           selectedLayer={guideLayer}
           recommendedLayer={recommendedLayer}
+          recommendationLoading={recommendationLoading}
           recommendationReason={recommendationReason}
           availability={guideAvailability}
           onChooseLayer={(layer: GuideLayerKey) => {

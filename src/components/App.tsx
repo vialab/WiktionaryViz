@@ -38,9 +38,9 @@ function App() {
   // TODO [LOW LEVEL]: Implement a lightweight preset registry and a bookmarks context with localStorage persistence.
 
   return (
-    <div className={theme === 'light' ? 'flex min-h-screen flex-col bg-white text-slate-900' : 'flex min-h-screen flex-col bg-neutral-950 text-slate-100'}>
+    <div className={theme === 'light' ? 'flex min-h-screen flex-col bg-white text-slate-900' : 'flex min-h-screen flex-col bg-neutral-900 text-slate-100'}>
       {/* Navbar */}
-      <header className={theme === 'light' ? 'fixed top-0 z-50 w-full border-b border-slate-200/80 bg-white/90 p-3 shadow-sm backdrop-blur-sm' : 'fixed top-0 z-50 w-full bg-neutral-950/95 p-3 shadow-md shadow-black/20 backdrop-blur-sm'}>
+      <header className={theme === 'light' ? 'fixed top-0 z-50 w-full border-b border-slate-200/80 bg-white/90 p-3 shadow-sm backdrop-blur-sm' : 'fixed top-0 z-50 w-full bg-neutral-900/95 p-3 shadow-md shadow-black/20 backdrop-blur-sm'}>
         <Navbar
           title="WiktionaryViz"
           onTitleClick={() => setVisibleSection('landing-page')}

@@ -41,12 +41,20 @@ export const fetchWordData = async (word: string, language: string) => {
  */
 const useWordData = (word: string, language: string) => {
   const [wordData, setWordData] = useState<Record<string, unknown> | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [resolvedKey, setResolvedKey] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+
     if (!word || !language) {
       setWordData(null)
+      setLoading(false)
+      setResolvedKey(null)
       return
     }
+
+    setLoading(true)
 
     const fetchWordData = async () => {
       try {
@@ -58,27 +66,43 @@ const useWordData = (word: string, language: string) => {
 
         if (!response.ok) {
           console.error(`[useWordData] Request failed: ${response.status} ${response.statusText}`)
-          setWordData(null)
+          if (!cancelled) {
+            setWordData(null)
+            setLoading(false)
+            setResolvedKey(`${word}::${language}`)
+          }
           return
         }
 
         const data = await response.json()
 
-        if (Object.keys(data).length > 0) {
-          setWordData(data)
-        } else {
-          setWordData(null)
+        if (!cancelled) {
+          if (Object.keys(data).length > 0) {
+            setWordData(data)
+          } else {
+            setWordData(null)
+          }
+          setResolvedKey(`${word}::${language}`)
+          setLoading(false)
         }
       } catch (error: unknown) {
-        console.error('[useWordData] Error fetching data:', error)
-        setWordData(null)
+        if (!cancelled) {
+          console.error('[useWordData] Error fetching data:', error)
+          setWordData(null)
+          setResolvedKey(`${word}::${language}`)
+          setLoading(false)
+        }
       }
     }
 
     fetchWordData()
+
+    return () => {
+      cancelled = true
+    }
   }, [word, language])
 
-  return wordData
+  return { wordData, loading, resolvedKey }
 }
 
 // TODO [HIGH LEVEL]: Add `useKwicExamples(word, lang, decade?)` hook to surface examples in Timeline/Metadata.

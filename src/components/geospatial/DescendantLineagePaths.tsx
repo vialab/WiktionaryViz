@@ -8,6 +8,7 @@ import { normalizePosition, getCoordinatesForLanguage } from '@/utils/mapUtils'
 import { apiUrl } from '@/utils/apiBase'
 import { flattenPathsFromTree, fallbackPoint } from './descendantPathHelpers'
 import type { AggregatedTreeNode } from './descendantPathHelpers'
+import type { LanguoidData } from '@/types/languoid'
 
 type DescNode = {
   word?: string
@@ -60,7 +61,7 @@ const stablePathBase = (path: DescPath): [number, number] => {
   return [lat, lng]
 }
 
-const getLanguageLabel = (langCode: string | null | undefined, languoidData: ReturnType<typeof useLanguoidData>) => {
+const getLanguageLabel = (langCode: string | null | undefined, languoidData: LanguoidData[]) => {
   if (!langCode) return null
   const normalizedCode = langCode.toLowerCase()
   const match = languoidData.find(entry => entry.iso639P3code?.toLowerCase() === normalizedCode)
@@ -70,7 +71,7 @@ const getLanguageLabel = (langCode: string | null | undefined, languoidData: Ret
   return langCode
 }
 
-const resolveLanguageName = async (langCode: string | null | undefined, languoidData: ReturnType<typeof useLanguoidData>) => {
+const resolveLanguageName = async (langCode: string | null | undefined, languoidData: LanguoidData[]) => {
   if (!langCode) return null
 
   const direct = getLanguageLabel(langCode, languoidData)
@@ -128,7 +129,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
   rootWord,
   rootLang,
 }) => {
-  const languoidData = useLanguoidData()
+  const { languoidData } = useLanguoidData() as { languoidData: LanguoidData[]; loading: boolean }
   const [paths, setPaths] = useState<DescPath[]>([])
   const [, setRootCandidates] = useState<RootCandidate[]>([])
   const [selectedRootCandidate, setSelectedRootCandidate] = useState<RootCandidate | null>(null)

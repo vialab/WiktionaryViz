@@ -5,27 +5,35 @@ import type { LanguoidData } from '@/types/languoid'
 
 const useLanguoidData = () => {
   const [languoidData, setLanguoidData] = useState<LanguoidData[]>([])
+  const [loading, setLoading] = useState(true)
   const { readString } = usePapaParse()
 
   useEffect(() => {
-    // console.log('Fetching languoid data...');
+    let cancelled = false
+    setLoading(true)
+
     fetchData<string>('/languoid.csv', csvText => {
-      // console.log('CSV text fetched:', csvText);
       readString(csvText, {
         header: true,
         delimiter: ',',
         worker: true,
         complete: results => {
-          // console.log('CSV parsing complete:', results);
-          setLanguoidData(results.data as LanguoidData[])
+          if (!cancelled) {
+            setLanguoidData(results.data as LanguoidData[])
+            setLoading(false)
+          }
         },
         error: error => console.error('Error parsing languoid CSV:', error),
       })
     })
+
+    return () => {
+      cancelled = true
+    }
   }, [readString])
 
   console.log('Languoid data state:', languoidData)
-  return languoidData
+  return { languoidData, loading }
 }
 
 export default useLanguoidData

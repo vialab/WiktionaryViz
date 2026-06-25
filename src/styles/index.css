@@ -23,10 +23,15 @@ body {
   /* allow normal page scrolling; fixed header is already positioned */
   overflow: auto;
   /* Prevent unwanted scrollbars */
-  background-color: #0f172a;
+  background-color: #18181b;
   color: #f8fafc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body[data-theme='dark'] {
+  background-color: #18181b;
+  color: #f8fafc;
 }
 
 body[data-theme='light'] {
@@ -166,6 +171,20 @@ body[data-theme='light'] .leaflet-container .country-hovered {
   color: #f8fafc;
 }
 
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers label[data-layer-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers label[data-layer-disabled='true'] .leaflet-control-layers-selector {
+  accent-color: rgba(148, 163, 184, 0.55);
+}
+
+#geospatial .leaflet-top.leaflet-right .leaflet-control-layers label[data-layer-disabled='true']:hover {
+  color: #e2e8f0;
+}
+
 #geospatial .leaflet-top.leaflet-right .leaflet-control-layers-selector {
   accent-color: #38bdf8;
 }
@@ -213,6 +232,15 @@ body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control
 
 body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers-selector {
   accent-color: #2563eb;
+}
+
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers label[data-layer-disabled='true'] {
+  opacity: 0.5;
+  color: #94a3b8;
+}
+
+body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control-layers label[data-layer-disabled='true'] .leaflet-control-layers-selector {
+  accent-color: rgba(148, 163, 184, 0.6);
 }
 
 /* Highlighted lineage countries */
