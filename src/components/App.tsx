@@ -44,6 +44,8 @@ function App() {
         <Navbar
           title="WiktionaryViz"
           onTitleClick={() => setVisibleSection('landing-page')}
+          showBackHomeButton={visibleSection === 'geospatial'}
+          onBackHomeClick={() => setVisibleSection('landing-page')}
           showGuideButton={visibleSection === 'geospatial'}
           onGuideClick={() => geospatialGuideOpenHandler?.()}
           theme={theme}

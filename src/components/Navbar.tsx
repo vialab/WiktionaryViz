@@ -3,13 +3,24 @@ import { Moon, SunMedium } from 'lucide-react'
 interface NavbarProps {
   title: string
   onTitleClick: () => void
+  showBackHomeButton?: boolean
+  onBackHomeClick?: () => void
   showGuideButton?: boolean
   onGuideClick?: () => void
   theme: 'dark' | 'light'
   onToggleTheme: () => void
 }
 
-const Navbar: React.FC<NavbarProps> = ({ title, onTitleClick, showGuideButton, onGuideClick, theme, onToggleTheme }) => (
+const Navbar: React.FC<NavbarProps> = ({
+  title,
+  onTitleClick,
+  showBackHomeButton,
+  onBackHomeClick,
+  showGuideButton,
+  onGuideClick,
+  theme,
+  onToggleTheme,
+}) => (
   <nav className="navbar flex items-center justify-between gap-4">
     <h1
       className={theme === 'light'
@@ -20,6 +31,18 @@ const Navbar: React.FC<NavbarProps> = ({ title, onTitleClick, showGuideButton, o
       {title}
     </h1>
     <div className="flex items-center gap-2">
+      {showBackHomeButton && onBackHomeClick && (
+        <button
+          type="button"
+          onClick={onBackHomeClick}
+          className={theme === 'light'
+            ? 'rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50 hover:text-slate-900'
+            : 'rounded-full border border-slate-600/80 bg-slate-800/90 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-300 hover:bg-slate-700 hover:text-white'}
+          aria-label="Back To Home"
+        >
+          Back To Home
+        </button>
+      )}
       {showGuideButton && onGuideClick && (
         <button
           type="button"
