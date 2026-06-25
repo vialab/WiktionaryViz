@@ -2,6 +2,14 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.28](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.27...wiktionaryviz-v0.1.28) (2026-06-25)
+
+
+### Features
+
+* **App:** conditionally render back home button based on visible section to enhance user interface ([70524ff](https://github.com/vialab/WiktionaryViz/commit/70524ffb05c8826adbf6599ff6c0251cf7f4a80c))
+* **Navbar:** add back home button functionality to improve navigation experience ([70524ff](https://github.com/vialab/WiktionaryViz/commit/70524ffb05c8826adbf6599ff6c0251cf7f4a80c))
+
 ## [0.1.27](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.26...wiktionaryviz-v0.1.27) (2026-06-18)
 
 
