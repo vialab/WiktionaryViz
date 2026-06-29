@@ -16,7 +16,21 @@
 import json
 import heapq
 from collections import defaultdict
-from tqdm import tqdm
+try:
+    from tqdm import tqdm
+except Exception:
+    # Minimal no-op fallback for environments without tqdm (tests/dev).
+    def tqdm(iterable=None, **kwargs):
+        if iterable is None:
+            class _Ctx:
+                def __enter__(self):
+                    return self
+                def __exit__(self, exc_type, exc, tb):
+                    return False
+                def update(self, n=1):
+                    return None
+            return _Ctx()
+        return iterable
 
 # File paths
 JSONL_FILE_PATH = "data/wiktionary_data.jsonl"
@@ -24,6 +38,7 @@ INDEX_OUTPUT_PATH = "data/wiktionary_index.json"
 LONGEST_WORDS_OUTPUT_PATH = "data/longest_words.json"
 MOST_TRANSLATIONS_OUTPUT_PATH = "data/most_translations.json"
 MOST_DESCENDANTS_OUTPUT_PATH = "data/most_descendants.json"
+LONGEST_ETYMOLOGICAL_CHAINS_OUTPUT_PATH = "data/longest_etymological_chains.json"
 
 # Languages to exclude from longest word category (sign languages, gloss systems)
 SIGN_LANG_CODES = {
@@ -82,6 +97,10 @@ def compute_descendant_counts(descendant_links: dict) -> dict:
     return counts
 
 
+# NOTE: Longest etymological chain stat is derived from the number of
+# `etymology_templates` in each entry. We compute that directly while
+# indexing instead of performing graph traversal here.
+
 def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None:
     """
     Builds a byte-offset index for fast lookup and precomputes Hall of Fame data:
@@ -95,6 +114,7 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
 
     TOP_N = 100
     longest_words_heap = []
+    longest_chains_heap = []
     most_translations_heap = []
 
     # Optimized memory: store only keys, not full entries
@@ -162,7 +182,15 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
                                     child_key = f"{child_word.lower()}_{lang}"
                                     add_descendant_link(word, lang_code, child_key)
 
-                        for tpl in entry.get("etymology_templates", []) or []:
+                        # Etymology templates: record length for longest-chain stat
+                        etym_templates = entry.get("etymology_templates", []) or []
+                        etym_len = len(etym_templates)
+                        if etym_len > 0:
+                            heapq.heappush(longest_chains_heap, (etym_len, word, lang_code))
+                            if len(longest_chains_heap) > TOP_N:
+                                heapq.heappop(longest_chains_heap)
+
+                        for tpl in etym_templates:
                             if not tpl or not isinstance(tpl, dict):
                                 continue
                             args = tpl.get("args") or {}
@@ -173,6 +201,7 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
                             if not use_word:
                                 continue
                             add_descendant_link(str(use_word), str(parent_lang or ""), index_key)
+                            # (no parent_links collection needed for template-count metric)
 
                     record_count += 1
                     progress_bar.update(1)
@@ -224,6 +253,14 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
         print(f"[WARN] Failed to compute most-descendants stat; writing empty file: {exc}")
         most_descendants_output = []
     save_json(most_descendants_output, MOST_DESCENDANTS_OUTPUT_PATH)
+
+    # Save longest etymological chains measured by etymology_templates length
+    longest_chains_sorted = sorted(longest_chains_heap, reverse=True)
+    longest_chains_output = [
+        {"word": word, "lang_code": lang_code, "chain_length": length}
+        for length, word, lang_code in longest_chains_sorted
+    ]
+    save_json(longest_chains_output, LONGEST_ETYMOLOGICAL_CHAINS_OUTPUT_PATH)
 
     print(f"Indexed {record_count} records.")
     print(f"Saved Top {TOP_N} longest words to {LONGEST_WORDS_OUTPUT_PATH}")

@@ -16,32 +16,33 @@ export function useInterestingWord() {
   const [category, setCategory] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
-  const fetchInterestingWord = useCallback(async (): Promise<InterestingWord | null> => {
+  const fetchInterestingWord = useCallback(async (): Promise<(InterestingWord & { category?: string }) | null> => {
     setLoading(true)
     try {
       const res = await fetch(apiUrl('/random-interesting-word'))
       const data = await res.json()
       if (data?.entry?.word && data?.entry?.lang_code) {
+        const catRaw = data.category || 'unknown'
         const obj = {
           word: data.entry.word,
           reason:
-            data.entry.reason || `Highlighted in ${data.category.replace(/_/g, ' ')} category`,
+            data.entry.reason || `Highlighted in ${catRaw.replace(/_/g, ' ')} category`,
           lang_code: data.entry.lang_code,
         }
         setInterestingWord(obj)
-        setCategory(data.category.replace(/_/g, ' '))
-        return obj
+        setCategory(catRaw.replace(/_/g, ' '))
+        return { ...obj, category: catRaw }
       } else {
         const obj = { word: 'example', reason: 'Could not fetch real interesting words.' }
         setInterestingWord(obj)
         setCategory('unknown')
-        return obj
+        return { ...obj, category: 'unknown' }
       }
     } catch {
       const obj = { word: 'example', reason: 'Could not fetch real interesting words.' }
       setInterestingWord(obj)
       setCategory('unknown')
-      return obj
+      return { ...obj, category: 'unknown' }
     } finally {
       setLoading(false)
     }

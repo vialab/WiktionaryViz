@@ -27,6 +27,7 @@ interface LandingPageProps {
   setVisibleSection?: (section: string) => void
   setWord1?: (word: string) => void
   setLanguage1?: (lang: string) => void
+  setInspireCategory?: (cat: string | null) => void
   // also accept the older controlled prop name
   word1?: string
 }
@@ -47,6 +48,7 @@ export default function LandingPage({
   setVisibleSection,
   setWord1,
   setLanguage1,
+  setInspireCategory,
   word1,
   language1,
 }: LandingPageProps) {
@@ -105,12 +107,16 @@ export default function LandingPage({
     if (typeof refresh === 'function') {
       try {
         const result = await refresh()
-        if (result?.word) {
-          setInspireWord(result.word)
-          setInspireLabel(result.reason || 'interesting')
-          setWord(result.word)
-          inputRef.current?.focus()
-        }
+          if (result?.word) {
+            setInspireWord(result.word)
+            setInspireLabel(result.reason || 'interesting')
+            setWord(result.word)
+            // Propagate to parent controlled props so App receives the word selection.
+            setWord1?.(result.word)
+            if (result.lang_code) setLanguage1?.(result.lang_code)
+            if (result.category) setInspireCategory?.(result.category)
+            inputRef.current?.focus()
+          }
         return
       } catch {
         // fall through to local fallback

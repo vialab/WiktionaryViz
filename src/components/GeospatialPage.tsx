@@ -41,13 +41,14 @@ interface GeospatialPageProps {
   language: string
   onGuideOpenRegister?: (openGuide: (() => void) | null) => void
   theme?: 'dark' | 'light'
+  inspireCategory?: string | null
 }
 
 /**
  * GeospatialPage visualizes translations and etymology lineage on a map.
  * Uses modular components for maintainability and performance.
  */
-const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuideOpenRegister, theme = 'dark' }) => {
+const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuideOpenRegister, theme = 'dark', inspireCategory }) => {
   const isLight = theme === 'light'
   const { wordData, loading: wordDataLoading, resolvedKey: wordDataResolvedKey } = useWordData(word, language) as {
     wordData: WordData | null
@@ -100,13 +101,26 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
     families: true,
   }
   const translationHeavy = translationCount >= 25 && translationBreadth >= 10
-  const recommendedLayer: GuideLayerKey = translationHeavy
+  // If an Inspire-Me category was provided, prefer mapping it to a guided layer.
+  const mapCategoryToLayer = (cat?: string | null): GuideLayerKey | null => {
+    if (!cat) return null
+    const c = cat.toLowerCase()
+    if (c.includes('translation') || c.includes('most_translations') || c.includes('translations')) return 'translations'
+    if (c.includes('longest') || c.includes('long')) return 'families'
+    if (c.includes('descend') || c.includes('most_descendants')) return 'descendants'
+    // fallback: null
+    return null
+  }
+
+  const inspiredLayer = mapCategoryToLayer(inspireCategory)
+
+  const recommendedLayer: GuideLayerKey = inspiredLayer ?? (translationHeavy
     ? 'translations'
     : hasPlayableLineage
       ? 'etymology'
       : translationCount > 0
         ? 'translations'
-        : 'protoZones'
+        : 'protoZones')
   const currentWordKey = `${word}::${language}`
   const recommendationLoading =
     guideOpen &&

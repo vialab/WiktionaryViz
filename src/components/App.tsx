@@ -11,6 +11,7 @@ function App() {
   const [word2, setWord2] = useState<string>('')
   const [language1, setLanguage1] = useState('')
   const [language2, setLanguage2] = useState('')
+  const [inspireCategory, setInspireCategory] = useState<string | null>(null)
   const [geospatialGuideOpenHandler, setGeospatialGuideOpenHandler] = useState<(() => void) | null>(null)
   const [theme, setTheme] = useState<ThemeMode>(() => {
     if (typeof window === 'undefined') return 'dark'
@@ -63,6 +64,7 @@ function App() {
             setWord2={setWord2}
             setLanguage1={setLanguage1}
             setLanguage2={setLanguage2}
+            setInspireCategory={setInspireCategory}
             word1={word1}
             word2={word2}
             language1={language1}
@@ -73,6 +75,7 @@ function App() {
           <GeospatialPage
             word={word1}
             language={language1}
+            inspireCategory={inspireCategory}
             onGuideOpenRegister={setGeospatialGuideOpenHandler}
             theme={theme}
           />
