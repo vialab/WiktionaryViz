@@ -281,12 +281,32 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
     const map = mapInstance
     if (!map) return
 
-    const layerAvailability: Array<{ label: string; enabled: boolean }> = [
-      { label: 'Translations', enabled: guideAvailability.translations },
-      { label: 'Etymology Lineage Path', enabled: guideAvailability.etymology },
-      { label: 'Descendant Paths', enabled: guideAvailability.descendants },
-      { label: 'Proto-Language Zones', enabled: guideAvailability.protoZones },
-      { label: 'Language Families', enabled: guideAvailability.families },
+    const layerAvailability: Array<{ label: string; enabled: boolean; description: string }> = [
+      {
+        label: 'Translations',
+        enabled: guideAvailability.translations,
+        description: 'Shows translation markers for related languages and regions.',
+      },
+      {
+        label: 'Etymology Lineage Path',
+        enabled: guideAvailability.etymology,
+        description: 'Animates the word’s etymology path step by step over time.',
+      },
+      {
+        label: 'Descendant Paths',
+        enabled: guideAvailability.descendants,
+        description: 'Highlights how the word branches into descendant forms.',
+      },
+      {
+        label: 'Proto-Language Zones',
+        enabled: guideAvailability.protoZones,
+        description: 'Shows estimated proto-language regions on the map.',
+      },
+      {
+        label: 'Language Families',
+        enabled: guideAvailability.families,
+        description: 'Displays broad family-level geographic groupings.',
+      },
     ]
 
     const layerLabels = Array.from(
@@ -301,7 +321,9 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
       const disabled = !availability.enabled
       label.dataset.layerDisabled = disabled ? 'true' : 'false'
       label.setAttribute('aria-disabled', String(disabled))
-      label.title = disabled ? 'No data available for this layer' : ''
+      label.title = disabled
+        ? 'No data available for this layer'
+        : availability.description
 
       const input = label.querySelector<HTMLInputElement>('input[type="checkbox"]')
       if (input) {
