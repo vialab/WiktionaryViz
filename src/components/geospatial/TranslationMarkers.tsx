@@ -13,12 +13,13 @@ export interface TranslationMarkersProps {
   markers: TranslationMarker[]
   opacity?: number
   zIndex?: number
+  onMarkerClick?: (marker: TranslationMarker, index: number) => void
 }
 
 /**
  * Renders translation markers with popups. Memoized for performance.
  */
-const TranslationMarkers: FC<TranslationMarkersProps> = memo(({ markers, opacity = 1, zIndex = 600 }) => (
+const TranslationMarkers: FC<TranslationMarkersProps> = memo(({ markers, opacity = 1, zIndex = 600, onMarkerClick }) => (
   <Pane name="translations" style={{ zIndex }}>
     <>
       {markers.map((marker, index) => (
@@ -30,6 +31,7 @@ const TranslationMarkers: FC<TranslationMarkersProps> = memo(({ markers, opacity
           interactive={true}
           eventHandlers={{
             click: e => {
+              onMarkerClick?.(marker, index)
               e.target.openPopup()
             },
           }}

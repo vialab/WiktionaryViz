@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
-import { MapContainer, TileLayer, LayersControl, LayerGroup } from 'react-leaflet'
+import { MapContainer, TileLayer, LayersControl, LayerGroup, useMap } from 'react-leaflet'
 import useWordData from '@/hooks/useWordData'
 import useLanguoidData from '@/hooks/useLanguoidData'
 import { processTranslations, processEtymologyLineage, flattenLineage } from '@/utils/mapUtils'
@@ -17,34 +17,33 @@ import GeospatialSettingsMenu from './geospatial/GeospatialSettingsMenu'
 import ProtoLanguageZones from './geospatial/ProtoLanguageZones'
 import LanguageFamiliesBubbles from './geospatial/LanguageFamiliesBubbles'
 import DescendantLineagePaths from './geospatial/DescendantLineagePaths'
-import GeospatialGuideOverlay, { type GuideLayerKey } from './geospatial/GeospatialGuideOverlay'
+import GeospatialGuideOverlay from './geospatial/GeospatialGuideOverlay'
 import type { EtymologyNode } from '@/types/etymology'
 import type { LanguoidData } from '@/types/languoid'
 import type { Translation } from '@/utils/mapUtils'
+import { decodeShareableStateFromSearch } from '@/utils/shareableState'
 
-type LayerOpacityKey = 'translations' | 'protoZones' | 'languageFamilies' | 'etymology' | 'descendants'
-
-type LayerOrderKey = LayerOpacityKey
-
-type LayerOpacityState = Record<LayerOpacityKey, number>
-
-const defaultLayerOrder: LayerOrderKey[] = [
-  'translations',
-  'descendants',
-  'etymology',
-  'protoZones',
-  'languageFamilies',
-]
+import {
+  createInitialMapState,
+  defaultMapLayerOpacities,
+  defaultMapLayerOrder,
+  type GuideLayerKey,
+  type MapLayerKey,
+  type MapSelection,
+  type MapState,
+} from '@/types/mapState'
 
 const layerOrderStep = 20
 const layerOrderBase = 500
 
-const defaultLayerOpacities: LayerOpacityState = {
-  translations: 1,
-  protoZones: 1,
-  languageFamilies: 1,
-  etymology: 1,
-  descendants: 1,
+const MapInstanceRegistrar = ({ onReady }: { onReady: (map: L.Map) => void }) => {
+  const map = useMap()
+
+  useEffect(() => {
+    onReady(map)
+  }, [map, onReady])
+
+  return null
 }
 
 L.Marker.prototype.options.icon = L.icon({
@@ -65,6 +64,9 @@ interface GeospatialPageProps {
   word: string
   language: string
   onGuideOpenRegister?: (openGuide: (() => void) | null) => void
+  initialMapState?: MapState | null
+  onMapStateChange?: (state: MapState) => void
+  openGuideOnLoad?: boolean
   theme?: 'dark' | 'light'
   inspireCategory?: string | null
 }
@@ -73,8 +75,25 @@ interface GeospatialPageProps {
  * GeospatialPage visualizes translations and etymology lineage on a map.
  * Uses modular components for maintainability and performance.
  */
-const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuideOpenRegister, theme = 'dark', inspireCategory }) => {
+const GeospatialPage: React.FC<GeospatialPageProps> = ({
+  word,
+  language,
+  onGuideOpenRegister,
+  initialMapState,
+  onMapStateChange,
+  openGuideOnLoad = true,
+  theme = 'dark',
+  inspireCategory,
+}) => {
   const isLight = theme === 'light'
+  const urlInitialMapState = typeof window === 'undefined'
+    ? null
+    : decodeShareableStateFromSearch(window.location.search).mapState
+  const sharedInitialMapState = initialMapState ?? urlInitialMapState
+  const shouldOpenGuideOnLoad = openGuideOnLoad
+  const initialCameraCenterRef = useRef<[number, number]>(sharedInitialMapState?.camera?.center ?? [0, 0])
+  const initialCameraZoomRef = useRef<number>(sharedInitialMapState?.camera?.zoom ?? 2)
+  const hydratedFromSharedStateRef = useRef(Boolean(sharedInitialMapState) || !shouldOpenGuideOnLoad)
   const { wordData, loading: wordDataLoading, resolvedKey: wordDataResolvedKey } = useWordData(word, language) as {
     wordData: WordData | null
     loading: boolean
@@ -84,34 +103,64 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
     languoidData: LanguoidData[]
     loading: boolean
   }
+  const [mapState, setMapState] = useState<MapState>(() => {
+    const base = createInitialMapState(word, language)
+    if (!sharedInitialMapState) {
+      return {
+        ...base,
+        filters: {
+          ...base.filters,
+          guideOpen: shouldOpenGuideOnLoad,
+        },
+      }
+    }
+
+    return {
+      ...base,
+      ...sharedInitialMapState,
+      camera: {
+        ...base.camera,
+        ...(sharedInitialMapState.camera ?? {}),
+      },
+      selectedItem: sharedInitialMapState.selectedItem ?? base.selectedItem,
+      activeLayers: {
+        ...base.activeLayers,
+        ...sharedInitialMapState.activeLayers,
+        opacities: {
+          ...base.activeLayers.opacities,
+          ...sharedInitialMapState.activeLayers?.opacities,
+        },
+        order: sharedInitialMapState.activeLayers?.order ?? base.activeLayers.order,
+      },
+      filters: {
+        ...base.filters,
+        ...(sharedInitialMapState.filters ?? {}),
+        guideOpen: sharedInitialMapState.filters?.guideOpen ?? shouldOpenGuideOnLoad,
+      },
+      currentWord: {
+        word,
+        language,
+        key: `${word}::${language}`,
+      },
+    }
+  })
   const [markers, setMarkers] = useState<TranslationMarker[]>([])
   const [lineage, setLineage] = useState<EtymologyNode | null>(null)
-  const [currentIndex, setCurrentIndex] = useState<number | undefined>(undefined)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [playSpeed, setPlaySpeed] = useState<number>(800) // ms per step
-  const [loop, setLoop] = useState<boolean>(false)
-  const [showAllPopups, setShowAllPopups] = useState(false)
-  const [guideOpen, setGuideOpen] = useState(true)
-  const [guideLayer, setGuideLayer] = useState<GuideLayerKey | null>(null)
-  const [showTranslations, setShowTranslations] = useState(false)
-  const [showProtoZones, setShowProtoZones] = useState(false)
-  const [showDescendantPaths, setShowDescendantPaths] = useState(false)
-  const [etymologyRequested, setEtymologyRequested] = useState(false)
-  const [layerOpacities, setLayerOpacities] = useState<LayerOpacityState>(defaultLayerOpacities)
-  const [layerOrder, setLayerOrder] = useState<LayerOrderKey[]>(defaultLayerOrder)
   const dwellDurationRef = useRef<number>(1200) // ms pause after each transition for reading (extended for readability)
-  const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
   // Track visibility of LayersControl overlays that render non-Leaflet DOM (bubbles SVG)
   const [translationGroup, setTranslationGroup] = useState<L.LayerGroup | null>(null)
   const [protoZonesGroup, setProtoZonesGroup] = useState<L.LayerGroup | null>(null)
   const [descendantPathsGroup, setDescendantPathsGroup] = useState<L.LayerGroup | null>(null)
-  const [showLanguageFamilies, setShowLanguageFamilies] = useState(false)
   const [languageFamiliesGroup, setLanguageFamiliesGroup] = useState<L.LayerGroup | null>(null)
-  const [showEtymologyLineage, setShowEtymologyLineage] = useState(false)
   const [etymologyLineageGroup, setEtymologyLineageGroup] = useState<L.LayerGroup | null>(null)
   const [descendantCoordinates, setDescendantCoordinates] = useState<[number, number][]>([])
   const hasAdjustedZoomRef = useRef(false)
   const playbackTimerRef = useRef<number | null>(null)
+  const mapInstanceRef = useRef<L.Map | null>(null)
+  const handleMapReady = useCallback((instance: L.Map) => {
+    if (mapInstanceRef.current === instance) return
+    mapInstanceRef.current = instance
+  }, [])
   // --- Dynamic zoom refs (distance-based small-jump assist) ---
   const autoZoomBaselineRef = useRef<number | null>(null) // original zoom before first auto-zoom-in
   const lastAutoZoomInRef = useRef<number | null>(null) // last zoom level we auto-raised to
@@ -121,6 +170,21 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
   const translationCount = markers.length
   const lineageNodeCount = lineageNodes.length
   const translationBreadth = translationCount / Math.max(1, lineageNodeCount)
+  const currentIndex = mapState.filters.currentIndex
+  const isPlaying = mapState.filters.isPlaying
+  const playSpeed = mapState.filters.playSpeedMs
+  const loop = mapState.filters.loop
+  const showAllPopups = mapState.filters.showAllPopups
+  const guideOpen = mapState.filters.guideOpen
+  const guideLayer = mapState.filters.guideLayer
+  const showTranslations = mapState.activeLayers.translations
+  const showProtoZones = mapState.activeLayers.protoZones
+  const showDescendantPaths = mapState.activeLayers.descendants
+  const showLanguageFamilies = mapState.activeLayers.languageFamilies
+  const showEtymologyLineage = mapState.activeLayers.etymology
+  const layerOpacities = mapState.activeLayers.opacities
+  const layerOrder = mapState.activeLayers.order
+  const currentWordKey = mapState.currentWord.key
   const lineageCoordinates = useCallback(() => {
     if (!lineage) return [] as [number, number][]
     return flattenLineage(lineage)
@@ -128,11 +192,84 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
       .filter((position): position is [number, number] => Array.isArray(position))
   }, [lineage])
 
-  const layerZIndex = (layer: LayerOrderKey) => {
+  const layerZIndex = (layer: MapLayerKey) => {
     const index = layerOrder.indexOf(layer)
     const resolvedIndex = index >= 0 ? index : layerOrder.length - 1
     return layerOrderBase + (layerOrder.length - resolvedIndex) * layerOrderStep
   }
+
+  const mapInstance = mapInstanceRef.current
+
+  const updateMapState = useCallback((updater: (current: MapState) => MapState) => {
+    setMapState(updater)
+  }, [])
+
+  const hasPublishedInitialMapStateRef = useRef(false)
+
+  useEffect(() => {
+    if (!hasPublishedInitialMapStateRef.current) {
+      hasPublishedInitialMapStateRef.current = true
+      return
+    }
+
+    onMapStateChange?.(mapState)
+  }, [mapState, onMapStateChange])
+
+  const setFilterState = useCallback((updates: Partial<MapState['filters']>) => {
+    updateMapState(current => ({
+      ...current,
+      filters: {
+        ...current.filters,
+        ...updates,
+      },
+    }))
+  }, [updateMapState])
+
+  const setActiveLayerState = useCallback((updates: Partial<MapState['activeLayers']>) => {
+    updateMapState(current => ({
+      ...current,
+      activeLayers: {
+        ...current.activeLayers,
+        ...updates,
+      },
+    }))
+  }, [updateMapState])
+
+  const setGuideLayer = useCallback((nextGuideLayer: GuideLayerKey | null) => {
+    setFilterState({ guideLayer: nextGuideLayer })
+  }, [setFilterState])
+
+  const setSelectedItem = useCallback((selectedItem: MapSelection) => {
+    updateMapState(current => {
+      if (current.selectedItem.kind !== selectedItem.kind) {
+        return { ...current, selectedItem }
+      }
+
+      if (selectedItem.kind === 'none') {
+        return current
+      }
+
+      if ('index' in current.selectedItem && 'index' in selectedItem && current.selectedItem.index === selectedItem.index) {
+        return current
+      }
+
+      return { ...current, selectedItem }
+    })
+  }, [updateMapState])
+
+  const setCameraState = useCallback((center: [number, number], zoom: number) => {
+    updateMapState(current => {
+      const sameCenter = current.camera.center[0] === center[0] && current.camera.center[1] === center[1]
+      if (sameCenter && current.camera.zoom === zoom) return current
+      return {
+        ...current,
+        camera: {
+          center,
+          zoom,
+        },
+      }
+    })
+  }, [updateMapState])
 
   useEffect(() => {
     if (!mapInstance) return
@@ -182,7 +319,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
       : translationCount > 0
         ? 'translations'
         : 'protoZones')
-  const currentWordKey = `${word}::${language}`
   const recommendationLoading =
     guideOpen &&
     guideLayer === null &&
@@ -205,22 +341,43 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
   //  - [ ] If user scrubs manually, explicitly cancel pending dwell (interval cancellation partly covers this; verify behavior).
 
   useEffect(() => {
-    setGuideOpen(true)
-    setGuideLayer(null)
-    setShowTranslations(false)
-    setShowProtoZones(false)
-    setShowDescendantPaths(false)
-    setEtymologyRequested(false)
-    setShowEtymologyLineage(false)
-    setCurrentIndex(undefined)
-    setIsPlaying(false)
-    setShowAllPopups(false)
-  }, [word, language])
+    if (hydratedFromSharedStateRef.current) {
+      hydratedFromSharedStateRef.current = false
+      return
+    }
+
+    updateMapState(current => ({
+      camera: current.camera,
+      currentWord: {
+        word,
+        language,
+        key: `${word}::${language}`,
+      },
+      selectedItem: { kind: 'none' },
+      activeLayers: {
+        ...current.activeLayers,
+        translations: false,
+        protoZones: false,
+        descendants: false,
+        languageFamilies: false,
+        etymology: false,
+      },
+      filters: {
+        ...current.filters,
+        guideOpen: shouldOpenGuideOnLoad,
+        guideLayer: null,
+        etymologyRequested: false,
+        currentIndex: undefined,
+        isPlaying: false,
+        showAllPopups: false,
+      },
+    }))
+  }, [shouldOpenGuideOnLoad, word, language])
 
   useEffect(() => {
     onGuideOpenRegister?.(() => () => {
       setGuideLayer(null)
-      setGuideOpen(true)
+      setFilterState({ guideOpen: true })
     })
 
     return () => {
@@ -231,77 +388,77 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
   useEffect(() => {
     if (!guideLayer) return
 
-    setShowTranslations(guideLayer === 'translations')
-    setShowProtoZones(guideLayer === 'protoZones')
-    setShowDescendantPaths(guideLayer === 'descendants')
-    setShowLanguageFamilies(guideLayer === 'families')
-    setShowEtymologyLineage(guideLayer === 'etymology')
+    setActiveLayerState({
+      translations: guideLayer === 'translations',
+      protoZones: guideLayer === 'protoZones',
+      descendants: guideLayer === 'descendants',
+      languageFamilies: guideLayer === 'families',
+      etymology: guideLayer === 'etymology',
+    })
 
     if (guideLayer === 'etymology') {
-      setEtymologyRequested(true)
+      setFilterState({ etymologyRequested: true })
     } else {
-      setCurrentIndex(undefined)
-      setIsPlaying(false)
-      setShowAllPopups(false)
+      setFilterState({ currentIndex: undefined, isPlaying: false, showAllPopups: false })
     }
-  }, [guideLayer])
+  }, [guideLayer, setActiveLayerState, setFilterState])
 
   useEffect(() => {
     const map = mapInstance
     const group = translationGroup
     if (!map || !group) return
     const onAdd = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setShowTranslations(true)
+      if (e.layer === group) setActiveLayerState({ translations: true })
     }
     const onRemove = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setShowTranslations(false)
+      if (e.layer === group) setActiveLayerState({ translations: false })
     }
     map.on('overlayadd', onAdd)
     map.on('overlayremove', onRemove)
-    setShowTranslations(map.hasLayer(group))
+    setActiveLayerState({ translations: map.hasLayer(group) })
     return () => {
       map.off('overlayadd', onAdd)
       map.off('overlayremove', onRemove)
     }
-  }, [mapInstance, translationGroup])
+  }, [mapInstance, translationGroup, setActiveLayerState])
 
   useEffect(() => {
     const map = mapInstance
     const group = protoZonesGroup
     if (!map || !group) return
     const onAdd = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setShowProtoZones(true)
+      if (e.layer === group) setActiveLayerState({ protoZones: true })
     }
     const onRemove = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setShowProtoZones(false)
+      if (e.layer === group) setActiveLayerState({ protoZones: false })
     }
     map.on('overlayadd', onAdd)
     map.on('overlayremove', onRemove)
-    setShowProtoZones(map.hasLayer(group))
+    setActiveLayerState({ protoZones: map.hasLayer(group) })
     return () => {
       map.off('overlayadd', onAdd)
       map.off('overlayremove', onRemove)
     }
-  }, [mapInstance, protoZonesGroup])
+  }, [mapInstance, protoZonesGroup, setActiveLayerState])
 
   useEffect(() => {
     const map = mapInstance
     const group = descendantPathsGroup
     if (!map || !group) return
     const onAdd = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setShowDescendantPaths(true)
+      if (e.layer === group) setActiveLayerState({ descendants: true })
     }
     const onRemove = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setShowDescendantPaths(false)
+      if (e.layer === group) setActiveLayerState({ descendants: false })
     }
     map.on('overlayadd', onAdd)
     map.on('overlayremove', onRemove)
-    setShowDescendantPaths(map.hasLayer(group))
+    setActiveLayerState({ descendants: map.hasLayer(group) })
     return () => {
       map.off('overlayadd', onAdd)
       map.off('overlayremove', onRemove)
     }
-  }, [mapInstance, descendantPathsGroup])
+  }, [mapInstance, descendantPathsGroup, setActiveLayerState])
 
   useEffect(() => {
     if (Array.isArray(wordData?.translations) && languoidData.length) {
@@ -324,19 +481,24 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
         }
         setLineage(root)
         // Reset playback-related state for new lineage
-        setCurrentIndex(undefined)
-        setIsPlaying(false)
-        setShowAllPopups(false)
-        setGuideOpen(true)
-        setGuideLayer(null)
-        setShowTranslations(false)
-        setShowProtoZones(false)
-        setShowDescendantPaths(false)
-        setEtymologyRequested(false)
-        setShowEtymologyLineage(false)
+        setFilterState({
+          currentIndex: undefined,
+          isPlaying: false,
+          showAllPopups: false,
+          guideOpen: openGuideOnLoad,
+          guideLayer: null,
+          etymologyRequested: false,
+        })
+        setActiveLayerState({
+          translations: false,
+          protoZones: false,
+          descendants: false,
+          etymology: false,
+          languageFamilies: false,
+        })
       })
     }
-  }, [wordData, languoidData])
+  }, [openGuideOnLoad, wordData, languoidData])
 
   useEffect(() => {
     const map = mapInstance
@@ -395,44 +557,49 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
     })
   }, [mapInstance, guideAvailability])
 
-  const moveLayer = (layer: LayerOrderKey, direction: 'up' | 'down') => {
-    setLayerOrder(prev => {
-      const currentIndex = prev.indexOf(layer)
-      if (currentIndex < 0) return prev
-      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
-      if (targetIndex < 0 || targetIndex >= prev.length) return prev
-      const next = [...prev]
-      const [item] = next.splice(currentIndex, 1)
-      next.splice(targetIndex, 0, item)
-      return next
+  const moveLayer = (layer: MapLayerKey, direction: 'up' | 'down') => {
+    setActiveLayerState({
+      order: (() => {
+        const nextOrder = [...layerOrder]
+        const currentIndex = nextOrder.indexOf(layer)
+        if (currentIndex < 0) return nextOrder
+        const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+        if (targetIndex < 0 || targetIndex >= nextOrder.length) return nextOrder
+        const [item] = nextOrder.splice(currentIndex, 1)
+        nextOrder.splice(targetIndex, 0, item)
+        return nextOrder
+      })(),
     })
   }
 
   const resetLayers = () => {
-    setShowTranslations(false)
-    setShowProtoZones(false)
-    setShowDescendantPaths(false)
-    setShowLanguageFamilies(false)
-    setShowEtymologyLineage(false)
-    setLayerOpacities(defaultLayerOpacities)
-    setLayerOrder(defaultLayerOrder)
-    setCurrentIndex(undefined)
-    setIsPlaying(false)
-    setShowAllPopups(false)
-    setEtymologyRequested(false)
+    setActiveLayerState({
+      translations: false,
+      protoZones: false,
+      descendants: false,
+      languageFamilies: false,
+      etymology: false,
+      opacities: defaultMapLayerOpacities,
+      order: defaultMapLayerOrder,
+    })
+    setFilterState({
+      currentIndex: undefined,
+      isPlaying: false,
+      showAllPopups: false,
+      etymologyRequested: false,
+    })
+    setSelectedItem({ kind: 'none' })
     setGuideLayer(null)
   }
 
   useEffect(() => {
-    if (!lineage || !etymologyRequested || !showEtymologyLineage || guideOpen) return
+    if (!lineage || !mapState.filters.etymologyRequested || !showEtymologyLineage || guideOpen) return
     const nodes = flattenLineage(lineage)
     if (nodes.length < 1) return
     if (currentIndex !== undefined) return
 
-    setCurrentIndex(0)
-    setIsPlaying(true)
-    setShowAllPopups(false)
-  }, [currentIndex, etymologyRequested, guideOpen, lineage, showEtymologyLineage])
+    setFilterState({ currentIndex: 0, isPlaying: true, showAllPopups: false })
+  }, [currentIndex, guideOpen, lineage, mapState.filters.etymologyRequested, setFilterState, showEtymologyLineage])
 
   // Playback effect (optimized with dwell pause and popup lifecycle).
   useEffect(() => {
@@ -450,7 +617,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
     // If starting fresh (full view), reset and begin at 0.
     const startIndex = currentIndex === undefined ? 0 : currentIndex
     // Begin new run -> ensure we hide the final all-popups state.
-    setShowAllPopups(false)
+    setFilterState({ showAllPopups: false })
 
     const transitionMs = playSpeed // (potential future: separate growth vs fade)
     const dwellMs = dwellDurationRef.current
@@ -460,7 +627,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
 
     const schedule = (idx: number) => {
       if (cancelled) return
-      setCurrentIndex(idx)
+      setFilterState({ currentIndex: idx })
       // Schedule next advance after combined transition + dwell.
       playbackTimerRef.current = window.setTimeout(() => {
         if (cancelled) return
@@ -472,8 +639,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
             schedule(0)
           } else {
             // Show all popups and stop playback (keep final index so last marker is included).
-            setShowAllPopups(true)
-            setIsPlaying(false)
+            setFilterState({ showAllPopups: true, isPlaying: false })
           }
         }
       }, stepTotal)
@@ -488,7 +654,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
         playbackTimerRef.current = null
       }
     }
-  }, [isPlaying, playSpeed, lineage, loop, currentIndex])
+  }, [isPlaying, playSpeed, lineage, loop, currentIndex, setFilterState])
 
   // Auto-pan + dynamic zoom assistance for small geographic jumps.
   useEffect(() => {
@@ -564,7 +730,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           ) {
             // Revert to baseline while centering at currentPos.
             map.flyTo([currentPos[0], currentPos[1]], autoZoomBaselineRef.current, {
-              duration: 0.85,
             })
             lastAutoZoomInRef.current = null
             autoZoomBaselineRef.current = null
@@ -585,7 +750,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
   // Stop playback if lineage removed or user selects Full (undefined).
   useEffect(() => {
     if (currentIndex === undefined && isPlaying) {
-      setIsPlaying(false)
+      setFilterState({ isPlaying: false })
     }
     if (currentIndex === undefined) {
       // Allow a fresh zoom-in next time playback begins
@@ -594,7 +759,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
       autoZoomBaselineRef.current = null
       lastAutoZoomInRef.current = null
     }
-  }, [currentIndex, isPlaying])
+  }, [currentIndex, isPlaying, setFilterState])
 
   // Stop timers on unmount
   useEffect(() => {
@@ -609,20 +774,20 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
     const group = languageFamiliesGroup
     if (!map || !group) return
     const onAdd = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setShowLanguageFamilies(true)
+      if (e.layer === group) setActiveLayerState({ languageFamilies: true })
     }
     const onRemove = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setShowLanguageFamilies(false)
+      if (e.layer === group) setActiveLayerState({ languageFamilies: false })
     }
     map.on('overlayadd', onAdd)
     map.on('overlayremove', onRemove)
     // initialize based on whether the group is currently on the map
-    setShowLanguageFamilies(map.hasLayer(group))
+    setActiveLayerState({ languageFamilies: map.hasLayer(group) })
     return () => {
       map.off('overlayadd', onAdd)
       map.off('overlayremove', onRemove)
     }
-  }, [mapInstance, languageFamiliesGroup])
+  }, [mapInstance, languageFamiliesGroup, setActiveLayerState])
 
   // Mirror the etymology overlay state so the timeline scrubber only shows while that layer is visible.
   useEffect(() => {
@@ -630,24 +795,72 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
     const group = etymologyLineageGroup
     if (!map || !group) return
     const onAdd = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setShowEtymologyLineage(true)
+      if (e.layer === group) setActiveLayerState({ etymology: true })
     }
     const onRemove = (e: L.LayersControlEvent) => {
       if (e.layer === group) {
-        setShowEtymologyLineage(false)
-        setIsPlaying(false)
-        setCurrentIndex(undefined)
-        setShowAllPopups(false)
+        setActiveLayerState({ etymology: false })
+        setFilterState({ isPlaying: false, currentIndex: undefined, showAllPopups: false })
       }
     }
     map.on('overlayadd', onAdd)
     map.on('overlayremove', onRemove)
-    setShowEtymologyLineage(map.hasLayer(group))
     return () => {
       map.off('overlayadd', onAdd)
       map.off('overlayremove', onRemove)
     }
-  }, [mapInstance, etymologyLineageGroup])
+  }, [mapInstance, etymologyLineageGroup, setActiveLayerState, setFilterState])
+
+  useEffect(() => {
+    if (!mapInstance) return
+
+    const syncCamera = () => {
+      const center = mapInstance.getCenter()
+      setCameraState([center.lat, center.lng], mapInstance.getZoom())
+    }
+
+    syncCamera()
+    mapInstance.on('moveend zoomend', syncCamera)
+    return () => {
+      mapInstance.off('moveend zoomend', syncCamera)
+    }
+  }, [mapInstance, setCameraState])
+
+  useEffect(() => {
+    if (currentIndex === undefined || !lineage) {
+      setSelectedItem({ kind: 'none' })
+      return
+    }
+
+    const nodes = flattenLineage(lineage)
+    const currentNode = nodes[currentIndex]
+    if (!currentNode) return
+
+    setSelectedItem({
+      kind: 'lineage-node',
+      index: currentIndex,
+      word: currentNode.word,
+      language: currentNode.lang_code,
+    })
+  }, [currentIndex, lineage, setSelectedItem])
+
+  const handleMarkerSelect = useCallback((marker: TranslationMarker, index: number) => {
+    setSelectedItem({
+      kind: 'translation-marker',
+      index,
+      label: marker.popupText,
+    })
+  }, [setSelectedItem])
+
+  const handleNodeSelect = useCallback((node: EtymologyNode, index: number) => {
+    setFilterState({ currentIndex: index })
+    setSelectedItem({
+      kind: 'lineage-node',
+      index,
+      word: node.word,
+      language: node.lang_code,
+    })
+  }, [setFilterState, setSelectedItem])
 
   const fitToData = useCallback(() => {
     if (!mapInstance) return
@@ -693,18 +906,16 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
       className={isLight ? 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-white text-slate-900' : 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-gray-900 text-white'}
     >
       <MapContainer
-        center={[0, 0]}
-        zoom={2}
+        center={initialCameraCenterRef.current}
+        zoom={initialCameraZoomRef.current}
         minZoom={2}
         scrollWheelZoom={true}
         wheelPxPerZoomLevel={240}
         className="relative w-full h-full"
         style={{ background: isLight ? '#f8fafc' : '#0b0f1a' }}
         id="map-root"
-        ref={(instance: L.Map | null) => {
-          if (instance) setMapInstance(instance)
-        }}
       >
+        <MapInstanceRegistrar onReady={handleMapReady} />
         <GeospatialSettingsMenu
           markers={markers}
           lineage={lineage}
@@ -715,7 +926,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           onFitToData={fitToData}
           layerOpacities={layerOpacities}
           onLayerOpacityChange={(layer, opacity) => {
-            setLayerOpacities(prev => ({ ...prev, [layer]: opacity }))
+            setActiveLayerState({ opacities: { ...layerOpacities, [layer]: opacity } })
           }}
           layerOrder={layerOrder}
           onLayerMove={moveLayer}
@@ -752,6 +963,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
                   markers={markers}
                   opacity={layerOpacities.translations}
                   zIndex={layerZIndex('translations')}
+                  onMarkerClick={handleMarkerSelect}
                 />
               )}
             </MarkerClusterGroup>
@@ -800,6 +1012,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
                     showAllPopups={showAllPopups}
                     opacity={layerOpacities.etymology}
                     zIndex={layerZIndex('etymology')}
+                    onNodeClick={handleNodeSelect}
                   />
                 </>
               )}
@@ -829,17 +1042,15 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           <TimelineScrubber
             lineage={lineage}
             currentIndex={currentIndex}
-            onChange={setCurrentIndex}
+            onChange={index => setFilterState({ currentIndex: index })}
             isPlaying={isPlaying}
-            onTogglePlay={() => setIsPlaying(p => !p)}
+            onTogglePlay={() => setFilterState({ isPlaying: !isPlaying })}
             speed={playSpeed}
-            onSpeedChange={setPlaySpeed}
+            onSpeedChange={speed => setFilterState({ playSpeedMs: speed })}
             loop={loop}
-            onToggleLoop={() => setLoop(l => !l)}
+            onToggleLoop={() => setFilterState({ loop: !loop })}
             onReset={() => {
-              setCurrentIndex(undefined)
-              setIsPlaying(false)
-              setShowAllPopups(false)
+              setFilterState({ currentIndex: undefined, isPlaying: false, showAllPopups: false })
             }}
             theme={theme}
           />
@@ -853,17 +1064,19 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           availability={guideAvailability}
           onChooseLayer={(layer: GuideLayerKey) => {
             setGuideLayer(layer)
-            setGuideOpen(true)
+            setFilterState({ guideOpen: true })
           }}
-          onCloseGuide={() => setGuideOpen(false)}
-          onClose={() => setGuideOpen(false)}
+          onCloseGuide={() => setFilterState({ guideOpen: false })}
+          onClose={() => setFilterState({ guideOpen: false })}
           onRestart={() => {
             setGuideLayer(null)
-            setEtymologyRequested(false)
-            setShowEtymologyLineage(false)
-            setCurrentIndex(undefined)
-            setIsPlaying(false)
-            setShowAllPopups(false)
+            setFilterState({
+              etymologyRequested: false,
+              currentIndex: undefined,
+              isPlaying: false,
+              showAllPopups: false,
+            })
+            setActiveLayerState({ etymology: false })
           }}
           theme={theme}
         />

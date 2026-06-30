@@ -40,32 +40,27 @@ P0 — CORE GEOSPATIAL MANIPULATION FEATURES
     Use case: Helps users recover from complex manipulation without manually undoing each change.
     Research context: Important for usability during open-ended exploration.
 
-[ ] P0 — Add map fit-to-data control
+[X] P0 — Add map fit-to-data control
     Description: A button that automatically zooms/pans the map to fit the currently visible word history, selected branch, or active filtered result.
     Use case: Helps users quickly reorient after zooming, filtering, or changing layers.
     Research context: Users need fluid movement between overview and detail.
 
-[ ] P0 — Add reset map view control
-    Description: A button that returns the camera to the default global or dataset-specific view.
-    Use case: Prevents users from getting lost after heavy map manipulation.
-    Research context: Basic navigation reliability is important for exploratory visualization tools.
-
-[ ] P0 — Add marker hover previews
+[X] P0 — Add marker hover previews
     Description: Hovering over a map marker shows a small tooltip with word, language, region, date, and relation summary.
     Use case: Lets users inspect data quickly without opening a full side panel.
     Research context: Participants wanted fast access to details while exploring.
 
-[ ] P0 — Add marker click selection
+[X] P0 — Add marker click selection
     Description: Clicking a marker selects it and highlights related routes, ancestors, descendants, or evidence.
     Use case: Turns the map from a passive display into an interactive investigation space.
     Research context: Supports drill-down from geographic overview into specific linguistic evidence.
 
-[ ] P0 — Add route/path click selection
+[X] P0 — Add route/path click selection
     Description: Clicking a route line selects the relationship between two nodes and opens relation-specific details.
     Use case: Lets users ask “why are these two places/words connected?”
     Research context: Participants emphasized the need to inspect evidence behind visual connections.
 
-[ ] P0 — Add selected-item highlight styling
+[X] P0 — Add selected-item highlight styling
     Description: Selected nodes and paths receive a distinct visual treatment, while unrelated elements are dimmed.
     Use case: Makes the current focus visually clear.
     Research context: Important for dense geospatial graphs where many elements compete for attention.
@@ -95,17 +90,17 @@ P0 — CORE GEOSPATIAL MANIPULATION FEATURES
     Use case: Lets users focus on one type of linguistic relationship at a time.
     Research context: Participants wanted more task-specific control over complex linguistic datasets.
 
-[ ] P0 — Add “show path to root” filter
+[X] P0 — Add “show path to root” filter
     Description: Shows only the selected word’s ancestry path back through known source forms.
     Use case: Useful for tracing the historical path of a single word.
     Research context: Supports etymological storytelling and simplified exploration.
 
-[ ] P0 — Add “show descendants” filter
+[X] P0 — Add “show descendants” filter
     Description: Shows only descendants or later forms branching out from the selected word.
     Use case: Useful for showing how a word spread or diversified.
     Research context: Participants were interested in historical spread, movement, and linguistic branching.
 
-[ ] P0 — Add map state object
+[X] P0 — Add map state object
     Description: Create a central state object for camera position, zoom, selected item, active layers, filters, and current word.
     Use case: Provides the foundation for state-saving, share links, comparison, and reproducible views.
     Research context: Users wanted to save, revisit, and communicate specific visualization states.

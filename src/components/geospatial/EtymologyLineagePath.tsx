@@ -34,6 +34,7 @@ export interface EtymologyLineagePathProps {
   /** Layer opacity multiplier. */
   opacity?: number
   zIndex?: number
+  onNodeClick?: (node: EtymologyNode, index: number) => void
 }
 
 /**
@@ -181,7 +182,7 @@ const AnimatedSegment: FC<{
 }
 
 const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
-  ({ lineage, currentIndex, isPlaying = false, segmentDurationMs, dwellMs, showAllPopups, opacity = 1, zIndex = 560 }) => {
+  ({ lineage, currentIndex, isPlaying = false, segmentDurationMs, dwellMs, showAllPopups, opacity = 1, zIndex = 560, onNodeClick }) => {
     const map = useMap()
     const completedSegments: React.ReactNode[] = []
     const activeSegments: React.ReactNode[] = []
@@ -210,6 +211,9 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
                 opacity={opacity}
                 fillOpacity={(isActive ? 0.9 : 0.7) * opacity}
               className={isActive ? 'etymology-node-active node-pulse' : 'etymology-node'}
+              eventHandlers={{
+                click: () => onNodeClick?.(node as EtymologyNode, idx),
+              }}
             >
               <Tooltip
                 pane="etymology-lineage"

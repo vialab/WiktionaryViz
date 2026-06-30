@@ -1,7 +1,6 @@
 import { FC, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-
-export type GuideLayerKey = 'translations' | 'etymology' | 'descendants' | 'protoZones' | 'families'
+import type { GuideLayerKey } from '@/types/mapState'
 
 type GuideLayerInfo = {
   title: string

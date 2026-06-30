@@ -1,23 +1,37 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Navbar from '@/components/Navbar'
 import LandingPage from '@/components/LandingPage'
 import GeospatialPage from '@/components/GeospatialPage'
+import type { MapState } from '@/types/mapState'
+import { decodeShareableStateFromSearch, encodeShareableStateToSearch } from '@/utils/shareableState'
 
 type ThemeMode = 'dark' | 'light'
 
 function App() {
-  const [visibleSection, setVisibleSection] = useState<string>('landing-page')
-  const [word1, setWord1] = useState<string>('')
-  const [word2, setWord2] = useState<string>('')
-  const [language1, setLanguage1] = useState('')
-  const [language2, setLanguage2] = useState('')
-  const [inspireCategory, setInspireCategory] = useState<string | null>(null)
+  const initialShareableState = (() => {
+    if (typeof window === 'undefined') return decodeShareableStateFromSearch('')
+    return decodeShareableStateFromSearch(window.location.search)
+  })()
+  const [visibleSection, setVisibleSection] = useState<string>(initialShareableState.visibleSection)
+  const [word1, setWord1] = useState<string>(initialShareableState.word1)
+  const [word2, setWord2] = useState<string>(initialShareableState.word2)
+  const [language1, setLanguage1] = useState(initialShareableState.language1)
+  const [language2, setLanguage2] = useState(initialShareableState.language2)
+  const [inspireCategory, setInspireCategory] = useState<string | null>(initialShareableState.inspireCategory)
+  const [shareableMapState, setShareableMapState] = useState<MapState | null>(initialShareableState.mapState)
+  const [mapStateReady, setMapStateReady] = useState(Boolean(initialShareableState.mapState))
   const [geospatialGuideOpenHandler, setGeospatialGuideOpenHandler] = useState<(() => void) | null>(null)
   const [theme, setTheme] = useState<ThemeMode>(() => {
+    if (initialShareableState.theme) return initialShareableState.theme
     if (typeof window === 'undefined') return 'dark'
     const storedTheme = window.localStorage.getItem('wiktionaryviz-theme')
     return storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'dark'
   })
+
+  const handleMapStateChange = useCallback((state: MapState) => {
+    setShareableMapState(state)
+    setMapStateReady(true)
+  }, [])
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -25,6 +39,25 @@ function App() {
     document.documentElement.style.colorScheme = theme
     window.localStorage.setItem('wiktionaryviz-theme', theme)
   }, [theme])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (visibleSection === 'geospatial' && !mapStateReady) return
+
+    const query = encodeShareableStateToSearch({
+      visibleSection: visibleSection === 'geospatial' ? 'geospatial' : 'landing-page',
+      word1,
+      word2,
+      language1,
+      language2,
+      inspireCategory,
+      theme,
+      mapState: visibleSection === 'geospatial' ? shareableMapState : null,
+    })
+
+    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
+    window.history.replaceState(null, '', nextUrl)
+  }, [inspireCategory, language1, language2, mapStateReady, shareableMapState, theme, visibleSection, word1, word2])
 
   // TODO [HIGH LEVEL]: Support shareable, state-preserving URLs that encode current view, filters, words, languages, and selections.
   // Rationale: Participants 4, 6 asked for reproducibility and easy sharing. Enable deep-linking to exact visualization states.
@@ -77,6 +110,8 @@ function App() {
             language={language1}
             inspireCategory={inspireCategory}
             onGuideOpenRegister={setGeospatialGuideOpenHandler}
+            initialMapState={shareableMapState}
+            onMapStateChange={handleMapStateChange}
             theme={theme}
           />
         )}
