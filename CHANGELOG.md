@@ -2,6 +2,48 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.29](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.28...wiktionaryviz-v0.1.29) (2026-06-30)
+
+
+### Features
+
+* **App.tsx, GeospatialPage.tsx, LandingPage.tsx:** integrate inspireCategory state and prop to enhance user experience with guided layers ([aca24d3](https://github.com/vialab/WiktionaryViz/commit/aca24d35a57644c78b92d226d60f76fa236c6bd1))
+* **App:** implement shareable state management for URL encoding and decoding to allow users to share specific app states ([fa076cf](https://github.com/vialab/WiktionaryViz/commit/fa076cf7ad1c7531f1677073fdcb1b46c3704652))
+* **build_index.py:** add longest etymological chains calculation to index building process for enhanced data insights ([aca24d3](https://github.com/vialab/WiktionaryViz/commit/aca24d35a57644c78b92d226d60f76fa236c6bd1))
+* **DescendantLineagePaths:** add functionality to collapse descendant paths based on user interaction to enhance user experience ([b16392e](https://github.com/vialab/WiktionaryViz/commit/b16392ee0ee5bf5342de2ab7aab216154ac5b914))
+* **DescendantLineagePaths:** implement callback to pass visible coordinates of descendant paths to parent component ([79a6369](https://github.com/vialab/WiktionaryViz/commit/79a63691ffbc4814462263cb7dc382f9298669f5))
+* **DescendantLineagePaths:** implement visibility check for descendants to manage UI state effectively ([b16392e](https://github.com/vialab/WiktionaryViz/commit/b16392ee0ee5bf5342de2ab7aab216154ac5b914))
+* **DescendantLineagePaths:** restructure Pane components for better organization and layering of descendant paths elements ([bd25009](https://github.com/vialab/WiktionaryViz/commit/bd25009e770a5c6aa2a6e8a9afcc3762e3fd2ddc))
+* **descendants.py:** add new endpoint to resolve descendant-root candidates without building paths to enhance performance and usability ([2c647bc](https://github.com/vialab/WiktionaryViz/commit/2c647bc3755a2f15a6e33e536cb6a8613f8269bd))
+* **geospatial:** implement layer ordering and z-index controls for improved map visibility and usability ([893c782](https://github.com/vialab/WiktionaryViz/commit/893c782cabb2e9c23951bcab671f910ea3b68888))
+* **GeospatialPage:** add descriptions to layer availability for better user understanding ([9e29eaf](https://github.com/vialab/WiktionaryViz/commit/9e29eaf95a9d0925617aee1bb6492aa56f20d971))
+* **GeospatialPage:** add functionality to fit map view to visible data points including translations, lineage, and descendants ([79a6369](https://github.com/vialab/WiktionaryViz/commit/79a63691ffbc4814462263cb7dc382f9298669f5))
+* **GeospatialPage:** implement layer opacity controls for better visualization management ([45f0584](https://github.com/vialab/WiktionaryViz/commit/45f05845647fe99da9041d7868036034473d4451))
+* **GeospatialPage:** implement resetLayers function to reset all layer settings to default ([7290090](https://github.com/vialab/WiktionaryViz/commit/7290090bf4c13d83620b34c3622e855f09a3b05e))
+* **GeospatialPage:** integrate map state management to enhance user interaction and maintain state across sessions ([fa076cf](https://github.com/vialab/WiktionaryViz/commit/fa076cf7ad1c7531f1677073fdcb1b46c3704652))
+* **GeospatialSettingsMenu:** add button to fit map to currently visible data points with appropriate styling and disabled state handling ([79a6369](https://github.com/vialab/WiktionaryViz/commit/79a63691ffbc4814462263cb7dc382f9298669f5))
+* **GeospatialSettingsMenu:** add UI for adjusting layer opacity settings to enhance user control ([45f0584](https://github.com/vialab/WiktionaryViz/commit/45f05845647fe99da9041d7868036034473d4451))
+* **mapState:** create a centralized map state type to manage camera, layers, filters, and current word for better state handling ([fa076cf](https://github.com/vialab/WiktionaryViz/commit/fa076cf7ad1c7531f1677073fdcb1b46c3704652))
+* **shareableState:** add utility functions for encoding and decoding shareable app state to facilitate deep linking and state preservation ([fa076cf](https://github.com/vialab/WiktionaryViz/commit/fa076cf7ad1c7531f1677073fdcb1b46c3704652))
+* **TODO_LIST:** mark "reset layers" button as completed in the TODO list ([7290090](https://github.com/vialab/WiktionaryViz/commit/7290090bf4c13d83620b34c3622e855f09a3b05e))
+* **TODO_LIST:** mark completed tasks and add new features to the geospatial manipulation list to track progress and enhance user experience ([fa076cf](https://github.com/vialab/WiktionaryViz/commit/fa076cf7ad1c7531f1677073fdcb1b46c3704652))
+* **TODO_LIST:** mark multiple P0 tasks as completed to reflect progress on core features ([45f0584](https://github.com/vialab/WiktionaryViz/commit/45f05845647fe99da9041d7868036034473d4451))
+
+
+### Bug Fixes
+
+* **DescendantLineagePaths.tsx:** remove unnecessary fallback for expansion to simplify logic ([f21cc2b](https://github.com/vialab/WiktionaryViz/commit/f21cc2b5470f17a3f917714bbf8329fb7220df60))
+* **DescendantLineagePaths.tsx:** update rendering of word to ensure it only displays when present for better clarity ([f21cc2b](https://github.com/vialab/WiktionaryViz/commit/f21cc2b5470f17a3f917714bbf8329fb7220df60))
+* **DescendantLineagePaths:** adjust opacity for descendant paths to enhance user experience ([45f0584](https://github.com/vialab/WiktionaryViz/commit/45f05845647fe99da9041d7868036034473d4451))
+* **EtymologyLineagePath:** add onNodeClick prop to handle node selection in the lineage path for improved interactivity ([fa076cf](https://github.com/vialab/WiktionaryViz/commit/fa076cf7ad1c7531f1677073fdcb1b46c3704652))
+* **EtymologyLineagePath:** incorporate opacity adjustments in lineage path rendering for better visibility ([45f0584](https://github.com/vialab/WiktionaryViz/commit/45f05845647fe99da9041d7868036034473d4451))
+* **LanguageFamiliesBubbles:** include opacity in bubble rendering for better visual integration ([45f0584](https://github.com/vialab/WiktionaryViz/commit/45f05845647fe99da9041d7868036034473d4451))
+* **LineageCountryHighlights:** ensure opacity settings are applied to country highlights for consistency ([45f0584](https://github.com/vialab/WiktionaryViz/commit/45f05845647fe99da9041d7868036034473d4451))
+* **ProtoLanguageZones:** apply opacity settings to zone styles for improved visual clarity ([45f0584](https://github.com/vialab/WiktionaryViz/commit/45f05845647fe99da9041d7868036034473d4451))
+* **TranslationMarkers:** add onMarkerClick prop to handle marker selection for better user interaction with translation markers ([fa076cf](https://github.com/vialab/WiktionaryViz/commit/fa076cf7ad1c7531f1677073fdcb1b46c3704652))
+* **TranslationMarkers:** pass opacity prop to markers for consistent rendering across layers ([45f0584](https://github.com/vialab/WiktionaryViz/commit/45f05845647fe99da9041d7868036034473d4451))
+* **useInterestingWord.ts:** include category in interesting word fetch response to improve data handling and user feedback ([aca24d3](https://github.com/vialab/WiktionaryViz/commit/aca24d35a57644c78b92d226d60f76fa236c6bd1))
+
 ## [0.1.28](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.27...wiktionaryviz-v0.1.28) (2026-06-25)
 
 
