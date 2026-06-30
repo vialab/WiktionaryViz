@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { MapContainer, TileLayer, LayersControl, LayerGroup } from 'react-leaflet'
 import useWordData from '@/hooks/useWordData'
 import useLanguoidData from '@/hooks/useLanguoidData'
@@ -109,6 +109,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
   const [languageFamiliesGroup, setLanguageFamiliesGroup] = useState<L.LayerGroup | null>(null)
   const [showEtymologyLineage, setShowEtymologyLineage] = useState(false)
   const [etymologyLineageGroup, setEtymologyLineageGroup] = useState<L.LayerGroup | null>(null)
+  const [descendantCoordinates, setDescendantCoordinates] = useState<[number, number][]>([])
   const hasAdjustedZoomRef = useRef(false)
   const playbackTimerRef = useRef<number | null>(null)
   // --- Dynamic zoom refs (distance-based small-jump assist) ---
@@ -120,6 +121,13 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
   const translationCount = markers.length
   const lineageNodeCount = lineageNodes.length
   const translationBreadth = translationCount / Math.max(1, lineageNodeCount)
+  const lineageCoordinates = useCallback(() => {
+    if (!lineage) return [] as [number, number][]
+    return flattenLineage(lineage)
+      .map(node => node.position)
+      .filter((position): position is [number, number] => Array.isArray(position))
+  }, [lineage])
+
   const layerZIndex = (layer: LayerOrderKey) => {
     const index = layerOrder.indexOf(layer)
     const resolvedIndex = index >= 0 ? index : layerOrder.length - 1
@@ -641,6 +649,44 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
     }
   }, [mapInstance, etymologyLineageGroup])
 
+  const fitToData = useCallback(() => {
+    if (!mapInstance) return
+
+    const positions: [number, number][] = []
+
+    if (showTranslations) {
+      positions.push(...markers.map(marker => marker.position))
+    }
+
+    if (showEtymologyLineage) {
+      positions.push(...lineageCoordinates())
+    }
+
+    if (showDescendantPaths) {
+      positions.push(...descendantCoordinates)
+    }
+
+    if (!positions.length) return
+
+    const map = mapInstance
+    const bounds = L.latLngBounds(positions.map(position => L.latLng(position[0], position[1])))
+
+    if (bounds.isValid() && bounds.getNorthEast().equals(bounds.getSouthWest())) {
+      map.flyTo(bounds.getCenter(), Math.max(map.getZoom(), 5), { duration: 0.8 })
+      return
+    }
+
+    if (bounds.isValid()) {
+      map.fitBounds(bounds.pad(0.15), {
+        animate: true,
+        duration: 0.8,
+        maxZoom: 8,
+      })
+    }
+  }, [descendantCoordinates, lineageCoordinates, markers, mapInstance, showDescendantPaths, showEtymologyLineage, showTranslations])
+
+  const canFitToData = showTranslations || showEtymologyLineage || showDescendantPaths
+
   return (
     <section
       id="geospatial"
@@ -665,6 +711,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           word={word}
           language={language}
           mapInstance={mapInstance}
+          canFitToData={canFitToData}
+          onFitToData={fitToData}
           layerOpacities={layerOpacities}
           onLayerOpacityChange={(layer, opacity) => {
             setLayerOpacities(prev => ({ ...prev, [layer]: opacity }))
@@ -766,6 +814,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
                   rootLang={language || (lineage?.lang_code ?? '')}
                   opacity={layerOpacities.descendants}
                   zIndex={layerZIndex('descendants')}
+                  onVisibleCoordinatesChange={setDescendantCoordinates}
                 />
               )}
             </LayerGroup>

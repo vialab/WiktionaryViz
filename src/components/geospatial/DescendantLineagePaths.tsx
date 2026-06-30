@@ -174,11 +174,12 @@ const resolveLanguageName = async (langCode: string | null | undefined, languoid
  * - TODO: Add performance instrumentation (request size, traversal duration, cache hit rate).
  */
 
-const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opacity?: number; zIndex?: number }> = ({
+const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opacity?: number; zIndex?: number; onVisibleCoordinatesChange?: (positions: [number, number][]) => void }> = ({
   rootWord,
   rootLang,
   opacity = 1,
   zIndex = 560,
+  onVisibleCoordinatesChange,
 }) => {
   const { languoidData } = useLanguoidData() as { languoidData: LanguoidData[]; loading: boolean }
   const [paths, setPaths] = useState<DescPath[]>([])
@@ -452,6 +453,16 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
 
     return points
   }
+
+  useEffect(() => {
+    if (!onVisibleCoordinatesChange) return
+
+    const visiblePositions = paths.flatMap((path, pathIndex) =>
+      pointsForPath(path, pathIndex).map(point => point.position as [number, number]),
+    )
+
+    onVisibleCoordinatesChange(visiblePositions)
+  }, [onVisibleCoordinatesChange, paths, coordsMap])
 
 
   const stopPlayback = () => {

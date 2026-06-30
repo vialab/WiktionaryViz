@@ -22,6 +22,8 @@ interface GeospatialSettingsMenuProps {
   word?: string
   language?: string
   mapInstance?: L.Map | null
+  canFitToData?: boolean
+  onFitToData: () => void
   layerOpacities: LayerOpacityState
   onLayerOpacityChange: (layer: LayerOpacityKey, opacity: number) => void
   layerOrder: LayerOrderState
@@ -39,6 +41,8 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   onLayerOpacityChange,
   layerOrder,
   onLayerMove,
+  canFitToData = false,
+  onFitToData,
   onResetLayers,
   theme = 'dark',
 }) => {
@@ -341,6 +345,22 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
           </div>
 
           <div className="space-y-3 pt-3">
+            <section className="space-y-2">
+              <button
+                type="button"
+                onClick={onFitToData}
+                disabled={!canFitToData}
+                className={isLight
+                  ? 'inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 transition hover:border-blue-300 hover:bg-blue-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400'
+                  : 'inline-flex w-full items-center justify-center rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm font-medium text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900/40 disabled:text-slate-500'}
+              >
+                Fit to data
+              </button>
+              <p className={isLight ? 'px-1 text-xs leading-5 text-slate-500' : 'px-1 text-xs leading-5 text-slate-400'}>
+                Zooms to the currently visible markers, lineage, or descendant branches.
+              </p>
+            </section>
+
             <section className="space-y-2">
               <button
                 type="button"
