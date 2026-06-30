@@ -409,7 +409,9 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
   }, [rootWord, rootLang])
 
   return (
-    <Pane name="descendant-paths" style={{ zIndex: 565 }}>
+    <Pane name="descendant-paths-lines" style={{ zIndex: 560 }}>
+      <Pane name="descendant-paths-markers" style={{ zIndex: 620 }}>
+        <Pane name="descendant-paths-labels" style={{ zIndex: 700 }}>
       <LayerGroup>
         {paths.map((p, idx) => {
           const points = pointsForPath(p, idx)
@@ -424,6 +426,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
               {coords.length >= 2 ? (
                 <Polyline
                   positions={coords}
+                  pane="descendant-paths-lines"
                   interactive={false}
                   bubblingMouseEvents={false}
                   pathOptions={{
@@ -448,6 +451,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
                 <CircleMarker
                   key={`c-${idx}-${i}`}
                   center={point.position}
+                  pane="descendant-paths-markers"
                   bubblingMouseEvents={false}
                   radius={selected === idx ? 7 : point.aggregated ? 6 : point.fallback ? 4.5 : 4.5}
                   pathOptions={{
@@ -464,7 +468,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
                   }}
                 >
                   {(selected === idx || i === points.length - 1) && (
-                    <Tooltip direction="top" offset={[0, -6]} permanent={false}>
+                    <Tooltip pane="descendant-paths-labels" direction="top" offset={[0, -6]} permanent={false}>
                       <div className="leading-tight" style={{ fontSize: 12, fontWeight: 700 }}>
                         <strong>{languageNames[p[i]?.lang_code ?? ''] ?? getLanguageLabel(p[i]?.lang_code, languoidData) ?? p[i]?.lang_code}</strong>
                         {p[i]?.word && (
@@ -486,8 +490,8 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
           )
         })}
       </LayerGroup>
-
-      
+        </Pane>
+      </Pane>
     </Pane>
   )
 }
