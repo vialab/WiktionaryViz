@@ -64,7 +64,7 @@ const toNode = (item: DirectDescendant | undefined | null): DescNode | null => {
     word: item.word,
     lang_code: item.lang_code,
     lookupWord: normalizeLookupWord(item.word),
-    expansion: item.expansion || item.lang || undefined,
+    expansion: item.expansion || undefined,
     romanization: item.roman || undefined,
   }
 }
@@ -467,7 +467,9 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
                     <Tooltip direction="top" offset={[0, -6]} permanent={false}>
                       <div className="leading-tight" style={{ fontSize: 12, fontWeight: 700 }}>
                         <strong>{languageNames[p[i]?.lang_code ?? ''] ?? getLanguageLabel(p[i]?.lang_code, languoidData) ?? p[i]?.lang_code}</strong>
-                        <span className="ml-1 text-xs opacity-80">{p[i]?.expansion ?? p[i]?.word}</span>
+                        {p[i]?.word && (
+                          <span className="ml-1 text-xs opacity-80">{p[i].word}</span>
+                        )}
                         {p[i]?.romanization && (
                           <span className="ml-1 text-xs opacity-80">{p[i]?.romanization}</span>
                         )}
