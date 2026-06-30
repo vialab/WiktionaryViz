@@ -77,12 +77,15 @@ const parseMapState = (rawValue: string | null, word1: string, language1: string
         guideOpen: false,
         guideLayer: null,
         etymologyRequested: false,
+        annotationMode: parsed.filters?.annotationMode ?? base.filters.annotationMode,
+        annotationTool: parsed.filters?.annotationTool ?? base.filters.annotationTool,
       },
       currentWord: {
         word: word1,
         language: language1,
         key: `${word1}::${language1}`,
       },
+      annotations: Array.isArray(parsed.annotations) ? parsed.annotations : base.annotations,
     }
   } catch {
     return null

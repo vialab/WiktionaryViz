@@ -2,6 +2,39 @@ export type GuideLayerKey = 'translations' | 'etymology' | 'descendants' | 'prot
 
 export type MapLayerKey = 'translations' | 'protoZones' | 'languageFamilies' | 'etymology' | 'descendants'
 
+export type AnnotationKind = 'note' | 'highlight' | 'arrow' | 'region' | 'link'
+
+export interface BaseAnnotation {
+  id: string
+  kind: AnnotationKind
+  text: string
+  createdAt: string
+}
+
+export interface PointAnnotation extends BaseAnnotation {
+  kind: 'note'
+  position: [number, number]
+}
+
+export interface HighlightAnnotation extends BaseAnnotation {
+  kind: 'highlight'
+  center: [number, number]
+  radiusMeters: number
+}
+
+export interface SegmentAnnotation extends BaseAnnotation {
+  kind: 'arrow' | 'link'
+  start: [number, number]
+  end: [number, number]
+}
+
+export interface RegionAnnotation extends BaseAnnotation {
+  kind: 'region'
+  points: [number, number][]
+}
+
+export type MapAnnotation = PointAnnotation | HighlightAnnotation | SegmentAnnotation | RegionAnnotation
+
 export type LayerOpacityState = Record<MapLayerKey, number>
 
 export type LayerOrderState = MapLayerKey[]
@@ -35,6 +68,8 @@ export interface MapFilterState {
   loop: boolean
   showAllPopups: boolean
   playSpeedMs: number
+  annotationMode: boolean
+  annotationTool: AnnotationKind
 }
 
 export interface MapCurrentWordState {
@@ -49,6 +84,7 @@ export interface MapState {
   activeLayers: MapActiveLayersState
   filters: MapFilterState
   currentWord: MapCurrentWordState
+  annotations: MapAnnotation[]
 }
 
 export const defaultMapLayerOpacities: LayerOpacityState = {
@@ -91,10 +127,13 @@ export const createInitialMapState = (word: string, language: string): MapState 
     loop: false,
     showAllPopups: false,
     playSpeedMs: 800,
+    annotationMode: false,
+    annotationTool: 'note',
   },
   currentWord: {
     word,
     language,
     key: `${word}::${language}`,
   },
+  annotations: [],
 })

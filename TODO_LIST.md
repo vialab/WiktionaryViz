@@ -135,7 +135,7 @@ P1 — HIGH-VALUE THESIS / DEMO FEATURES
     Use case: Useful for reproducibility, debugging, sharing study tasks, and preserving analysis sessions.
     Research context: Supports transparent and reusable research workflows.
 
-[ ] P1 — Implement AnnotationMode
+[X] P1 — Implement AnnotationMode
     Description: A toggle that lets users add notes, highlights, arrows, regions, and custom links directly onto the map.
     Use case: Turns the map into a sensemaking workspace rather than just a display.
     Research context: Participants wanted to annotate visualizations, add interpretations, and save observations.

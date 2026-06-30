@@ -18,6 +18,7 @@ import ProtoLanguageZones from './geospatial/ProtoLanguageZones'
 import LanguageFamiliesBubbles from './geospatial/LanguageFamiliesBubbles'
 import DescendantLineagePaths from './geospatial/DescendantLineagePaths'
 import GeospatialGuideOverlay from './geospatial/GeospatialGuideOverlay'
+import AnnotationModeOverlay from './geospatial/AnnotationModeOverlay'
 import type { EtymologyNode } from '@/types/etymology'
 import type { LanguoidData } from '@/types/languoid'
 import type { Translation } from '@/utils/mapUtils'
@@ -27,6 +28,7 @@ import {
   createInitialMapState,
   defaultMapLayerOpacities,
   defaultMapLayerOrder,
+  type AnnotationKind,
   type GuideLayerKey,
   type MapLayerKey,
   type MapSelection,
@@ -136,12 +138,15 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         ...base.filters,
         ...(sharedInitialMapState.filters ?? {}),
         guideOpen: sharedInitialMapState.filters?.guideOpen ?? shouldOpenGuideOnLoad,
+        annotationMode: sharedInitialMapState.filters?.annotationMode ?? base.filters.annotationMode,
+        annotationTool: sharedInitialMapState.filters?.annotationTool ?? base.filters.annotationTool,
       },
       currentWord: {
         word,
         language,
         key: `${word}::${language}`,
       },
+      annotations: Array.isArray(sharedInitialMapState.annotations) ? sharedInitialMapState.annotations : base.annotations,
     }
   })
   const [markers, setMarkers] = useState<TranslationMarker[]>([])
@@ -154,6 +159,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const [languageFamiliesGroup, setLanguageFamiliesGroup] = useState<L.LayerGroup | null>(null)
   const [etymologyLineageGroup, setEtymologyLineageGroup] = useState<L.LayerGroup | null>(null)
   const [descendantCoordinates, setDescendantCoordinates] = useState<[number, number][]>([])
+  const annotations = mapState.annotations
   const hasAdjustedZoomRef = useRef(false)
   const playbackTimerRef = useRef<number | null>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
@@ -237,6 +243,14 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
 
   const setGuideLayer = useCallback((nextGuideLayer: GuideLayerKey | null) => {
     setFilterState({ guideLayer: nextGuideLayer })
+  }, [setFilterState])
+
+  const setAnnotationMode = useCallback((enabled: boolean) => {
+    setFilterState({ annotationMode: enabled })
+  }, [setFilterState])
+
+  const setAnnotationTool = useCallback((tool: AnnotationKind) => {
+    setFilterState({ annotationTool: tool })
   }, [setFilterState])
 
   const setSelectedItem = useCallback((selectedItem: MapSelection) => {
@@ -370,7 +384,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         currentIndex: undefined,
         isPlaying: false,
         showAllPopups: false,
+        annotationMode: false,
+        annotationTool: 'note',
       },
+      annotations: [],
     }))
   }, [shouldOpenGuideOnLoad, word, language])
 
@@ -399,7 +416,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     if (guideLayer === 'etymology') {
       setFilterState({ etymologyRequested: true })
     } else {
-      setFilterState({ currentIndex: undefined, isPlaying: false, showAllPopups: false })
+      setFilterState({ currentIndex: undefined, isPlaying: false, showAllPopups: false, annotationMode: false, annotationTool: 'note' })
     }
   }, [guideLayer, setActiveLayerState, setFilterState])
 
@@ -488,6 +505,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           guideOpen: openGuideOnLoad,
           guideLayer: null,
           etymologyRequested: false,
+          annotationMode: false,
+          annotationTool: 'note',
         })
         setActiveLayerState({
           translations: false,
@@ -587,6 +606,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       isPlaying: false,
       showAllPopups: false,
       etymologyRequested: false,
+      annotationMode: false,
+      annotationTool: 'note',
     })
     setSelectedItem({ kind: 'none' })
     setGuideLayer(null)
@@ -931,6 +952,30 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           layerOrder={layerOrder}
           onLayerMove={moveLayer}
           onResetLayers={resetLayers}
+          annotationMode={mapState.filters.annotationMode}
+          annotationTool={mapState.filters.annotationTool}
+          annotationCount={annotations.length}
+          onAnnotationModeChange={setAnnotationMode}
+          onAnnotationToolChange={setAnnotationTool}
+          onClearAnnotations={() => {
+            updateMapState(current => ({
+              ...current,
+              annotations: [],
+            }))
+          }}
+          theme={theme}
+        />
+        <AnnotationModeOverlay
+          enabled={mapState.filters.annotationMode}
+          tool={mapState.filters.annotationTool}
+          annotations={annotations}
+          onAnnotationsChange={nextAnnotations => {
+            updateMapState(current => ({
+              ...current,
+              annotations: nextAnnotations,
+            }))
+          }}
+          onToolChange={setAnnotationTool}
           theme={theme}
         />
         <LayersControl position="topright">
@@ -1075,6 +1120,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
               currentIndex: undefined,
               isPlaying: false,
               showAllPopups: false,
+              annotationMode: false,
+              annotationTool: 'note',
             })
             setActiveLayerState({ etymology: false })
           }}

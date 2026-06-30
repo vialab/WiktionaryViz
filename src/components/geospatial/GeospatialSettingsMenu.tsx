@@ -4,6 +4,7 @@ import html2canvas from 'html2canvas'
 import type L from 'leaflet'
 import type { TranslationMarker } from './TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
+import type { AnnotationKind } from '@/types/mapState'
 import { buildGeoJSON, downloadGeoJSON, type ExportOptions } from '@/utils/geojsonExport'
 
 type LayerOpacityKey = 'translations' | 'protoZones' | 'languageFamilies' | 'etymology' | 'descendants'
@@ -29,6 +30,12 @@ interface GeospatialSettingsMenuProps {
   layerOrder: LayerOrderState
   onLayerMove: (layer: LayerOrderKey, direction: LayerOrderDirection) => void
   onResetLayers: () => void
+  annotationMode: boolean
+  annotationTool: AnnotationKind
+  annotationCount: number
+  onAnnotationModeChange: (enabled: boolean) => void
+  onAnnotationToolChange: (tool: AnnotationKind) => void
+  onClearAnnotations: () => void
   theme?: 'dark' | 'light'
 }
 
@@ -44,6 +51,12 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   canFitToData = false,
   onFitToData,
   onResetLayers,
+  annotationMode,
+  annotationTool,
+  annotationCount,
+  onAnnotationModeChange,
+  onAnnotationToolChange,
+  onClearAnnotations,
   theme = 'dark',
 }) => {
   const isLight = theme === 'light'
@@ -310,6 +323,17 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     [],
   )
 
+  const annotationControls = useMemo(
+    () => [
+      { key: 'note' as const, label: 'Note', hint: 'Click once to add text' },
+      { key: 'highlight' as const, label: 'Highlight', hint: 'Click once to mark an area' },
+      { key: 'arrow' as const, label: 'Arrow', hint: 'Click twice to draw a direction' },
+      { key: 'region' as const, label: 'Region', hint: 'Click multiple points to trace an area' },
+      { key: 'link' as const, label: 'Link', hint: 'Click twice to draw a custom link' },
+    ],
+    [],
+  )
+
   return (
     <div className="fixed bottom-2 left-2 z-[10000]" style={{ pointerEvents: 'auto' }} ref={menuRef}>
       <button
@@ -423,6 +447,57 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                   className={isLight ? 'inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800' : 'inline-flex w-full items-center justify-center rounded-lg bg-slate-700/90 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-600'}
                 >
                   Reset layers
+                </button>
+              </div>
+            </section>
+
+            <section className="space-y-2">
+              <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+                Annotation Mode
+              </div>
+              <div className={isLight ? 'space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-2' : 'space-y-3 rounded-lg border border-slate-800 bg-slate-900/60 p-2'}>
+                <button
+                  type="button"
+                  onClick={() => onAnnotationModeChange(!annotationMode)}
+                  className={isLight
+                    ? 'inline-flex w-full items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900 transition hover:border-amber-400 hover:bg-amber-100'
+                    : 'inline-flex w-full items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-200 transition hover:border-amber-400 hover:bg-amber-500/20'}
+                >
+                  {annotationMode ? 'Disable annotation mode' : 'Enable annotation mode'}
+                </button>
+                <p className={isLight ? 'px-1 text-xs leading-5 text-slate-500' : 'px-1 text-xs leading-5 text-slate-400'}>
+                  {annotationCount > 0
+                    ? `${annotationCount} annotation${annotationCount === 1 ? '' : 's'} saved on the map.`
+                    : 'Click the map to add notes, highlights, arrows, regions, or custom links.'}
+                </p>
+                <div className={isLight ? 'space-y-2 rounded-md border border-slate-200 bg-white p-2' : 'space-y-2 rounded-md border border-slate-800 bg-slate-950/40 p-2'}>
+                  {annotationControls.map(item => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => onAnnotationToolChange(item.key)}
+                      className={annotationTool === item.key
+                        ? (isLight
+                          ? 'flex w-full flex-col rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-left text-sm text-blue-900'
+                          : 'flex w-full flex-col rounded-md border border-sky-400/60 bg-sky-500/15 px-3 py-2 text-left text-sm text-sky-100')
+                        : (isLight
+                          ? 'flex w-full flex-col rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-700 transition hover:border-slate-300 hover:bg-slate-50'
+                          : 'flex w-full flex-col rounded-md border border-slate-800 bg-slate-950/20 px-3 py-2 text-left text-sm text-slate-200 transition hover:border-slate-700 hover:bg-slate-900')}
+                    >
+                      <span className="font-medium">{item.label}</span>
+                      <span className={isLight ? 'text-xs text-slate-500' : 'text-xs text-slate-400'}>{item.hint}</span>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={onClearAnnotations}
+                  disabled={annotationCount === 0}
+                  className={isLight
+                    ? 'inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40'
+                    : 'inline-flex w-full items-center justify-center rounded-lg border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-40'}
+                >
+                  Clear annotations
                 </button>
               </div>
             </section>
