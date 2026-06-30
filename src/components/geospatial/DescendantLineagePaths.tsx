@@ -6,13 +6,13 @@ import { getLanguage } from '@ladjs/country-language'
 import useLanguoidData from '@/hooks/useLanguoidData'
 import { normalizePosition, getCoordinatesForLanguage } from '@/utils/mapUtils'
 import { apiUrl } from '@/utils/apiBase'
-import { flattenPathsFromTree, fallbackPoint } from './descendantPathHelpers'
-import type { AggregatedTreeNode } from './descendantPathHelpers'
+import { fallbackPoint } from './descendantPathHelpers'
 import type { LanguoidData } from '@/types/languoid'
 
 type DescNode = {
   word?: string
   lang_code?: string | null
+  lookupWord?: string | null
   romanization?: string | null
   expansion?: string | null
   aggregated?: boolean
@@ -27,6 +27,21 @@ type RootCandidate = {
   supporting_paths?: number
 }
 
+type DirectDescendant = {
+  word?: string
+  lang_code?: string | null
+  lang?: string | null
+  roman?: string | null
+  expansion?: string | null
+}
+
+type WordDataResponse = {
+  word?: string
+  lang_code?: string
+  lang?: string | null
+  descendants?: DirectDescendant[]
+}
+
 type RenderPoint = {
   position: LatLngExpression
   fallback: boolean
@@ -35,6 +50,24 @@ type RenderPoint = {
 }
 
 const nodeKey = (word?: string, langCode?: string | null) => `${word ?? ''}|${langCode ?? ''}`
+
+const normalizeLookupWord = (word?: string | null) => {
+  if (!word) return null
+  const normalized = word.normalize('NFKD')
+  const stripped = normalized.replace(/\p{M}+/gu, '').trim()
+  return stripped || word.trim() || null
+}
+
+const toNode = (item: DirectDescendant | undefined | null): DescNode | null => {
+  if (!item?.word || !item.lang_code) return null
+  return {
+    word: item.word,
+    lang_code: item.lang_code,
+    lookupWord: normalizeLookupWord(item.word),
+    expansion: item.expansion || item.lang || undefined,
+    romanization: item.roman || undefined,
+  }
+}
 
 const mergeExpandedPaths = (basePath: DescPath, expandedPaths: DescPath[], clickedIndex: number) => {
   const prefix = basePath.slice(0, clickedIndex + 1)
@@ -132,7 +165,6 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
   const { languoidData } = useLanguoidData() as { languoidData: LanguoidData[]; loading: boolean }
   const [paths, setPaths] = useState<DescPath[]>([])
   const [, setRootCandidates] = useState<RootCandidate[]>([])
-  const [selectedRootCandidate, setSelectedRootCandidate] = useState<RootCandidate | null>(null)
   const [, setResolvedRoot] = useState<string | null>(null)
   const [, setResolvedRootLang] = useState<string | null>(null)
   const [, setLastLoadMs] = useState<number | null>(null)
@@ -146,7 +178,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
   const expandedNodeKeysRef = useRef<Set<string>>(new Set())
   const activeBranchRef = useRef<{ pathIndex: number; nodeIndex: number } | null>(null)
 
-  // Fetch the resolved root and its descendant paths from the backend.
+  // Fetch the resolved root only; descendants are expanded one hop at a time on click.
   useEffect(() => {
     if (!rootWord) return
     let cancelled = false
@@ -157,7 +189,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
     ;(async () => {
       try {
         const url = apiUrl(
-          `/descendant-paths-resolved?${new URLSearchParams({
+          `/descendant-root?${new URLSearchParams({
             word: rootWord,
             lang_code: rootLang || '',
           }).toString()}`,
@@ -172,29 +204,17 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
           setLoading(false)
           return
         }
-        const json = await res.json()
-        const roots = (json.roots || []) as RootCandidate[]
-        const nextSelectedRoot = (() => {
-          if (selectedRootCandidate) {
-            const selectedKey = nodeKey(selectedRootCandidate.word, selectedRootCandidate.lang_code)
-            const match = roots.find(candidate => nodeKey(candidate.word, candidate.lang_code) === selectedKey)
-            if (match) return match
-          }
-          return (json.selected_root as RootCandidate) || roots[0] || null
-        })()
-
+        const json = (await res.json()) as { root?: string; root_lang?: string; selected_root?: RootCandidate }
         if (!cancelled) {
           const rootNode: DescNode = {
-            word: nextSelectedRoot?.word || json.root || rootWord,
-            lang_code: nextSelectedRoot?.lang_code || json.root_lang || rootLang || null,
+            word: json.selected_root?.word || json.root || rootWord,
+            lang_code: json.selected_root?.lang_code || json.root_lang || rootLang || null,
           }
-          const resolvedPaths = Array.isArray(json.paths) ? (json.paths as DescPath[]) : []
-          setPaths(resolvedPaths.length ? resolvedPaths : [[rootNode]])
-          setLastLoadMs(typeof json?.meta?.elapsed_ms === 'number' ? json.meta.elapsed_ms : null)
-          setRootCandidates(roots)
-          setSelectedRootCandidate(nextSelectedRoot)
-          setResolvedRoot(nextSelectedRoot?.word || json.root || null)
-          setResolvedRootLang(nextSelectedRoot?.lang_code || json.root_lang || null)
+          setPaths([[rootNode]])
+          setLastLoadMs(null)
+          setRootCandidates([])
+          setResolvedRoot(rootNode.word || rootWord)
+          setResolvedRootLang(rootNode.lang_code || rootLang || null)
         }
       } catch (e) {
         if ((e as Error)?.name === 'AbortError') return
@@ -214,8 +234,9 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
   }, [rootWord, rootLang])
 
   const expandNode = async (node: DescNode, basePath: DescPath, clickedIndex: number, pathIndex: number) => {
-    if (!node.word) return
-    const key = nodeKey(node.word, node.lang_code)
+    const lookupWord = node.lookupWord || node.word
+    if (!lookupWord) return
+    const key = nodeKey(lookupWord, node.lang_code)
     if (expandedNodeKeysRef.current.has(key)) return
     if (!node.lang_code) return
 
@@ -225,22 +246,20 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
     setLoading(true)
     setLoadError(null)
     try {
-      const url = apiUrl(
-        `/descendant-preview?${new URLSearchParams({
-          word: node.word,
-          lang_code: node.lang_code,
-          depth: '1',
-          max_nodes: '200',
-        }).toString()}`,
-      )
+      const url = apiUrl(`/word-data?${new URLSearchParams({ word: lookupWord, lang_code: node.lang_code }).toString()}`)
       const res = await fetch(url, { signal: controller.signal })
       if (!res.ok) {
         setLoadError(`Failed to expand branch (${res.status})`)
         return
       }
 
-      const json = await res.json()
-      const newPaths = flattenPathsFromTree(json.tree as AggregatedTreeNode | null | undefined).filter(path => path.length > 1)
+      const json = (await res.json()) as WordDataResponse
+      const descendants = Array.isArray(json.descendants) ? json.descendants : []
+      const childPaths = descendants
+        .map(child => toNode(child))
+        .filter((child): child is DescNode => Boolean(child))
+        .map(child => [...basePath.slice(0, clickedIndex + 1), child])
+      const newPaths = childPaths
       const mergedPaths = mergeExpandedPaths(basePath, newPaths, clickedIndex)
 
       if (!newPaths.length) {

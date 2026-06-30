@@ -8,10 +8,33 @@ import httpx
 
 router = APIRouter()
 
+
+def _candidate_word_keys(word: str, lang_code: str):
+    """Return possible index keys for a word, preferring exact matches first.
+
+    Wiktionary entries sometimes use alias/variety codes such as `fa-cls`
+    while the stored entry lives under the canonical code `fa`. We keep the
+    exact lookup first, then fall back to progressively shorter hyphenated
+    prefixes so descendant markers can still resolve to a real entry.
+    """
+    normalized_word = word.strip().lower()
+    normalized_lang = lang_code.strip().lower()
+
+    candidates = [f"{normalized_word}_{normalized_lang}"]
+    if "-" in normalized_lang:
+        parts = normalized_lang.split("-")
+        for end in range(len(parts) - 1, 0, -1):
+            prefix = "-".join(parts[:end])
+            candidate = f"{normalized_word}_{prefix}"
+            if candidate not in candidates:
+                candidates.append(candidate)
+
+    return candidates
+
 @router.get("/word-data")
 async def get_word_data(word: str = Query(...), lang_code: str = Query(...)):
-    key = f"{word.lower()}_{lang_code.lower()}"
-    if key not in index:
+    key = next((candidate for candidate in _candidate_word_keys(word, lang_code) if candidate in index), None)
+    if key is None:
         return JSONResponse(content={"message": "No matching entries found."}, status_code=404)
 
     try:
@@ -75,8 +98,8 @@ async def get_random_interest():
 
 # Helper: Get word-data or supplement with AI if missing
 async def get_word_data_or_ai(word, lang_code):
-    key = f"{word.lower()}_{lang_code.lower()}"
-    if key in index:
+    key = next((candidate for candidate in _candidate_word_keys(word, lang_code) if candidate in index), None)
+    if key:
         with open(JSONL_FILE_PATH, "r", encoding="utf-8") as f:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
             mm.seek(index[key])

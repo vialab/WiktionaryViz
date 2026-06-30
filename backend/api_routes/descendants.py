@@ -847,6 +847,69 @@ async def ancestor_roots(
             mm.close()
 
 
+@router.get("/descendant-root")
+async def descendant_root(
+    word: str,
+    lang_code: str = None,
+    max_depth: int = Query(8, ge=1, le=20),
+    max_paths: int = Query(24, ge=1, le=200),
+    max_branching: int = Query(5, ge=1, le=20),
+):
+    """Resolve the most likely descendant-root candidate without building descendant paths."""
+    mm = None
+    try:
+        cache_key = _cache_key(
+            "descendant-root",
+            {
+                "word": word,
+                "lang_code": lang_code,
+                "max_depth": max_depth,
+                "max_paths": max_paths,
+                "max_branching": max_branching,
+            },
+        )
+        cached = _cache_get(cache_key)
+        if cached is not None:
+            return cached
+
+        with open(JSONL_FILE_PATH, "r", encoding="utf-8") as f:
+            mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+
+            roots, ancestry_paths = _resolve_ancestor_roots(
+                mm,
+                word=word,
+                lang_code=lang_code,
+                max_depth=max_depth,
+                max_paths=max_paths,
+                max_branching=max_branching,
+            )
+            if not roots:
+                return JSONResponse(content={"error": "Word not found."}, status_code=404)
+
+            selected_root = roots[0]
+            payload = {
+                "query": {"word": word, "lang_code": lang_code},
+                "roots": roots,
+                "selected_root": selected_root,
+                "ancestry_paths": ancestry_paths,
+                "root": selected_root.get("word") or word,
+                "root_lang": selected_root.get("lang_code") or lang_code,
+                "meta": {
+                    "max_depth": max_depth,
+                    "max_paths": max_paths,
+                    "max_branching": max_branching,
+                    "path_count": len(ancestry_paths),
+                },
+            }
+            _cache_set(cache_key, payload)
+            return payload
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+    finally:
+        if mm is not None:
+            mm.close()
+
+
 @router.get("/descendant-paths-resolved")
 async def descendant_paths_resolved(
     word: str,

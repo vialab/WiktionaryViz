@@ -85,6 +85,19 @@ def _extract_child_ref_from_descendant(desc):
     if not isinstance(desc, dict):
         return None
 
+    # Many entries already store descendants in a normalized shape like:
+    # {"lang": "Hindi", "lang_code": "hi", "word": "नारंगी", "roman": "..."}
+    # Handle that directly before falling back to template parsing.
+    direct_word = (desc.get("word") or "").strip()
+    direct_lang_code = _normalize_for_match(desc.get("lang_code"))
+    if direct_word and direct_lang_code:
+        return {
+            "word": direct_word,
+            "lang_code": direct_lang_code,
+            "key": f"{direct_word.lower()}_{direct_lang_code}",
+            "expansion": desc.get("expansion") or desc.get("lang") or desc.get("roman"),
+        }
+
     templates = desc.get("templates", []) or []
     
     # Try each template to extract a valid child reference
