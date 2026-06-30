@@ -78,6 +78,22 @@ const mergeExpandedPaths = (basePath: DescPath, expandedPaths: DescPath[], click
   return nextPaths.length ? nextPaths : [basePath]
 }
 
+const hasVisibleDescendants = (paths: DescPath[], basePath: DescPath, clickedIndex: number) => {
+  const prefix = basePath.slice(0, clickedIndex + 1)
+  return paths.some(path => {
+    if (path.length <= prefix.length) return false
+    return prefix.every((node, index) => nodeKey(node.word, node.lang_code) === nodeKey(path[index]?.word, path[index]?.lang_code))
+  })
+}
+
+const collapsePathsFromNode = (paths: DescPath[], basePath: DescPath, clickedIndex: number) => {
+  const prefix = basePath.slice(0, clickedIndex + 1)
+  return paths.filter(path => {
+    if (path.length <= prefix.length) return true
+    return !prefix.every((node, index) => nodeKey(node.word, node.lang_code) === nodeKey(path[index]?.word, path[index]?.lang_code))
+  })
+}
+
 const hashString = (value: string) => {
   let hash = 0
   for (let index = 0; index < value.length; index++) {
@@ -283,6 +299,44 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
     }
   }
 
+  const collapseNode = (basePath: DescPath, clickedIndex: number) => {
+    const prefix = basePath.slice(0, clickedIndex + 1)
+    const keysToRemove = new Set(prefix.map(node => nodeKey(node.lookupWord || node.word, node.lang_code)))
+
+    setPaths(prev => {
+      const next = collapsePathsFromNode(prev, basePath, clickedIndex)
+      const prefixKey = prefix.map(node => nodeKey(node.word, node.lang_code)).join('>')
+      const hasPrefix = next.some(path => path.map(node => nodeKey(node.word, node.lang_code)).join('>') === prefixKey)
+      if (!hasPrefix) {
+        const insertAt = Math.max(
+          0,
+          prev.findIndex(path => {
+            if (path.length <= prefix.length) return false
+            return prefix.every((node, index) => nodeKey(node.word, node.lang_code) === nodeKey(path[index]?.word, path[index]?.lang_code))
+          }),
+        )
+        next.splice(insertAt < 0 ? next.length : insertAt, 0, prefix)
+      }
+      return next
+    })
+    setSelected(null)
+    activeBranchRef.current = null
+
+    for (const path of paths) {
+      if (path.length <= prefix.length) continue
+      if (!prefix.every((node, index) => nodeKey(node.word, node.lang_code) === nodeKey(path[index]?.word, path[index]?.lang_code))) {
+        continue
+      }
+      for (const descendant of path.slice(clickedIndex + 1)) {
+        keysToRemove.add(nodeKey(descendant.lookupWord || descendant.word, descendant.lang_code))
+      }
+    }
+
+    for (const key of keysToRemove) {
+      expandedNodeKeysRef.current.delete(key)
+    }
+  }
+
   // Resolve coordinates for each node by language code (cache by lang)
   const [coordsMap, setCoordsMap] = useState<Record<string, [number, number] | null>>({})
 
@@ -462,6 +516,12 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
                   }}
                   eventHandlers={{
                     click: () => {
+                      const isExpandedHere = hasVisibleDescendants(paths, p, i)
+                      if (isExpandedHere) {
+                        collapseNode(p, i)
+                        return
+                      }
+
                       setSelected(idx)
                       void expandNode(p[i], p, i, idx)
                     },
