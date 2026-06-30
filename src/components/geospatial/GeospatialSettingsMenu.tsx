@@ -10,6 +10,12 @@ type LayerOpacityKey = 'translations' | 'protoZones' | 'languageFamilies' | 'ety
 
 type LayerOpacityState = Record<LayerOpacityKey, number>
 
+type LayerOrderKey = LayerOpacityKey
+
+type LayerOrderState = LayerOrderKey[]
+
+type LayerOrderDirection = 'up' | 'down'
+
 interface GeospatialSettingsMenuProps {
   markers: TranslationMarker[]
   lineage: EtymologyNode | null
@@ -18,6 +24,9 @@ interface GeospatialSettingsMenuProps {
   mapInstance?: L.Map | null
   layerOpacities: LayerOpacityState
   onLayerOpacityChange: (layer: LayerOpacityKey, opacity: number) => void
+  layerOrder: LayerOrderState
+  onLayerMove: (layer: LayerOrderKey, direction: LayerOrderDirection) => void
+  onResetLayerOrder: () => void
   theme?: 'dark' | 'light'
 }
 
@@ -28,6 +37,9 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   language,
   layerOpacities,
   onLayerOpacityChange,
+  layerOrder,
+  onLayerMove,
+  onResetLayerOrder,
   theme = 'dark',
 }) => {
   const isLight = theme === 'light'
@@ -283,6 +295,17 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     [],
   )
 
+  const orderControls = useMemo(
+    () => [
+      { key: 'translations' as const, label: 'Translations', hint: 'Marker clusters and popups' },
+      { key: 'descendants' as const, label: 'Descendant paths', hint: 'Branching paths and labels' },
+      { key: 'etymology' as const, label: 'Etymology', hint: 'Lineage path and country highlights' },
+      { key: 'protoZones' as const, label: 'Proto-language zones', hint: 'Historical region polygons' },
+      { key: 'languageFamilies' as const, label: 'Language families', hint: 'Bubble overlays and labels' },
+    ],
+    [],
+  )
+
   return (
     <div className="fixed bottom-2 left-2 z-[10000]" style={{ pointerEvents: 'auto' }} ref={menuRef}>
       <button
@@ -318,6 +341,59 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
           </div>
 
           <div className="space-y-3 pt-3">
+            <section className="space-y-2">
+              <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+                Layer Order
+              </div>
+              <div className={isLight ? 'space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2' : 'space-y-2 rounded-lg border border-slate-800 bg-slate-900/60 p-2'}>
+                {layerOrder.map((layerKey, index) => {
+                  const item = orderControls.find(entry => entry.key === layerKey)
+                  if (!item) return null
+                  const isTop = index === 0
+                  const isBottom = index === layerOrder.length - 1
+                  const rankLabel = isTop ? 'Top' : isBottom ? 'Bottom' : `#${index + 1}`
+                  return (
+                    <div key={item.key} className={isLight ? 'rounded-md border border-slate-200 bg-white p-2' : 'rounded-md border border-slate-800 bg-slate-950/40 p-2'}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className={isLight ? 'text-sm font-medium text-slate-700' : 'text-sm font-medium text-slate-100'}>{item.label}</div>
+                          <div className={isLight ? 'text-xs text-slate-500' : 'text-xs text-slate-400'}>{item.hint}</div>
+                        </div>
+                        <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+                          {rankLabel}
+                        </div>
+                      </div>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onLayerMove(item.key, 'up')}
+                          disabled={isTop}
+                          className={isLight ? 'rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40' : 'rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40'}
+                        >
+                          Move up
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onLayerMove(item.key, 'down')}
+                          disabled={isBottom}
+                          className={isLight ? 'rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40' : 'rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40'}
+                        >
+                          Move down
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+                <button
+                  type="button"
+                  onClick={onResetLayerOrder}
+                  className={isLight ? 'inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800' : 'inline-flex w-full items-center justify-center rounded-lg bg-slate-700/90 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-600'}
+                >
+                  Reset order
+                </button>
+              </div>
+            </section>
+
             <section className="space-y-2">
               <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
                 Layer Opacity

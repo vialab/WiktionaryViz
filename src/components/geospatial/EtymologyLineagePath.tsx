@@ -1,5 +1,5 @@
 import React, { FC, memo, useEffect, useRef, useState } from 'react'
-import { Polyline, Marker, CircleMarker, Tooltip, useMap } from 'react-leaflet'
+import { Pane, Polyline, Marker, CircleMarker, Tooltip, useMap } from 'react-leaflet'
 import { normalizePosition, createArrowIcon, calculateBearing } from '@/utils/mapUtils'
 import { isProto, edgeStyleBetween } from '@/utils/visualConstants'
 import type { EtymologyNode } from '@/types/etymology'
@@ -33,6 +33,7 @@ export interface EtymologyLineagePathProps {
   showAllPopups?: boolean
   /** Layer opacity multiplier. */
   opacity?: number
+  zIndex?: number
 }
 
 /**
@@ -133,6 +134,7 @@ const AnimatedSegment: FC<{
     <>
       <Polyline
         positions={[start, end]}
+        pane="etymology-lineage"
         pathOptions={{
           className: `etymology-segment etymology-segment-animating ${proto ? 'proto-dotted' : ''}`,
           dashArray: proto ? '6 6' : undefined,
@@ -145,6 +147,7 @@ const AnimatedSegment: FC<{
       />
       {mounted && (
         <Marker
+          pane="etymology-lineage"
           ref={ref => {
             markerRef.current = ref as unknown as L.Marker | null
           }}
@@ -162,6 +165,7 @@ const AnimatedSegment: FC<{
       )}
       {showEndpoint && (
         <CircleMarker
+          pane="etymology-lineage"
           center={end}
           radius={7}
           fillColor={proto ? '#e11d48' : '#3388ff'}
@@ -177,7 +181,7 @@ const AnimatedSegment: FC<{
 }
 
 const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
-  ({ lineage, currentIndex, isPlaying = false, segmentDurationMs, dwellMs, showAllPopups, opacity = 1 }) => {
+  ({ lineage, currentIndex, isPlaying = false, segmentDurationMs, dwellMs, showAllPopups, opacity = 1, zIndex = 560 }) => {
     const map = useMap()
     const completedSegments: React.ReactNode[] = []
     const activeSegments: React.ReactNode[] = []
@@ -197,6 +201,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
           completedSegments.push(
             <CircleMarker
               key={`circle-${word}-${lang_code}`}
+              pane="etymology-lineage"
               center={center}
               radius={isActive ? 10 : 7}
               fillColor={isActive ? '#fbbf24' : '#3388ff'}
@@ -207,6 +212,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
               className={isActive ? 'etymology-node-active node-pulse' : 'etymology-node'}
             >
               <Tooltip
+                pane="etymology-lineage"
                 permanent={tooltipPermanent}
                 direction="top"
                 offset={[0, -6]}
@@ -238,6 +244,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
             const dash = edgeStyle.dashArray
             completedSegments.push(
                 <Polyline
+                  pane="etymology-lineage"
                 key={`polyline-static-${word}-${node.next.word}`}
                 positions={[start, end]}
                 pathOptions={{
@@ -252,6 +259,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
             // Arrow at end of completed segment
             completedSegments.push(
               <Marker
+                pane="etymology-lineage"
                 key={`arrow-static-${word}-${node.next.word}`}
                 position={getTrailingPosition(map, start, end, 1)}
                 icon={createArrowIcon(angle, {
@@ -295,10 +303,12 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
     }
     if (!lineage) return null
     return (
-      <>
-        {completedSegments}
-        {activeSegments}
-      </>
+      <Pane name="etymology-lineage" style={{ zIndex }}>
+        <>
+          {completedSegments}
+          {activeSegments}
+        </>
+      </Pane>
     )
   },
 )

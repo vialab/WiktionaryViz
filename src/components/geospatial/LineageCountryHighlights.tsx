@@ -13,6 +13,7 @@ interface Props {
   path?: string // geojson path
   currentIndex?: number // active node index for focused country pulse
   opacity?: number
+  zIndex?: number
 }
 
 // Persistent highlight style (no hover reset logic here)
@@ -83,6 +84,7 @@ const LineageCountryHighlights: FC<Props> = ({
   path = '/countries.geojson',
   currentIndex,
   opacity = 1,
+  zIndex = 560,
 }) => {
   const data = useCountriesGeoJSON(path)
   const lineageNodes = useMemo(() => flattenLineage(lineage), [lineage])
@@ -206,7 +208,7 @@ const LineageCountryHighlights: FC<Props> = ({
   if (!filtered || !filtered.features.length) return null
 
   return (
-    <Pane name="lineage-countries" style={{ zIndex: 560, pointerEvents: 'none' }}>
+    <Pane name="lineage-countries" style={{ zIndex, pointerEvents: 'none' }}>
       <GeoJSON
         data={filtered as FeatureCollection<Geometry, CountryProps | ProtoProps>}
         style={feat => {

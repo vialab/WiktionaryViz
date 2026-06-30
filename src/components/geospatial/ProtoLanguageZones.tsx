@@ -7,6 +7,7 @@ import useProtoRegionsGeoJSON, { ProtoRegionProps } from '@/hooks/useProtoRegion
 type Props = {
   path?: string
   opacity?: number
+  zIndex?: number
 }
 
 const clampOpacity = (value: number) => Math.max(0, Math.min(1, value))
@@ -37,7 +38,7 @@ const hoverStyle: L.PathOptions = {
   fillOpacity: 0.25,
 }
 
-const ProtoLanguageZones: FC<Props> = ({ path = '/proto_regions.geojson', opacity = 1 }) => {
+const ProtoLanguageZones: FC<Props> = ({ path = '/proto_regions.geojson', opacity = 1, zIndex = 540 }) => {
   const data = useProtoRegionsGeoJSON(path)
   const geoJsonRef = useRef<L.GeoJSON>(null)
 
@@ -79,7 +80,7 @@ const ProtoLanguageZones: FC<Props> = ({ path = '/proto_regions.geojson', opacit
   if (!data) return null
 
   return (
-    <Pane name="proto-zones" style={{ zIndex: 540 }}>
+    <Pane name="proto-zones" style={{ zIndex }}>
       <GeoJSON
         ref={geoJsonRef}
         data={data as FeatureCollection<Geometry, ProtoRegionProps>}

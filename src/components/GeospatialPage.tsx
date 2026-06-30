@@ -24,7 +24,20 @@ import type { Translation } from '@/utils/mapUtils'
 
 type LayerOpacityKey = 'translations' | 'protoZones' | 'languageFamilies' | 'etymology' | 'descendants'
 
+type LayerOrderKey = LayerOpacityKey
+
 type LayerOpacityState = Record<LayerOpacityKey, number>
+
+const defaultLayerOrder: LayerOrderKey[] = [
+  'translations',
+  'descendants',
+  'etymology',
+  'protoZones',
+  'languageFamilies',
+]
+
+const layerOrderStep = 20
+const layerOrderBase = 500
 
 const defaultLayerOpacities: LayerOpacityState = {
   translations: 1,
@@ -85,6 +98,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
   const [showDescendantPaths, setShowDescendantPaths] = useState(false)
   const [etymologyRequested, setEtymologyRequested] = useState(false)
   const [layerOpacities, setLayerOpacities] = useState<LayerOpacityState>(defaultLayerOpacities)
+  const [layerOrder, setLayerOrder] = useState<LayerOrderKey[]>(defaultLayerOrder)
   const dwellDurationRef = useRef<number>(1200) // ms pause after each transition for reading (extended for readability)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
   // Track visibility of LayersControl overlays that render non-Leaflet DOM (bubbles SVG)
@@ -106,6 +120,32 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
   const translationCount = markers.length
   const lineageNodeCount = lineageNodes.length
   const translationBreadth = translationCount / Math.max(1, lineageNodeCount)
+  const layerZIndex = (layer: LayerOrderKey) => {
+    const index = layerOrder.indexOf(layer)
+    const resolvedIndex = index >= 0 ? index : layerOrder.length - 1
+    return layerOrderBase + (layerOrder.length - resolvedIndex) * layerOrderStep
+  }
+
+  useEffect(() => {
+    if (!mapInstance) return
+
+    const paneZIndexes: Array<[string, number]> = [
+      ['translations', layerZIndex('translations')],
+      ['proto-zones', layerZIndex('protoZones')],
+      ['language-families-bubbles', layerZIndex('languageFamilies')],
+      ['etymology-lineage', layerZIndex('etymology')],
+      ['lineage-countries', layerZIndex('etymology') - 10],
+      ['descendant-paths-lines', layerZIndex('descendants')],
+      ['descendant-paths-markers', layerZIndex('descendants') + 60],
+      ['descendant-paths-labels', layerZIndex('descendants') + 140],
+    ]
+
+    paneZIndexes.forEach(([name, zIndex]) => {
+      const pane = mapInstance.getPane(name)
+      if (pane) pane.style.zIndex = String(zIndex)
+    })
+  }, [layerOrder, mapInstance])
+
   const guideAvailability: Record<GuideLayerKey, boolean> = {
     translations: translationCount > 0,
     etymology: hasPlayableLineage,
@@ -346,6 +386,21 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
       }
     })
   }, [mapInstance, guideAvailability])
+
+  const moveLayer = (layer: LayerOrderKey, direction: 'up' | 'down') => {
+    setLayerOrder(prev => {
+      const currentIndex = prev.indexOf(layer)
+      if (currentIndex < 0) return prev
+      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev
+      const next = [...prev]
+      const [item] = next.splice(currentIndex, 1)
+      next.splice(targetIndex, 0, item)
+      return next
+    })
+  }
+
+  const resetLayerOrder = () => setLayerOrder(defaultLayerOrder)
 
   useEffect(() => {
     if (!lineage || !etymologyRequested || !showEtymologyLineage || guideOpen) return
@@ -601,6 +656,9 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           onLayerOpacityChange={(layer, opacity) => {
             setLayerOpacities(prev => ({ ...prev, [layer]: opacity }))
           }}
+          layerOrder={layerOrder}
+          onLayerMove={moveLayer}
+          onResetLayerOrder={resetLayerOrder}
           theme={theme}
         />
         <LayersControl position="topright">
@@ -624,21 +682,40 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           {/* Country highlighting now limited to lineage-related countries only (no global hover). */}
           {/* General Etymology Markers Layer */}
           <LayersControl.Overlay checked={showTranslations} name="Translations">
-            <MarkerClusterGroup ref={(instance: L.LayerGroup | null) => setTranslationGroup(instance)}>
-              {showTranslations && <TranslationMarkers markers={markers} opacity={layerOpacities.translations} />}
+            <MarkerClusterGroup
+              ref={(instance: L.LayerGroup | null) => setTranslationGroup(instance)}
+              clusterPane="translations"
+            >
+              {showTranslations && (
+                <TranslationMarkers
+                  markers={markers}
+                  opacity={layerOpacities.translations}
+                  zIndex={layerZIndex('translations')}
+                />
+              )}
             </MarkerClusterGroup>
           </LayersControl.Overlay>
           {/* Proto-Language Zones overlay from public/proto_regions.geojson */}
           <LayersControl.Overlay checked={showProtoZones} name="Proto-Language Zones">
             <LayerGroup ref={(instance: L.LayerGroup | null) => setProtoZonesGroup(instance)}>
-              {showProtoZones && <ProtoLanguageZones path="/proto_regions.geojson" opacity={layerOpacities.protoZones} />}
+              {showProtoZones && (
+                <ProtoLanguageZones
+                  path="/proto_regions.geojson"
+                  opacity={layerOpacities.protoZones}
+                  zIndex={layerZIndex('protoZones')}
+                />
+              )}
             </LayerGroup>
           </LayersControl.Overlay>
           {/* Language Families polygons from Glottolog-derived hulls */}
           <LayersControl.Overlay checked={showLanguageFamilies} name="Language Families">
             <LayerGroup ref={(instance: L.LayerGroup | null) => setLanguageFamiliesGroup(instance)}>
               {showLanguageFamilies && (
-                <LanguageFamiliesBubbles path="/language_families.geojson" opacity={layerOpacities.languageFamilies} />
+                <LanguageFamiliesBubbles
+                  path="/language_families.geojson"
+                  opacity={layerOpacities.languageFamilies}
+                  zIndex={layerZIndex('languageFamilies')}
+                />
               )}
             </LayerGroup>
           </LayersControl.Overlay>
@@ -647,7 +724,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
             <LayerGroup ref={(instance: L.LayerGroup | null) => setEtymologyLineageGroup(instance)}>
               {showEtymologyLineage && (
                 <>
-                  <LineageCountryHighlights lineage={lineage} currentIndex={currentIndex} opacity={layerOpacities.etymology} />
+                  <LineageCountryHighlights
+                    lineage={lineage}
+                    currentIndex={currentIndex}
+                    opacity={layerOpacities.etymology}
+                    zIndex={layerZIndex('etymology')}
+                  />
                   <EtymologyLineagePath
                     lineage={lineage}
                     currentIndex={currentIndex}
@@ -656,6 +738,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
                     dwellMs={dwellDurationRef.current}
                     showAllPopups={showAllPopups}
                     opacity={layerOpacities.etymology}
+                    zIndex={layerZIndex('etymology')}
                   />
                 </>
               )}
@@ -669,6 +752,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
                   rootWord={word || (lineage?.word ?? '')}
                   rootLang={language || (lineage?.lang_code ?? '')}
                   opacity={layerOpacities.descendants}
+                  zIndex={layerZIndex('descendants')}
                 />
               )}
             </LayerGroup>

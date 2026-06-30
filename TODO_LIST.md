@@ -30,7 +30,7 @@ P0 — CORE GEOSPATIAL MANIPULATION FEATURES
     Use case: Lets users compare overlapping layers without fully hiding any of them.
     Research context: Useful when route lines, markers, regions, and labels overlap on the same map.
 
-[ ] P0 — Add layer ordering / z-index controls
+[X] P0 — Add layer ordering / z-index controls
     Description: Users can move layers above or below each other.
     Use case: Prevents important data from being hidden behind polygons, map regions, or dense marker clusters.
     Research context: Geospatial participants often struggle with map legibility and visual clutter.

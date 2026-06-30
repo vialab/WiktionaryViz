@@ -174,10 +174,11 @@ const resolveLanguageName = async (langCode: string | null | undefined, languoid
  * - TODO: Add performance instrumentation (request size, traversal duration, cache hit rate).
  */
 
-const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opacity?: number }> = ({
+const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opacity?: number; zIndex?: number }> = ({
   rootWord,
   rootLang,
   opacity = 1,
+  zIndex = 560,
 }) => {
   const { languoidData } = useLanguoidData() as { languoidData: LanguoidData[]; loading: boolean }
   const [paths, setPaths] = useState<DescPath[]>([])
@@ -464,9 +465,9 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
   }, [rootWord, rootLang])
 
   return (
-    <Pane name="descendant-paths-lines" style={{ zIndex: 560 }}>
-      <Pane name="descendant-paths-markers" style={{ zIndex: 620 }}>
-        <Pane name="descendant-paths-labels" style={{ zIndex: 700 }}>
+    <Pane name="descendant-paths-lines" style={{ zIndex }}>
+      <Pane name="descendant-paths-markers" style={{ zIndex: zIndex + 60 }}>
+        <Pane name="descendant-paths-labels" style={{ zIndex: zIndex + 140 }}>
       <LayerGroup>
         {paths.map((p, idx) => {
           const points = pointsForPath(p, idx)
