@@ -4,7 +4,7 @@ import type { FeatureCollection, Geometry, Feature, Polygon, MultiPoint } from '
 import useLanguageFamiliesGeoJSON, { LanguageFamilyProps } from '@/hooks/useLanguageFamiliesGeoJSON'
 import { BSplineShapeGenerator, BubbleSet, PointPath, ShapeSimplifier } from 'bubblesets'
 
-type Props = { path?: string }
+type Props = { path?: string; opacity?: number }
 
 const palette = [
   '#ef4444',
@@ -35,7 +35,7 @@ type PathEntry = {
   labelY: number
 }
 
-const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson' }) => {
+const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson', opacity = 1 }) => {
   const data = useLanguageFamiliesGeoJSON(path)
   const map = useMap()
   const [paths, setPaths] = useState<PathEntry[]>([])
@@ -178,7 +178,7 @@ const LanguageFamiliesBubbles: FC<Props> = ({ path = '/language_families.geojson
         ref={svgRef}
         width={svgSize.w}
         height={svgSize.h}
-        style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible' }}
+        style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible', opacity }}
         onMouseLeave={() => {
           setHoverId(null)
           setHoverPos(null)

@@ -31,6 +31,8 @@ export interface EtymologyLineagePathProps {
   dwellMs?: number
   /** When true, force display of all popups (end-of-playback overview). */
   showAllPopups?: boolean
+  /** Layer opacity multiplier. */
+  opacity?: number
 }
 
 /**
@@ -59,8 +61,9 @@ const AnimatedSegment: FC<{
   dwellMs?: number
   angle: number
   proto?: boolean
+  opacity?: number
   onFrame?: (position: [number, number]) => void
-}> = ({ start, end, growMs, dwellMs, angle, proto, onFrame }) => {
+}> = ({ start, end, growMs, dwellMs, angle, proto, opacity = 1, onFrame }) => {
   const polyRef = useRef<L.Polyline | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
   const map = useMap()
@@ -134,6 +137,7 @@ const AnimatedSegment: FC<{
           className: `etymology-segment etymology-segment-animating ${proto ? 'proto-dotted' : ''}`,
           dashArray: proto ? '6 6' : undefined,
           color: proto ? '#e11d48' : '#60a5fa',
+          opacity,
         }}
         ref={ref => {
           polyRef.current = ref as unknown as L.Polyline | null
@@ -151,6 +155,7 @@ const AnimatedSegment: FC<{
             color: proto ? '#e11d48' : '#60a5fa',
             outline: '#082f49',
             outlineWidth: 2,
+            opacity,
           })}
           interactive={false}
         />
@@ -162,8 +167,8 @@ const AnimatedSegment: FC<{
           fillColor={proto ? '#e11d48' : '#3388ff'}
           color={proto ? '#e11d48' : '#3388ff'}
           weight={1}
-          opacity={1}
-          fillOpacity={0.8}
+          opacity={opacity}
+          fillOpacity={0.8 * opacity}
           className={proto ? 'etymology-node proto-endpoint' : 'etymology-node endpoint'}
         />
       )}
@@ -172,7 +177,7 @@ const AnimatedSegment: FC<{
 }
 
 const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
-  ({ lineage, currentIndex, isPlaying = false, segmentDurationMs, dwellMs, showAllPopups }) => {
+  ({ lineage, currentIndex, isPlaying = false, segmentDurationMs, dwellMs, showAllPopups, opacity = 1 }) => {
     const map = useMap()
     const completedSegments: React.ReactNode[] = []
     const activeSegments: React.ReactNode[] = []
@@ -197,14 +202,15 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
               fillColor={isActive ? '#fbbf24' : '#3388ff'}
               color={isActive ? '#f59e0b' : '#3388ff'}
               weight={isActive ? 2 : 1}
-              opacity={1}
-              fillOpacity={isActive ? 0.9 : 0.7}
+                opacity={opacity}
+                fillOpacity={(isActive ? 0.9 : 0.7) * opacity}
               className={isActive ? 'etymology-node-active node-pulse' : 'etymology-node'}
             >
               <Tooltip
                 permanent={tooltipPermanent}
                 direction="top"
                 offset={[0, -6]}
+                  opacity={opacity}
                 className={showAllPopups ? 'etymology-tooltip-final' : 'etymology-tooltip-active'}
               >
                 <div className="leading-tight">
@@ -231,7 +237,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
             const edgeStyle = edgeStyleBetween(lang_code, node.next.lang_code)
             const dash = edgeStyle.dashArray
             completedSegments.push(
-              <Polyline
+                <Polyline
                 key={`polyline-static-${word}-${node.next.word}`}
                 positions={[start, end]}
                 pathOptions={{
@@ -239,6 +245,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
                   weight: edgeStyle.weight,
                   color: edgeStyle.color,
                   dashArray: dash || undefined,
+                    opacity: (((edgeStyle as L.PathOptions).opacity ?? 1) * opacity),
                 }}
               />,
             )
@@ -252,6 +259,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
                   color: isProto(lang_code) || isProto(node.next.lang_code) ? '#e11d48' : '#3b82f6',
                   outline: '#082f49',
                   outlineWidth: 2,
+                  opacity,
                 })}
                 interactive={false}
               />,
@@ -269,6 +277,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
                 dwellMs={dwellMs}
                 angle={angle}
                 proto={protoEdge}
+                opacity={opacity}
                 onFrame={position => {
                   if (isPlaying) {
                     map.panTo(position, { animate: false, noMoveStart: true })

@@ -6,12 +6,18 @@ import type { TranslationMarker } from './TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
 import { buildGeoJSON, downloadGeoJSON, type ExportOptions } from '@/utils/geojsonExport'
 
+type LayerOpacityKey = 'translations' | 'protoZones' | 'languageFamilies' | 'etymology' | 'descendants'
+
+type LayerOpacityState = Record<LayerOpacityKey, number>
+
 interface GeospatialSettingsMenuProps {
   markers: TranslationMarker[]
   lineage: EtymologyNode | null
   word?: string
   language?: string
   mapInstance?: L.Map | null
+  layerOpacities: LayerOpacityState
+  onLayerOpacityChange: (layer: LayerOpacityKey, opacity: number) => void
   theme?: 'dark' | 'light'
 }
 
@@ -20,6 +26,8 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   lineage,
   word,
   language,
+  layerOpacities,
+  onLayerOpacityChange,
   theme = 'dark',
 }) => {
   const isLight = theme === 'light'
@@ -264,6 +272,17 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     [],
   )
 
+  const opacityControls = useMemo(
+    () => [
+      { key: 'translations' as const, label: 'Translations', hint: 'Marker clusters and popups' },
+      { key: 'protoZones' as const, label: 'Proto-language zones', hint: 'Historical region polygons' },
+      { key: 'languageFamilies' as const, label: 'Language families', hint: 'Bubble overlays and labels' },
+      { key: 'etymology' as const, label: 'Etymology', hint: 'Lineage path and country highlights' },
+      { key: 'descendants' as const, label: 'Descendant paths', hint: 'Branching paths and labels' },
+    ],
+    [],
+  )
+
   return (
     <div className="fixed bottom-2 left-2 z-[10000]" style={{ pointerEvents: 'auto' }} ref={menuRef}>
       <button
@@ -284,8 +303,8 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
           role="menu"
           aria-label="Map settings"
           className={isLight
-            ? 'absolute bottom-full left-0 mb-2 w-80 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-2xl shadow-blue-100/50 backdrop-blur'
-            : 'absolute bottom-full left-0 mb-2 w-80 rounded-xl border border-slate-700/80 bg-slate-950/95 p-3 shadow-2xl backdrop-blur'}
+            ? 'absolute bottom-full left-0 mb-2 max-h-[70vh] w-80 overflow-y-auto rounded-xl border border-slate-200 bg-white/95 p-3 shadow-2xl shadow-blue-100/50 backdrop-blur'
+            : 'absolute bottom-full left-0 mb-2 max-h-[70vh] w-80 overflow-y-auto rounded-xl border border-slate-700/80 bg-slate-950/95 p-3 shadow-2xl backdrop-blur'}
         >
           <div className={isLight ? 'flex items-center justify-between border-b border-slate-200 pb-2' : 'flex items-center justify-between border-b border-slate-800 pb-2'}>
             <span className={isLight ? 'text-sm font-semibold text-blue-700' : 'text-sm font-semibold text-indigo-300'}>Map Settings</span>
@@ -299,6 +318,44 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
           </div>
 
           <div className="space-y-3 pt-3">
+            <section className="space-y-2">
+              <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+                Layer Opacity
+              </div>
+              <div className={isLight ? 'space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-2' : 'space-y-3 rounded-lg border border-slate-800 bg-slate-900/60 p-2'}>
+                {opacityControls.map(item => {
+                  const value = Math.round(layerOpacities[item.key] * 100)
+                  return (
+                    <div key={item.key} className="space-y-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <label className={isLight ? 'text-sm text-slate-700' : 'text-sm text-slate-200'} htmlFor={`opacity-${item.key}`}>
+                          {item.label}
+                        </label>
+                        <span className={isLight ? 'text-xs font-medium text-slate-500' : 'text-xs font-medium text-slate-400'}>
+                          {value}%
+                        </span>
+                      </div>
+                      <input
+                        id={`opacity-${item.key}`}
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={value}
+                        onChange={event => onLayerOpacityChange(item.key, Number(event.target.value) / 100)}
+                        aria-label={`${item.label} opacity`}
+                        aria-describedby={`opacity-hint-${item.key}`}
+                        className="h-2 w-full cursor-pointer accent-sky-500"
+                      />
+                      <p id={`opacity-hint-${item.key}`} className={isLight ? 'text-xs leading-4 text-slate-500' : 'text-xs leading-4 text-slate-400'}>
+                        {item.hint}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+
             <section className="space-y-2">
               <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
                 Export GeoJSON

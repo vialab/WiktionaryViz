@@ -22,6 +22,18 @@ import type { EtymologyNode } from '@/types/etymology'
 import type { LanguoidData } from '@/types/languoid'
 import type { Translation } from '@/utils/mapUtils'
 
+type LayerOpacityKey = 'translations' | 'protoZones' | 'languageFamilies' | 'etymology' | 'descendants'
+
+type LayerOpacityState = Record<LayerOpacityKey, number>
+
+const defaultLayerOpacities: LayerOpacityState = {
+  translations: 1,
+  protoZones: 1,
+  languageFamilies: 1,
+  etymology: 1,
+  descendants: 1,
+}
+
 L.Marker.prototype.options.icon = L.icon({
   iconUrl: icon,
   shadowUrl: iconShadow,
@@ -72,6 +84,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
   const [showProtoZones, setShowProtoZones] = useState(false)
   const [showDescendantPaths, setShowDescendantPaths] = useState(false)
   const [etymologyRequested, setEtymologyRequested] = useState(false)
+  const [layerOpacities, setLayerOpacities] = useState<LayerOpacityState>(defaultLayerOpacities)
   const dwellDurationRef = useRef<number>(1200) // ms pause after each transition for reading (extended for readability)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
   // Track visibility of LayersControl overlays that render non-Leaflet DOM (bubbles SVG)
@@ -584,6 +597,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           word={word}
           language={language}
           mapInstance={mapInstance}
+          layerOpacities={layerOpacities}
+          onLayerOpacityChange={(layer, opacity) => {
+            setLayerOpacities(prev => ({ ...prev, [layer]: opacity }))
+          }}
           theme={theme}
         />
         <LayersControl position="topright">
@@ -608,20 +625,20 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           {/* General Etymology Markers Layer */}
           <LayersControl.Overlay checked={showTranslations} name="Translations">
             <MarkerClusterGroup ref={(instance: L.LayerGroup | null) => setTranslationGroup(instance)}>
-              {showTranslations && <TranslationMarkers markers={markers} />}
+              {showTranslations && <TranslationMarkers markers={markers} opacity={layerOpacities.translations} />}
             </MarkerClusterGroup>
           </LayersControl.Overlay>
           {/* Proto-Language Zones overlay from public/proto_regions.geojson */}
           <LayersControl.Overlay checked={showProtoZones} name="Proto-Language Zones">
             <LayerGroup ref={(instance: L.LayerGroup | null) => setProtoZonesGroup(instance)}>
-              {showProtoZones && <ProtoLanguageZones path="/proto_regions.geojson" />}
+              {showProtoZones && <ProtoLanguageZones path="/proto_regions.geojson" opacity={layerOpacities.protoZones} />}
             </LayerGroup>
           </LayersControl.Overlay>
           {/* Language Families polygons from Glottolog-derived hulls */}
           <LayersControl.Overlay checked={showLanguageFamilies} name="Language Families">
             <LayerGroup ref={(instance: L.LayerGroup | null) => setLanguageFamiliesGroup(instance)}>
               {showLanguageFamilies && (
-                <LanguageFamiliesBubbles path="/language_families.geojson" />
+                <LanguageFamiliesBubbles path="/language_families.geojson" opacity={layerOpacities.languageFamilies} />
               )}
             </LayerGroup>
           </LayersControl.Overlay>
@@ -630,7 +647,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
             <LayerGroup ref={(instance: L.LayerGroup | null) => setEtymologyLineageGroup(instance)}>
               {showEtymologyLineage && (
                 <>
-                  <LineageCountryHighlights lineage={lineage} currentIndex={currentIndex} />
+                  <LineageCountryHighlights lineage={lineage} currentIndex={currentIndex} opacity={layerOpacities.etymology} />
                   <EtymologyLineagePath
                     lineage={lineage}
                     currentIndex={currentIndex}
@@ -638,6 +655,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
                     segmentDurationMs={playSpeed}
                     dwellMs={dwellDurationRef.current}
                     showAllPopups={showAllPopups}
+                    opacity={layerOpacities.etymology}
                   />
                 </>
               )}
@@ -650,6 +668,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
                 <DescendantLineagePaths
                   rootWord={word || (lineage?.word ?? '')}
                   rootLang={language || (lineage?.lang_code ?? '')}
+                  opacity={layerOpacities.descendants}
                 />
               )}
             </LayerGroup>

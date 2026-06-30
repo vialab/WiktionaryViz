@@ -11,17 +11,19 @@ export interface TranslationMarker {
 
 export interface TranslationMarkersProps {
   markers: TranslationMarker[]
+  opacity?: number
 }
 
 /**
  * Renders translation markers with popups. Memoized for performance.
  */
-const TranslationMarkers: FC<TranslationMarkersProps> = memo(({ markers }) => (
+const TranslationMarkers: FC<TranslationMarkersProps> = memo(({ markers, opacity = 1 }) => (
   <>
     {markers.map((marker, index) => (
       <Marker
         key={index}
         position={marker.position}
+        opacity={opacity}
         interactive={true}
         eventHandlers={{
           click: e => {

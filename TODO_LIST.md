@@ -10,22 +10,22 @@ P2 = polish, export, or quality-of-life feature
 P0 — CORE GEOSPATIAL MANIPULATION FEATURES
 ================================================================================
 
-[ ] P0 — Implement a LayerPanel component
+[X] P0 — Implement a LayerPanel component
     Description: A side panel where users can toggle map layers on/off, such as markers, routes, labels, regions, annotations, and uncertainty overlays.
     Use case: Lets users control visual complexity instead of seeing every linguistic/geographic element at once.
     Research context: Interview participants wanted filtering, hiding/showing categories, and better control over what appears in visualizations.
 
-[ ] P0 — Create a layer registry/config system
+[X] P0 — Create a layer registry/config system
     Description: Define each map layer in one structured place with an ID, name, description, default visibility, opacity, z-index, and render function.
     Use case: Makes the layer system easier to extend later without hardcoding every toggle into the map component.
     Research context: Since WiktionaryViz is layer-heavy, the tool needs a scalable way to manage many geospatial information types.
 
-[ ] P0 — Add layer visibility toggles
+[X] P0 — Add layer visibility toggles
     Description: Users can turn individual layers on/off, such as language markers, etymological paths, borrowing routes, labels, and annotations.
     Use case: Helps users isolate one type of evidence at a time.
     Research context: Participants wanted visualizations that support exploration without overwhelming them.
 
-[ ] P0 — Add layer opacity controls
+[X] P0 — Add layer opacity controls
     Description: Users can adjust opacity for each layer using sliders.
     Use case: Lets users compare overlapping layers without fully hiding any of them.
     Research context: Useful when route lines, markers, regions, and labels overlap on the same map.

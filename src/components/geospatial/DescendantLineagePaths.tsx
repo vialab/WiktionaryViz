@@ -174,9 +174,10 @@ const resolveLanguageName = async (langCode: string | null | undefined, languoid
  * - TODO: Add performance instrumentation (request size, traversal duration, cache hit rate).
  */
 
-const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> = ({
+const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opacity?: number }> = ({
   rootWord,
   rootLang,
+  opacity = 1,
 }) => {
   const { languoidData } = useLanguoidData() as { languoidData: LanguoidData[]; loading: boolean }
   const [paths, setPaths] = useState<DescPath[]>([])
@@ -475,6 +476,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
           const hasAggregatedNode = points.some(point => point.aggregated)
           const hasFallbackNode = points.some(point => point.fallback)
           const baseColor = isActive ? '#fb923c' : hasAggregatedNode ? '#eab308' : '#f97316'
+          const layerOpacity = Math.max(0, Math.min(1, opacity))
           return (
             <React.Fragment key={`path-${idx}`}>
               {coords.length >= 2 ? (
@@ -486,7 +488,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
                   pathOptions={{
                     color: baseColor,
                     weight: isActive ? 3.6 : hasAggregatedNode ? 2.6 : 2.2,
-                    opacity: isActive ? 0.98 : hasAggregatedNode ? 0.72 : hasFallbackNode ? 0.68 : 0.6,
+                    opacity: (isActive ? 0.98 : hasAggregatedNode ? 0.72 : hasFallbackNode ? 0.68 : 0.6) * layerOpacity,
                     dashArray: hasAggregatedNode ? '6 4' : hasFallbackNode ? '3 5' : undefined,
                     className: `descendant-segment${isActive ? ' descendant-segment-active' : ''}`,
                   }}
@@ -512,7 +514,8 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
                     fillColor: point.aggregated ? '#fbbf24' : point.fallback ? '#60a5fa' : '#f97316',
                     color: point.aggregated ? '#a16207' : point.fallback ? '#1d4ed8' : '#92400e',
                     weight: 1,
-                    fillOpacity: selected === idx ? 0.95 : point.aggregated ? 0.88 : point.fallback ? 0.82 : 0.7,
+                    opacity: layerOpacity,
+                    fillOpacity: (selected === idx ? 0.95 : point.aggregated ? 0.88 : point.fallback ? 0.82 : 0.7) * layerOpacity,
                   }}
                   eventHandlers={{
                     click: () => {
@@ -528,7 +531,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string }> =
                   }}
                 >
                   {(selected === idx || i === points.length - 1) && (
-                    <Tooltip pane="descendant-paths-labels" direction="top" offset={[0, -6]} permanent={false}>
+                    <Tooltip pane="descendant-paths-labels" direction="top" offset={[0, -6]} permanent={false} opacity={layerOpacity}>
                       <div className="leading-tight" style={{ fontSize: 12, fontWeight: 700 }}>
                         <strong>{languageNames[p[i]?.lang_code ?? ''] ?? getLanguageLabel(p[i]?.lang_code, languoidData) ?? p[i]?.lang_code}</strong>
                         {p[i]?.word && (

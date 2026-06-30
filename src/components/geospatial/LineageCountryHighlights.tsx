@@ -12,6 +12,7 @@ interface Props {
   lineage: EtymologyNode | null
   path?: string // geojson path
   currentIndex?: number // active node index for focused country pulse
+  opacity?: number
 }
 
 // Persistent highlight style (no hover reset logic here)
@@ -81,6 +82,7 @@ const LineageCountryHighlights: FC<Props> = ({
   lineage,
   path = '/countries.geojson',
   currentIndex,
+  opacity = 1,
 }) => {
   const data = useCountriesGeoJSON(path)
   const lineageNodes = useMemo(() => flattenLineage(lineage), [lineage])
@@ -215,8 +217,12 @@ const LineageCountryHighlights: FC<Props> = ({
           const style = regionStyleFor(lc || '')
           const id = (props as CountryProps | undefined)?.ISO_A3 || (feat?.id as string) || lc || ''
           const focused = typeof id === 'string' ? activeIds?.has(id) : false
+          const layerOpacity = Math.max(0, Math.min(1, opacity))
+          const baseStyle = style as L.PathOptions
           return {
             ...style,
+            opacity: Math.max(0, Math.min(1, (baseStyle.opacity ?? 1) * layerOpacity)),
+            fillOpacity: Math.max(0, Math.min(1, (baseStyle.fillOpacity ?? 0) * layerOpacity)),
             className: `${baseClassName}${focused ? ' country-focused' : ''} ${
               isProtoFeature ? 'proto-region' : 'attested-region'
             }`,

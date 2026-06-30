@@ -6,7 +6,16 @@ import useProtoRegionsGeoJSON, { ProtoRegionProps } from '@/hooks/useProtoRegion
 
 type Props = {
   path?: string
+  opacity?: number
 }
+
+const clampOpacity = (value: number) => Math.max(0, Math.min(1, value))
+
+const applyOpacity = (style: L.PathOptions, multiplier: number): L.PathOptions => ({
+  ...style,
+  opacity: clampOpacity((style.opacity ?? 1) * multiplier),
+  fillOpacity: clampOpacity((style.fillOpacity ?? 0) * multiplier),
+})
 
 const defaultStyle: L.PathOptions = {
   color: '#a78bfa', // violet-400
@@ -28,11 +37,12 @@ const hoverStyle: L.PathOptions = {
   fillOpacity: 0.25,
 }
 
-const ProtoLanguageZones: FC<Props> = ({ path = '/proto_regions.geojson' }) => {
+const ProtoLanguageZones: FC<Props> = ({ path = '/proto_regions.geojson', opacity = 1 }) => {
   const data = useProtoRegionsGeoJSON(path)
   const geoJsonRef = useRef<L.GeoJSON>(null)
 
-  const style = useMemo(() => defaultStyle, [])
+  const style = useMemo(() => applyOpacity(defaultStyle, opacity), [opacity])
+  const hoveredStyle = useMemo(() => applyOpacity(hoverStyle, opacity), [opacity])
 
   const onEachFeature = (feature: Feature<Geometry, ProtoRegionProps>, layer: L.Layer) => {
     // Ensure interactivity for hover feedback
@@ -52,14 +62,14 @@ const ProtoLanguageZones: FC<Props> = ({ path = '/proto_regions.geojson' }) => {
     layer.on({
       mouseover: (e: L.LeafletEvent) => {
         const target = e.target as L.Path
-        target.setStyle(hoverStyle)
+        target.setStyle(hoveredStyle)
         const el = (target as L.Path).getElement?.() as SVGElement | undefined
         if (el) el.classList.add('proto-zone-hovered')
         if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) target.bringToFront()
       },
       mouseout: (e: L.LeafletEvent) => {
-        const gj = geoJsonRef.current
-        if (gj) gj.resetStyle(e.target as L.Layer)
+        const target = e.target as L.Path
+        target.setStyle(style)
         const el = (e.target as L.Path).getElement?.() as SVGElement | undefined
         if (el) el.classList.remove('proto-zone-hovered')
       },
