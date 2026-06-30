@@ -35,12 +35,7 @@ P0 — CORE GEOSPATIAL MANIPULATION FEATURES
     Use case: Prevents important data from being hidden behind polygons, map regions, or dense marker clusters.
     Research context: Geospatial participants often struggle with map legibility and visual clutter.
 
-[ ] P0 — Add “solo layer” mode
-    Description: Clicking “solo” on a layer hides all other layers temporarily.
-    Use case: Allows users to quickly inspect one layer, such as only borrowing paths or only uncertain data.
-    Research context: Supports focused exploration and reduces cognitive load.
-
-[ ] P0 — Add “reset layers” button
+[X] P0 — Add “reset layers” button
     Description: Restores all layer visibility, opacity, and ordering settings to default.
     Use case: Helps users recover from complex manipulation without manually undoing each change.
     Research context: Important for usability during open-ended exploration.

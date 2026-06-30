@@ -26,7 +26,7 @@ interface GeospatialSettingsMenuProps {
   onLayerOpacityChange: (layer: LayerOpacityKey, opacity: number) => void
   layerOrder: LayerOrderState
   onLayerMove: (layer: LayerOrderKey, direction: LayerOrderDirection) => void
-  onResetLayerOrder: () => void
+  onResetLayers: () => void
   theme?: 'dark' | 'light'
 }
 
@@ -39,7 +39,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   onLayerOpacityChange,
   layerOrder,
   onLayerMove,
-  onResetLayerOrder,
+  onResetLayers,
   theme = 'dark',
 }) => {
   const isLight = theme === 'light'
@@ -342,6 +342,19 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
 
           <div className="space-y-3 pt-3">
             <section className="space-y-2">
+              <button
+                type="button"
+                onClick={onResetLayers}
+                className={isLight ? 'inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800' : 'inline-flex w-full items-center justify-center rounded-lg bg-slate-700/90 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-600'}
+              >
+                Reset layers
+              </button>
+              <p className={isLight ? 'px-1 text-xs leading-5 text-slate-500' : 'px-1 text-xs leading-5 text-slate-400'}>
+                Restores layer visibility, opacity, and stacking order to their defaults.
+              </p>
+            </section>
+
+            <section className="space-y-2">
               <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
                 Layer Order
               </div>
@@ -386,10 +399,10 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                 })}
                 <button
                   type="button"
-                  onClick={onResetLayerOrder}
+                  onClick={onResetLayers}
                   className={isLight ? 'inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800' : 'inline-flex w-full items-center justify-center rounded-lg bg-slate-700/90 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-600'}
                 >
-                  Reset order
+                  Reset layers
                 </button>
               </div>
             </section>

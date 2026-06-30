@@ -400,7 +400,20 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
     })
   }
 
-  const resetLayerOrder = () => setLayerOrder(defaultLayerOrder)
+  const resetLayers = () => {
+    setShowTranslations(false)
+    setShowProtoZones(false)
+    setShowDescendantPaths(false)
+    setShowLanguageFamilies(false)
+    setShowEtymologyLineage(false)
+    setLayerOpacities(defaultLayerOpacities)
+    setLayerOrder(defaultLayerOrder)
+    setCurrentIndex(undefined)
+    setIsPlaying(false)
+    setShowAllPopups(false)
+    setEtymologyRequested(false)
+    setGuideLayer(null)
+  }
 
   useEffect(() => {
     if (!lineage || !etymologyRequested || !showEtymologyLineage || guideOpen) return
@@ -658,7 +671,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({ word, language, onGuide
           }}
           layerOrder={layerOrder}
           onLayerMove={moveLayer}
-          onResetLayerOrder={resetLayerOrder}
+          onResetLayers={resetLayers}
           theme={theme}
         />
         <LayersControl position="topright">
