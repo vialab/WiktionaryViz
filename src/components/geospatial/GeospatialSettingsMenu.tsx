@@ -26,6 +26,8 @@ interface GeospatialSettingsMenuProps {
   mapInstance?: L.Map | null
   canFitToData?: boolean
   onFitToData: () => void
+  onResetView: () => void
+  onSaveState: () => void
   layerOpacities: LayerOpacityState
   onLayerOpacityChange: (layer: LayerOpacityKey, opacity: number) => void
   layerOrder: LayerOrderState
@@ -51,6 +53,8 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   onLayerMove,
   canFitToData = false,
   onFitToData,
+  onResetView,
+  onSaveState,
   onResetLayers,
   annotationMode,
   annotationTool,
@@ -340,6 +344,21 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     [],
   )
 
+  const shortcutHelpItems = useMemo(
+    () => [
+      { keys: ['Alt', '1'], label: 'Toggle translations layer' },
+      { keys: ['Alt', '2'], label: 'Toggle etymology layer' },
+      { keys: ['Alt', '3'], label: 'Toggle descendant paths layer' },
+      { keys: ['Alt', '4'], label: 'Toggle proto-language zones' },
+      { keys: ['Alt', '5'], label: 'Toggle language families' },
+      { keys: ['Alt', 'A'], label: 'Toggle annotation mode' },
+      { keys: ['Alt', 'F'], label: 'Fit the map to visible data' },
+      { keys: ['Alt', 'R'], label: 'Reset the map view' },
+      { keys: ['Alt', 'S'], label: 'Copy the current shareable state link' },
+    ],
+    [],
+  )
+
   return (
     <div className="fixed bottom-2 left-2 z-[10000]" style={{ pointerEvents: 'auto' }} ref={menuRef}>
       <button
@@ -574,6 +593,47 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
               >
                 Download GeoJSON
               </button>
+            </section>
+
+            <section className={isLight ? 'space-y-2 border-t border-slate-200 pt-3' : 'space-y-2 border-t border-slate-800 pt-3'}>
+              <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+                Keyboard Shortcuts
+              </div>
+              <div className={isLight ? 'space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2' : 'space-y-2 rounded-lg border border-slate-800 bg-slate-900/60 p-2'}>
+                <p className={isLight ? 'text-xs leading-5 text-slate-500' : 'text-xs leading-5 text-slate-400'}>
+                  Shortcuts only fire when you are not typing in a field. Use them to move faster without hunting through the panel.
+                </p>
+                <div className="grid gap-2">
+                  {shortcutHelpItems.map(item => (
+                    <div key={item.label} className={isLight ? 'flex items-start justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2' : 'flex items-start justify-between gap-3 rounded-md border border-slate-800 bg-slate-950/40 px-3 py-2'}>
+                      <div className={isLight ? 'text-sm text-slate-700' : 'text-sm text-slate-200'}>{item.label}</div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        {item.keys.map(key => (
+                          <kbd key={key} className={isLight ? 'rounded border border-slate-300 bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600' : 'rounded border border-slate-700 bg-slate-950 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300'}>
+                            {key}
+                          </kbd>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={onSaveState}
+                    className={isLight ? 'inline-flex items-center justify-center rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 transition hover:border-blue-400 hover:bg-blue-100' : 'inline-flex items-center justify-center rounded-lg border border-sky-400/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-100 transition hover:border-sky-300 hover:bg-sky-500/20'}
+                  >
+                    Copy shareable link
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onResetView}
+                    className={isLight ? 'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50' : 'inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900'}
+                  >
+                    Reset view
+                  </button>
+                </div>
+              </div>
             </section>
 
             <section className={isLight ? 'space-y-2 border-t border-slate-200 pt-3' : 'space-y-2 border-t border-slate-800 pt-3'}>

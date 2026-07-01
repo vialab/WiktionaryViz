@@ -273,6 +273,35 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     setFilterState({ annotationTool: tool })
   }, [setFilterState])
 
+  const toggleLayerVisibility = useCallback((layer: MapLayerKey) => {
+    updateMapState(current => ({
+      ...current,
+      activeLayers: {
+        ...current.activeLayers,
+        [layer]: !current.activeLayers[layer],
+      },
+    }))
+  }, [updateMapState])
+
+  const resetView = useCallback(() => {
+    if (!mapInstance) return
+    mapInstance.flyTo(initialCameraCenterRef.current, initialCameraZoomRef.current, {
+      duration: 0.8,
+    })
+    announce('Map view reset')
+  }, [announce, mapInstance])
+
+  const saveShareableState = useCallback(async () => {
+    if (typeof window === 'undefined') return
+    const shareableUrl = window.location.href
+    try {
+      await window.navigator.clipboard.writeText(shareableUrl)
+      announce('Shareable map link copied to clipboard')
+    } catch {
+      window.prompt('Copy this shareable map link', shareableUrl)
+    }
+  }, [announce])
+
   const setSelectedItem = useCallback((selectedItem: MapSelection) => {
     updateMapState(current => {
       if (current.selectedItem.kind !== selectedItem.kind) {
@@ -964,6 +993,43 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     }
   }, [descendantCoordinates, lineageCoordinates, markers, mapInstance, showDescendantPaths, showEtymologyLineage, showTranslations])
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return
+
+      const target = event.target as HTMLElement | null
+      if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) {
+        return
+      }
+
+      if (!event.altKey || event.ctrlKey || event.metaKey) return
+
+      const key = event.key.toLowerCase()
+      const shortcutHandlers: Record<string, () => void> = {
+        '1': () => toggleLayerVisibility('translations'),
+        '2': () => toggleLayerVisibility('etymology'),
+        '3': () => toggleLayerVisibility('descendants'),
+        '4': () => toggleLayerVisibility('protoZones'),
+        '5': () => toggleLayerVisibility('languageFamilies'),
+        a: () => setAnnotationMode(!mapState.filters.annotationMode),
+        f: () => fitToData(),
+        r: () => resetView(),
+        s: () => {
+          void saveShareableState()
+        },
+      }
+
+      const handler = shortcutHandlers[key]
+      if (!handler) return
+
+      event.preventDefault()
+      handler()
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [fitToData, mapState.filters.annotationMode, resetView, saveShareableState, setAnnotationMode, toggleLayerVisibility])
+
   const canFitToData = showTranslations || showEtymologyLineage || showDescendantPaths
 
   return (
@@ -996,6 +1062,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             fitToData()
             announce('Map fitted to visible data')
           }}
+          onResetView={resetView}
+          onSaveState={saveShareableState}
           layerOpacities={layerOpacities}
           onLayerOpacityChange={(layer, opacity) => {
             setActiveLayerState({ opacities: { ...layerOpacities, [layer]: opacity } })

@@ -295,7 +295,7 @@ P2 — EXPORT, PRESENTATION, AND POLISH FEATURES
     Use case: Makes the tool more usable in classrooms and presentations.
     Research context: Participants noted that visualizations need to be readable in real-world teaching/presentation contexts.
 
-[ ] P2 — Add keyboard shortcuts
+[X] P2 — Add keyboard shortcuts
     Description: Add shortcuts for toggling layers, saving state, opening annotation mode, resetting view, and opening the evidence drawer.
     Use case: Speeds up expert workflows.
     Research context: Participants differed in interaction preferences; some prefer efficient control over point-and-click UI.
@@ -310,7 +310,7 @@ P2 — EXPORT, PRESENTATION, AND POLISH FEATURES
     Use case: Helps new users understand the interaction model quickly.
     Research context: Participants noted that tools can fail adoption when users do not understand how to use them.
 
-[ ] P2 — Add tooltip explanations for controls
+[X] P2 — Add tooltip explanations for controls
     Description: Hovering over buttons explains what they do.
     Use case: Reduces confusion without cluttering the interface.
     Research context: Supports usability for both experts and non-experts.
@@ -330,7 +330,7 @@ P2 — EXPORT, PRESENTATION, AND POLISH FEATURES
     Use case: Prevents total failure during presentations or studies.
     Research context: Reliability was a recurring adoption concern.
 
-[ ] P2 — Add accessibility checks
+[X] P2 — Add accessibility checks
     Description: Check color contrast, keyboard navigation, screen-reader labels, and non-color encodings.
     Use case: Makes the visualization more usable for diverse users.
     Research context: Participants discussed communication barriers and the need for multiple ways to understand information.
