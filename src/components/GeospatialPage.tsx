@@ -159,6 +159,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const [descendantPathsGroup, setDescendantPathsGroup] = useState<L.LayerGroup | null>(null)
   const [languageFamiliesGroup, setLanguageFamiliesGroup] = useState<L.LayerGroup | null>(null)
   const [etymologyLineageGroup, setEtymologyLineageGroup] = useState<L.LayerGroup | null>(null)
+  const [annotationLayerGroup, setAnnotationLayerGroup] = useState<L.LayerGroup | null>(null)
   const [descendantCoordinates, setDescendantCoordinates] = useState<[number, number][]>([])
   const [liveMessage, setLiveMessage] = useState('')
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
@@ -192,6 +193,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const showDescendantPaths = mapState.activeLayers.descendants
   const showLanguageFamilies = mapState.activeLayers.languageFamilies
   const showEtymologyLineage = mapState.activeLayers.etymology
+  const showAnnotations = mapState.activeLayers.annotations
   const layerOpacities = mapState.activeLayers.opacities
   const layerOrder = mapState.activeLayers.order
   const currentWordKey = mapState.currentWord.key
@@ -274,6 +276,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const setAnnotationTool = useCallback((tool: AnnotationKind) => {
     setFilterState({ annotationTool: tool })
   }, [setFilterState])
+
+  const setAnnotationsVisible = useCallback((enabled: boolean) => {
+    setActiveLayerState({ annotations: enabled })
+  }, [setActiveLayerState])
 
   const toggleLayerVisibility = useCallback((layer: MapLayerKey) => {
     updateMapState(current => ({
@@ -431,6 +437,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         descendants: false,
         languageFamilies: false,
         etymology: false,
+        annotations: true,
       },
       filters: {
         ...current.filters,
@@ -534,6 +541,25 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   }, [mapInstance, descendantPathsGroup, setActiveLayerState])
 
   useEffect(() => {
+    const map = mapInstance
+    const group = annotationLayerGroup
+    if (!map || !group) return
+    const onAdd = (e: L.LayersControlEvent) => {
+      if (e.layer === group) setActiveLayerState({ annotations: true })
+    }
+    const onRemove = (e: L.LayersControlEvent) => {
+      if (e.layer === group) setActiveLayerState({ annotations: false })
+    }
+    map.on('overlayadd', onAdd)
+    map.on('overlayremove', onRemove)
+    setActiveLayerState({ annotations: map.hasLayer(group) })
+    return () => {
+      map.off('overlayadd', onAdd)
+      map.off('overlayremove', onRemove)
+    }
+  }, [annotationLayerGroup, mapInstance, setActiveLayerState])
+
+  useEffect(() => {
     if (Array.isArray(wordData?.translations) && languoidData.length) {
       processTranslations(wordData.translations, languoidData, setMarkers)
     }
@@ -570,6 +596,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           descendants: false,
           etymology: false,
           languageFamilies: false,
+          annotations: true,
         })
       })
     }
@@ -922,10 +949,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     })
   }, [currentIndex, lineage, setSelectedItem])
 
-  const selectedLineageIndex = mapState.selectedItem.kind === 'lineage-node'
-    ? mapState.selectedItem.index
-    : null
-
   useEffect(() => {
     if (!lineage || currentIndex === undefined) return
 
@@ -1106,6 +1129,17 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         announce(`Language families ${showLanguageFamilies ? 'hidden' : 'shown'}`)
       },
     },
+      {
+        id: 'toggle-annotations-layer',
+        label: showAnnotations ? 'Hide annotations layer' : 'Show annotations layer',
+        description: 'Toggle user-created annotations as their own map layer.',
+        group: 'Annotations',
+        keywords: ['annotation layer', 'hide notes', 'show notes', 'export annotations'],
+        onSelect: () => {
+          setAnnotationsVisible(!showAnnotations)
+          announce(`Annotations layer ${showAnnotations ? 'hidden' : 'shown'}`)
+        },
+      },
     {
       id: 'toggle-annotation-mode',
       label: mapState.filters.annotationMode ? 'Disable annotation mode' : 'Enable annotation mode',
@@ -1182,8 +1216,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     showLanguageFamilies,
     showProtoZones,
     showTranslations,
+    showAnnotations,
     toggleLayerVisibility,
     updateMapState,
+    setAnnotationsVisible,
   ])
 
   useEffect(() => {
@@ -1212,6 +1248,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         '3': () => toggleLayerVisibility('descendants'),
         '4': () => toggleLayerVisibility('protoZones'),
         '5': () => toggleLayerVisibility('languageFamilies'),
+        '6': () => setAnnotationsVisible(!showAnnotations),
         a: () => setAnnotationMode(!mapState.filters.annotationMode),
         f: () => fitToData(),
         r: () => resetView(),
@@ -1229,7 +1266,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
 
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [commandPaletteOpen, fitToData, mapState.filters.annotationMode, resetView, saveShareableState, setAnnotationMode, toggleLayerVisibility])
+  }, [commandPaletteOpen, fitToData, mapState.filters.annotationMode, resetView, saveShareableState, setAnnotationMode, setAnnotationsVisible, showAnnotations, toggleLayerVisibility])
 
   return (
     <section
@@ -1253,6 +1290,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         <GeospatialSettingsMenu
           markers={markers}
           lineage={lineage}
+          annotations={annotations}
           word={word}
           language={language}
           mapInstance={mapInstance}
@@ -1276,11 +1314,16 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           onResetLayers={resetLayers}
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
           annotationMode={mapState.filters.annotationMode}
+          annotationsVisible={showAnnotations}
           annotationTool={mapState.filters.annotationTool}
           annotationCount={annotations.length}
           onAnnotationModeChange={enabled => {
             setAnnotationMode(enabled)
             announce(`Annotation mode ${enabled ? 'enabled' : 'disabled'}`)
+          }}
+          onAnnotationsVisibleChange={enabled => {
+            setAnnotationsVisible(enabled)
+            announce(`Annotations layer ${enabled ? 'shown' : 'hidden'}`)
           }}
           onAnnotationToolChange={tool => {
             setAnnotationTool(tool)
@@ -1293,20 +1336,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             }))
             announce('Annotations cleared')
           }}
-          theme={theme}
-        />
-        <AnnotationModeOverlay
-          enabled={mapState.filters.annotationMode}
-          tool={mapState.filters.annotationTool}
-          annotations={annotations}
-          onAnnotationsChange={nextAnnotations => {
-            updateMapState(current => ({
-              ...current,
-              annotations: nextAnnotations,
-            }))
-          }}
-          onToolChange={setAnnotationTool}
-          onAnnounce={announce}
           theme={theme}
         />
         <LayersControl position="topright">
@@ -1380,7 +1409,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
                   <EtymologyLineagePath
                     lineage={lineage}
                     currentIndex={currentIndex}
-                    selectedIndex={selectedLineageIndex}
                     isPlaying={isPlaying}
                     segmentDurationMs={playSpeed}
                     dwellMs={dwellDurationRef.current}
@@ -1403,6 +1431,27 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
                   opacity={layerOpacities.descendants}
                   zIndex={layerZIndex('descendants')}
                   onVisibleCoordinatesChange={setDescendantCoordinates}
+                />
+              )}
+            </LayerGroup>
+          </LayersControl.Overlay>
+          <LayersControl.Overlay checked={showAnnotations} name="Annotations">
+            <LayerGroup ref={(instance: L.LayerGroup | null) => setAnnotationLayerGroup(instance)}>
+              {showAnnotations && (
+                <AnnotationModeOverlay
+                  enabled={mapState.filters.annotationMode}
+                  visible={showAnnotations}
+                  tool={mapState.filters.annotationTool}
+                  annotations={annotations}
+                  onAnnotationsChange={nextAnnotations => {
+                    updateMapState(current => ({
+                      ...current,
+                      annotations: nextAnnotations,
+                    }))
+                  }}
+                  onToolChange={setAnnotationTool}
+                  onAnnounce={announce}
+                  theme={theme}
                 />
               )}
             </LayerGroup>

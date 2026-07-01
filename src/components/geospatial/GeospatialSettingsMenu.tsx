@@ -21,6 +21,7 @@ type LayerOrderDirection = 'up' | 'down'
 interface GeospatialSettingsMenuProps {
   markers: TranslationMarker[]
   lineage: EtymologyNode | null
+  annotations: import('@/types/mapState').MapAnnotation[]
   word?: string
   language?: string
   mapInstance?: L.Map | null
@@ -35,9 +36,11 @@ interface GeospatialSettingsMenuProps {
   onResetLayers: () => void
   onOpenCommandPalette: () => void
   annotationMode: boolean
+  annotationsVisible: boolean
   annotationTool: AnnotationKind
   annotationCount: number
   onAnnotationModeChange: (enabled: boolean) => void
+  onAnnotationsVisibleChange: (enabled: boolean) => void
   onAnnotationToolChange: (tool: AnnotationKind) => void
   onClearAnnotations: () => void
   theme?: 'dark' | 'light'
@@ -46,6 +49,7 @@ interface GeospatialSettingsMenuProps {
 const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   markers,
   lineage,
+  annotations,
   word,
   language,
   layerOpacities,
@@ -59,9 +63,11 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   onResetLayers,
   onOpenCommandPalette,
   annotationMode,
+  annotationsVisible,
   annotationTool,
   annotationCount,
   onAnnotationModeChange,
+  onAnnotationsVisibleChange,
   onAnnotationToolChange,
   onClearAnnotations,
   theme = 'dark',
@@ -75,6 +81,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     markers: true,
     lineagePoints: true,
     lineagePath: true,
+    annotations: true,
   })
   const menuRef = useRef<HTMLDivElement | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
@@ -91,9 +98,9 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   }
 
   const handleExport = useCallback(() => {
-    const geojson = buildGeoJSON(markers, lineage, options)
+    const geojson = buildGeoJSON(markers, lineage, annotations, options)
     downloadGeoJSON(geojson)
-  }, [markers, lineage, options])
+  }, [annotations, markers, lineage, options])
 
   const tryFindTarget = useCallback(() => {
     const byId = document.getElementById('map-root')
@@ -309,6 +316,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
       { key: 'markers' as const, label: 'Translation Markers' },
       { key: 'lineagePoints' as const, label: 'Lineage Points' },
       { key: 'lineagePath' as const, label: 'Lineage Path' },
+      { key: 'annotations' as const, label: 'Annotations' },
     ],
     [],
   )
@@ -353,6 +361,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
       { keys: ['Alt', '3'], label: 'Toggle descendant paths layer' },
       { keys: ['Alt', '4'], label: 'Toggle proto-language zones' },
       { keys: ['Alt', '5'], label: 'Toggle language families' },
+      { keys: ['Alt', '6'], label: 'Toggle annotations layer' },
       { keys: ['Alt', 'A'], label: 'Toggle annotation mode' },
       { keys: ['Alt', 'F'], label: 'Fit the map to visible data' },
       { keys: ['Alt', 'R'], label: 'Reset the map view' },
@@ -516,6 +525,21 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                   {annotationCount > 0
                     ? `${annotationCount} annotation${annotationCount === 1 ? '' : 's'} saved on the map.`
                     : 'Click the map to add notes, highlights, arrows, regions, or custom links.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => onAnnotationsVisibleChange(!annotationsVisible)}
+                  aria-pressed={annotationsVisible}
+                  className={isLight
+                    ? 'inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50'
+                    : 'inline-flex w-full items-center justify-center rounded-lg border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900'}
+                >
+                  {annotationsVisible ? 'Hide annotation layer' : 'Show annotation layer'}
+                </button>
+                <p className={isLight ? 'px-1 text-xs leading-5 text-slate-500' : 'px-1 text-xs leading-5 text-slate-400'}>
+                  {annotationsVisible
+                    ? 'Annotations are visible as their own layer and can be exported.'
+                    : 'Annotations remain in map state but are hidden from the canvas and export.'}
                 </p>
                 <div className={isLight ? 'space-y-2 rounded-md border border-slate-200 bg-white p-2' : 'space-y-2 rounded-md border border-slate-800 bg-slate-950/40 p-2'}>
                   {annotationControls.map(item => (

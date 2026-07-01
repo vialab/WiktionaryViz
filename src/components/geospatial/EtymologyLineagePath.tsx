@@ -35,7 +35,6 @@ export interface EtymologyLineagePathProps {
   opacity?: number
   zIndex?: number
   onNodeClick?: (node: EtymologyNode, index: number) => void
-  selectedIndex?: number | null
 }
 
 const LINE_PANE = 'etymology-lineage-lines'
@@ -187,7 +186,7 @@ const AnimatedSegment: FC<{
 }
 
 const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
-  ({ lineage, currentIndex, isPlaying = false, segmentDurationMs, dwellMs, showAllPopups, opacity = 1, zIndex = 560, onNodeClick, selectedIndex }) => {
+  ({ lineage, currentIndex, isPlaying = false, segmentDurationMs, dwellMs, showAllPopups, opacity = 1, zIndex = 560, onNodeClick }) => {
     const map = useMap()
     const completedSegments: React.ReactNode[] = []
     const activeSegments: React.ReactNode[] = []
@@ -204,7 +203,6 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
         const visible = active === undefined || idx <= active // only show nodes up to active
         if (visible) {
           const tooltipPermanent = showAllPopups || isActive
-          const isSelected = selectedIndex === idx
           completedSegments.push(
             <CircleMarker
               key={`circle-${word}-${lang_code}`}

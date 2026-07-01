@@ -12,6 +12,7 @@ type AnnotationTheme = 'dark' | 'light'
 
 interface AnnotationModeOverlayProps {
   enabled: boolean
+  visible: boolean
   tool: AnnotationKind
   annotations: MapAnnotation[]
   onAnnotationsChange: (nextAnnotations: MapAnnotation[]) => void
@@ -44,6 +45,7 @@ const createNoteIcon = (theme: AnnotationTheme) =>
 
 const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   enabled,
+  visible,
   tool,
   annotations,
   onAnnotationsChange,
@@ -161,7 +163,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
 
   return (
     <>
-      {annotations.map(annotation => {
+      {visible && annotations.map(annotation => {
         if (annotation.kind === 'note') {
           return (
             <Marker

@@ -70,6 +70,7 @@ const parseMapState = (rawValue: string | null, word1: string, language1: string
           ...parsed.activeLayers?.opacities,
         },
         order: parsed.activeLayers?.order ?? base.activeLayers.order,
+        annotations: parsed.activeLayers?.annotations ?? base.activeLayers.annotations,
       },
       filters: {
         ...base.filters,

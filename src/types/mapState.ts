@@ -55,6 +55,7 @@ export interface MapActiveLayersState {
   languageFamilies: boolean
   etymology: boolean
   descendants: boolean
+  annotations: boolean
   opacities: LayerOpacityState
   order: LayerOrderState
 }
@@ -115,6 +116,7 @@ export const createInitialMapState = (word: string, language: string): MapState 
     languageFamilies: false,
     etymology: false,
     descendants: false,
+    annotations: true,
     opacities: defaultMapLayerOpacities,
     order: defaultMapLayerOrder,
   },

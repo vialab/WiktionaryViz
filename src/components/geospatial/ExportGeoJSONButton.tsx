@@ -1,19 +1,22 @@
 import React, { useCallback, useState } from 'react'
 import type { TranslationMarker } from './TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
+import type { MapAnnotation } from '@/types/mapState'
 import { buildGeoJSON, downloadGeoJSON, ExportOptions } from '@/utils/geojsonExport'
 
 interface ExportGeoJSONButtonProps {
   markers: TranslationMarker[]
   lineage: EtymologyNode | null
+  annotations: MapAnnotation[]
 }
 
-const ExportGeoJSONButton: React.FC<ExportGeoJSONButtonProps> = ({ markers, lineage }) => {
+const ExportGeoJSONButton: React.FC<ExportGeoJSONButtonProps> = ({ markers, lineage, annotations }) => {
   const [open, setOpen] = useState(false)
   const [options, setOptions] = useState<ExportOptions>({
     markers: true,
     lineagePoints: true,
     lineagePath: true,
+    annotations: true,
   })
 
   const toggle = () => setOpen(o => !o)
@@ -23,9 +26,9 @@ const ExportGeoJSONButton: React.FC<ExportGeoJSONButtonProps> = ({ markers, line
   }
 
   const handleExport = useCallback(() => {
-    const geojson = buildGeoJSON(markers, lineage, options)
+    const geojson = buildGeoJSON(markers, lineage, annotations, options)
     downloadGeoJSON(geojson)
-  }, [markers, lineage, options])
+  }, [annotations, markers, lineage, options])
 
   return (
     <div className="fixed bottom-2 left-2 z-[10000]" style={{ pointerEvents: 'auto' }}>
@@ -67,6 +70,14 @@ const ExportGeoJSONButton: React.FC<ExportGeoJSONButtonProps> = ({ markers, line
                 onChange={onChange('lineagePath')}
               />
               <span>Lineage Path</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={options.annotations !== false}
+                onChange={onChange('annotations')}
+              />
+              <span>Annotations</span>
             </label>
           </fieldset>
           <div className="pt-1 flex justify-end">

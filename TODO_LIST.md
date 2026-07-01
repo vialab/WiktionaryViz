@@ -150,12 +150,12 @@ P1 — HIGH-VALUE THESIS / DEMO FEATURES
     Use case: Useful for commenting on uncertain borrowing paths or interesting linguistic transitions.
     Research context: Participants wanted to explain or question relationships shown in the visualization.
 
-[ ] P1 — Add free-floating map annotations
+[X] P1 — Add free-floating map annotations
     Description: Users can place notes anywhere on the map independent of existing data.
     Use case: Useful for observations about regions, clusters, movement patterns, or map-level interpretation.
     Research context: Supports exploratory thinking beyond what the dataset explicitly encodes.
 
-[ ] P1 — Add region drawing annotations
+[X] P1 — Add region drawing annotations
     Description: Users can draw circles, rectangles, or polygons around areas of interest.
     Use case: Useful for marking geographic clusters, cultural zones, or suspected regions of influence.
     Research context: Participants wanted more flexible region-based thinking than simple country/state maps.
@@ -180,7 +180,7 @@ P1 — HIGH-VALUE THESIS / DEMO FEATURES
     Use case: Helps organize annotations by purpose.
     Research context: Supports multiple use cases: research, teaching, explanation, and exploratory analysis.
 
-[ ] P1 — Add annotation layer toggle
+[X] P1 — Add annotation layer toggle
     Description: User annotations appear as their own layer that can be hidden, shown, or exported.
     Use case: Lets users switch between clean source-data view and interpreted/annotated view.
     Research context: Participants wanted both exploration and communication modes.

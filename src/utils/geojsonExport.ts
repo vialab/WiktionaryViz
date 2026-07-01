@@ -2,12 +2,14 @@
 // GeoJSON spec: https://datatracker.ietf.org/doc/html/rfc7946
 import type { TranslationMarker } from '@/components/geospatial/TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
+import type { MapAnnotation } from '@/types/mapState'
 import { flattenLineage } from '@/utils/mapUtils'
 
 export interface ExportOptions {
   markers?: boolean // include translation markers as Point features
   lineagePoints?: boolean // include lineage nodes as Point features
   lineagePath?: boolean // include lineage path as LineString feature
+  annotations?: boolean // include user annotations as GeoJSON features
   metadata?: Record<string, unknown> // arbitrary collection-level metadata
   fileName?: string // override default file name
 }
@@ -23,12 +25,14 @@ interface LineageNodeFeatureProps {
 export function buildGeoJSON(
   markers: TranslationMarker[],
   lineageRoot: EtymologyNode | null,
+  annotations: MapAnnotation[] = [],
   opts: ExportOptions = {},
 ) {
   const {
     markers: includeMarkers = true,
     lineagePoints = true,
     lineagePath = true,
+    annotations: includeAnnotations = true,
     metadata = {},
   } = opts
 
@@ -48,6 +52,8 @@ export function buildGeoJSON(
     properties: Record<string, unknown>
   }
   const features: GenericFeature[] = []
+
+  const toLonLat = (position: [number, number]) => [position[1], position[0]] as [number, number]
 
   if (includeMarkers) {
     for (const m of markers) {
@@ -99,12 +105,76 @@ export function buildGeoJSON(
     }
   }
 
+  if (includeAnnotations) {
+    annotations.forEach(annotation => {
+      if (annotation.kind === 'note') {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: toLonLat(annotation.position) },
+          properties: {
+            type: 'user_annotation',
+            annotationKind: annotation.kind,
+            text: annotation.text,
+            createdAt: annotation.createdAt,
+          },
+        })
+        return
+      }
+
+      if (annotation.kind === 'highlight') {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: toLonLat(annotation.center) },
+          properties: {
+            type: 'user_annotation',
+            annotationKind: annotation.kind,
+            text: annotation.text,
+            createdAt: annotation.createdAt,
+            radiusMeters: annotation.radiusMeters,
+          },
+        })
+        return
+      }
+
+      if (annotation.kind === 'region') {
+        features.push({
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: annotation.points.map(toLonLat),
+          },
+          properties: {
+            type: 'user_annotation',
+            annotationKind: annotation.kind,
+            text: annotation.text,
+            createdAt: annotation.createdAt,
+          },
+        })
+        return
+      }
+
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [toLonLat(annotation.start), toLonLat(annotation.end)],
+        },
+        properties: {
+          type: 'user_annotation',
+          annotationKind: annotation.kind,
+          text: annotation.text,
+          createdAt: annotation.createdAt,
+        },
+      })
+    })
+  }
+
   interface ExportFeatureCollection {
     type: 'FeatureCollection'
     features: GenericFeature[]
     metadata: {
       generated: string
-      counts: { markers: number; lineageNodes: number }
+      counts: { markers: number; lineageNodes: number; annotations: number }
       [k: string]: unknown
     }
   }
@@ -116,6 +186,7 @@ export function buildGeoJSON(
       counts: {
         markers: includeMarkers ? markers.length : 0,
         lineageNodes: lineagePoints ? lineageArr.filter(n => n.position).length : 0,
+        annotations: includeAnnotations ? annotations.length : 0,
       },
       ...metadata,
     },
