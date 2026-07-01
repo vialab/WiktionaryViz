@@ -2,6 +2,27 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.32](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.31...wiktionaryviz-v0.1.32) (2026-07-01)
+
+
+### Features
+
+* **annotations:** implement user-created annotations as a separate map layer ([e6c47ae](https://github.com/vialab/WiktionaryViz/commit/e6c47ae25d8eccc795b98da2a1d34ada800d569f))
+* **CommandPalette:** implement command palette for quick access to map actions and features ([022f27f](https://github.com/vialab/WiktionaryViz/commit/022f27f68dd8055e1793fd6aea2dfbed871c588a))
+* **GeospatialPage:** implement keyboard shortcuts for layer toggling, view reset, and state saving to enhance user experience ([0a06567](https://github.com/vialab/WiktionaryViz/commit/0a0656746a32529a56b2125774bca823636eef1b))
+* **GeospatialPage:** integrate command palette into geospatial page for enhanced user experience ([022f27f](https://github.com/vialab/WiktionaryViz/commit/022f27f68dd8055e1793fd6aea2dfbed871c588a))
+* **GeospatialSettingsMenu:** add button to open command palette from settings menu ([022f27f](https://github.com/vialab/WiktionaryViz/commit/022f27f68dd8055e1793fd6aea2dfbed871c588a))
+* **GeospatialSettingsMenu:** add export and capture options for downloading GeoJSON and capturing screenshots ([3c0ee92](https://github.com/vialab/WiktionaryViz/commit/3c0ee925e92938edcde3c646230a27d5f3fcfed6))
+* **GeospatialSettingsMenu:** add visual representation of keyboard shortcuts and buttons for resetting view and copying shareable link to improve usability ([0a06567](https://github.com/vialab/WiktionaryViz/commit/0a0656746a32529a56b2125774bca823636eef1b))
+* **GeospatialSettingsMenu:** enhance button styles for improved user experience and consistency across the settings menu ([3c0ee92](https://github.com/vialab/WiktionaryViz/commit/3c0ee925e92938edcde3c646230a27d5f3fcfed6))
+* **GeospatialSettingsMenu:** refactor settings menu to use reusable SettingsSection component for better organization and readability ([3c0ee92](https://github.com/vialab/WiktionaryViz/commit/3c0ee925e92938edcde3c646230a27d5f3fcfed6))
+
+
+### Bug Fixes
+
+* **TODO_LIST:** mark "Add command palette" as completed in the TODO list ([022f27f](https://github.com/vialab/WiktionaryViz/commit/022f27f68dd8055e1793fd6aea2dfbed871c588a))
+* **TODO_LIST:** mark tasks for adding keyboard shortcuts, tooltip explanations, and accessibility checks as completed to reflect progress ([0a06567](https://github.com/vialab/WiktionaryViz/commit/0a0656746a32529a56b2125774bca823636eef1b))
+
 ## [0.1.31](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.30...wiktionaryviz-v0.1.31) (2026-07-01)
 
 
