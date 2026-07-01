@@ -230,11 +230,6 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
                 className={showAllPopups ? 'etymology-tooltip-final' : 'etymology-tooltip-active'}
               >
                 <div className="space-y-1 leading-tight">
-                  {(isActive || isSelected) && (
-                    <div className={isActive ? 'inline-flex rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700' : 'inline-flex rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-700'}>
-                      {isActive ? 'Current step' : 'Selected step'}
-                    </div>
-                  )}
                   <strong>{expansion || word}</strong>
                   {romanization && (
                     <span className="ml-1 text-xs opacity-80">{romanization}</span>
