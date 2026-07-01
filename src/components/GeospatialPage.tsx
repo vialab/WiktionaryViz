@@ -159,9 +159,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const [languageFamiliesGroup, setLanguageFamiliesGroup] = useState<L.LayerGroup | null>(null)
   const [etymologyLineageGroup, setEtymologyLineageGroup] = useState<L.LayerGroup | null>(null)
   const [descendantCoordinates, setDescendantCoordinates] = useState<[number, number][]>([])
+  const [liveMessage, setLiveMessage] = useState('')
   const annotations = mapState.annotations
   const hasAdjustedZoomRef = useRef(false)
   const playbackTimerRef = useRef<number | null>(null)
+  const announcementTimerRef = useRef<number | null>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const handleMapReady = useCallback((instance: L.Map) => {
     if (mapInstanceRef.current === instance) return
@@ -221,6 +223,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     onMapStateChange?.(mapState)
   }, [mapState, onMapStateChange])
 
+  useEffect(() => () => {
+    if (announcementTimerRef.current != null) {
+      window.clearTimeout(announcementTimerRef.current)
+    }
+  }, [])
+
   const setFilterState = useCallback((updates: Partial<MapState['filters']>) => {
     updateMapState(current => ({
       ...current,
@@ -240,6 +248,18 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       },
     }))
   }, [updateMapState])
+
+  const announce = useCallback((message: string) => {
+    if (announcementTimerRef.current != null) {
+      window.clearTimeout(announcementTimerRef.current)
+    }
+
+    setLiveMessage('')
+    announcementTimerRef.current = window.setTimeout(() => {
+      setLiveMessage(message)
+      announcementTimerRef.current = null
+    }, 30)
+  }, [])
 
   const setGuideLayer = useCallback((nextGuideLayer: GuideLayerKey | null) => {
     setFilterState({ guideLayer: nextGuideLayer })
@@ -611,6 +631,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     })
     setSelectedItem({ kind: 'none' })
     setGuideLayer(null)
+    announce('Layer settings restored to defaults')
   }
 
   useEffect(() => {
@@ -865,13 +886,35 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     })
   }, [currentIndex, lineage, setSelectedItem])
 
+  const selectedTranslationIndex = mapState.selectedItem.kind === 'translation-marker'
+    ? mapState.selectedItem.index
+    : null
+  const selectedLineageIndex = mapState.selectedItem.kind === 'lineage-node'
+    ? mapState.selectedItem.index
+    : null
+
+  useEffect(() => {
+    if (!lineage || currentIndex === undefined) return
+
+    const nodes = flattenLineage(lineage)
+    const currentNode = nodes[currentIndex]
+    if (!currentNode) return
+
+    const label = `${currentNode.word} (${currentNode.lang_code})`
+    announce(isPlaying
+      ? `Playback step ${currentIndex + 1} of ${nodes.length}: ${label}`
+      : `Timeline focused on step ${currentIndex + 1} of ${nodes.length}: ${label}`)
+  }, [announce, currentIndex, isPlaying, lineage])
+
   const handleMarkerSelect = useCallback((marker: TranslationMarker, index: number) => {
+    const popupText = marker.popupText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
     setSelectedItem({
       kind: 'translation-marker',
       index,
       label: marker.popupText,
     })
-  }, [setSelectedItem])
+    announce(`Selected translation marker ${index + 1}${popupText ? `: ${popupText}` : ''}`)
+  }, [announce, setSelectedItem])
 
   const handleNodeSelect = useCallback((node: EtymologyNode, index: number) => {
     setFilterState({ currentIndex: index })
@@ -926,6 +969,9 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       id="geospatial"
       className={isLight ? 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-white text-slate-900' : 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-gray-900 text-white'}
     >
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {liveMessage}
+      </div>
       <MapContainer
         center={initialCameraCenterRef.current}
         zoom={initialCameraZoomRef.current}
@@ -944,24 +990,38 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           language={language}
           mapInstance={mapInstance}
           canFitToData={canFitToData}
-          onFitToData={fitToData}
+          onFitToData={() => {
+            fitToData()
+            announce('Map fitted to visible data')
+          }}
           layerOpacities={layerOpacities}
           onLayerOpacityChange={(layer, opacity) => {
             setActiveLayerState({ opacities: { ...layerOpacities, [layer]: opacity } })
+            announce(`${layer} opacity set to ${Math.round(opacity * 100)} percent`)
           }}
           layerOrder={layerOrder}
-          onLayerMove={moveLayer}
+          onLayerMove={(layer, direction) => {
+            moveLayer(layer, direction)
+            announce(`${layer} moved ${direction}`)
+          }}
           onResetLayers={resetLayers}
           annotationMode={mapState.filters.annotationMode}
           annotationTool={mapState.filters.annotationTool}
           annotationCount={annotations.length}
-          onAnnotationModeChange={setAnnotationMode}
-          onAnnotationToolChange={setAnnotationTool}
+          onAnnotationModeChange={enabled => {
+            setAnnotationMode(enabled)
+            announce(`Annotation mode ${enabled ? 'enabled' : 'disabled'}`)
+          }}
+          onAnnotationToolChange={tool => {
+            setAnnotationTool(tool)
+            announce(`Annotation tool set to ${tool}`)
+          }}
           onClearAnnotations={() => {
             updateMapState(current => ({
               ...current,
               annotations: [],
             }))
+            announce('Annotations cleared')
           }}
           theme={theme}
         />
@@ -976,6 +1036,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             }))
           }}
           onToolChange={setAnnotationTool}
+          onAnnounce={announce}
           theme={theme}
         />
         <LayersControl position="topright">
@@ -1009,6 +1070,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
                   opacity={layerOpacities.translations}
                   zIndex={layerZIndex('translations')}
                   onMarkerClick={handleMarkerSelect}
+                  selectedIndex={selectedTranslationIndex}
                 />
               )}
             </MarkerClusterGroup>
@@ -1051,6 +1113,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
                   <EtymologyLineagePath
                     lineage={lineage}
                     currentIndex={currentIndex}
+                    selectedIndex={selectedLineageIndex}
                     isPlaying={isPlaying}
                     segmentDurationMs={playSpeed}
                     dwellMs={dwellDurationRef.current}
@@ -1089,13 +1152,23 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             currentIndex={currentIndex}
             onChange={index => setFilterState({ currentIndex: index })}
             isPlaying={isPlaying}
-            onTogglePlay={() => setFilterState({ isPlaying: !isPlaying })}
+            onTogglePlay={() => {
+              setFilterState({ isPlaying: !isPlaying })
+              announce(isPlaying ? 'Playback paused' : 'Playback started')
+            }}
             speed={playSpeed}
-            onSpeedChange={speed => setFilterState({ playSpeedMs: speed })}
+            onSpeedChange={speed => {
+              setFilterState({ playSpeedMs: speed })
+              announce(`Playback speed set to ${speed} milliseconds per step`)
+            }}
             loop={loop}
-            onToggleLoop={() => setFilterState({ loop: !loop })}
+            onToggleLoop={() => {
+              setFilterState({ loop: !loop })
+              announce(loop ? 'Loop disabled' : 'Loop enabled')
+            }}
             onReset={() => {
               setFilterState({ currentIndex: undefined, isPlaying: false, showAllPopups: false })
+              announce('Timeline reset to full view')
             }}
             theme={theme}
           />
@@ -1110,9 +1183,16 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           onChooseLayer={(layer: GuideLayerKey) => {
             setGuideLayer(layer)
             setFilterState({ guideOpen: true })
+            announce(`Guide layer selected: ${layer}`)
           }}
-          onCloseGuide={() => setFilterState({ guideOpen: false })}
-          onClose={() => setFilterState({ guideOpen: false })}
+          onCloseGuide={() => {
+            setFilterState({ guideOpen: false })
+            announce('Guide closed')
+          }}
+          onClose={() => {
+            setFilterState({ guideOpen: false })
+            announce('Guide closed')
+          }}
           onRestart={() => {
             setGuideLayer(null)
             setFilterState({
@@ -1124,6 +1204,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
               annotationTool: 'note',
             })
             setActiveLayerState({ etymology: false })
+            announce('Guide restarted')
           }}
           theme={theme}
         />

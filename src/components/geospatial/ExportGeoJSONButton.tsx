@@ -37,6 +37,7 @@ const ExportGeoJSONButton: React.FC<ExportGeoJSONButtonProps> = ({ markers, line
               onClick={toggle}
               className="text-gray-400 hover:text-gray-200 text-xs"
               aria-label="Close export panel"
+              type="button"
             >
               ✕
             </button>
@@ -72,6 +73,8 @@ const ExportGeoJSONButton: React.FC<ExportGeoJSONButtonProps> = ({ markers, line
             <button
               onClick={handleExport}
               className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium"
+              aria-label="Download GeoJSON export"
+              type="button"
             >
               Download
             </button>
@@ -81,6 +84,8 @@ const ExportGeoJSONButton: React.FC<ExportGeoJSONButtonProps> = ({ markers, line
         <button
           onClick={toggle}
           className="bg-slate-700/90 hover:bg-slate-600 text-white font-medium px-4 py-2 rounded shadow text-sm backdrop-blur border border-slate-500/40"
+          aria-label="Open GeoJSON export panel"
+          type="button"
         >
           Export GeoJSON
         </button>

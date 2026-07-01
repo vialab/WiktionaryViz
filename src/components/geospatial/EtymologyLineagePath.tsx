@@ -35,6 +35,7 @@ export interface EtymologyLineagePathProps {
   opacity?: number
   zIndex?: number
   onNodeClick?: (node: EtymologyNode, index: number) => void
+  selectedIndex?: number | null
 }
 
 /**
@@ -182,7 +183,7 @@ const AnimatedSegment: FC<{
 }
 
 const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
-  ({ lineage, currentIndex, isPlaying = false, segmentDurationMs, dwellMs, showAllPopups, opacity = 1, zIndex = 560, onNodeClick }) => {
+  ({ lineage, currentIndex, isPlaying = false, segmentDurationMs, dwellMs, showAllPopups, opacity = 1, zIndex = 560, onNodeClick, selectedIndex }) => {
     const map = useMap()
     const completedSegments: React.ReactNode[] = []
     const activeSegments: React.ReactNode[] = []
@@ -199,6 +200,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
         const visible = active === undefined || idx <= active // only show nodes up to active
         if (visible) {
           const tooltipPermanent = showAllPopups || isActive
+          const isSelected = selectedIndex === idx
           completedSegments.push(
             <CircleMarker
               key={`circle-${word}-${lang_code}`}
@@ -223,7 +225,12 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
                   opacity={opacity}
                 className={showAllPopups ? 'etymology-tooltip-final' : 'etymology-tooltip-active'}
               >
-                <div className="leading-tight">
+                <div className="space-y-1 leading-tight">
+                  {(isActive || isSelected) && (
+                    <div className={isActive ? 'inline-flex rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700' : 'inline-flex rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-700'}>
+                      {isActive ? 'Current step' : 'Selected step'}
+                    </div>
+                  )}
                   <strong>{expansion || word}</strong>
                   {romanization && (
                     <span className="ml-1 text-xs opacity-80">{romanization}</span>

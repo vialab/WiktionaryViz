@@ -16,6 +16,7 @@ interface AnnotationModeOverlayProps {
   annotations: MapAnnotation[]
   onAnnotationsChange: (nextAnnotations: MapAnnotation[]) => void
   onToolChange: (tool: AnnotationKind) => void
+  onAnnounce?: (message: string) => void
   theme?: AnnotationTheme
 }
 
@@ -47,6 +48,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   annotations,
   onAnnotationsChange,
   onToolChange,
+  onAnnounce,
   theme = 'dark',
 }) => {
   const isLight = theme === 'light'
@@ -112,6 +114,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         text,
         createdAt: new Date().toISOString(),
       })
+      onAnnounce?.('Annotation note added')
       return
     }
 
@@ -125,6 +128,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         text,
         createdAt: new Date().toISOString(),
       })
+      onAnnounce?.('Highlight annotation added')
       return
     }
 
@@ -136,13 +140,15 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
 
       finishSegment(tool, segmentStart, point)
       setSegmentStart(null)
+      onAnnounce?.(tool === 'arrow' ? 'Arrow annotation added' : 'Custom link annotation added')
       return
     }
 
     if (tool === 'region') {
       setDraftRegion(current => [...current, point])
+      onAnnounce?.('Region point added')
     }
-  }, [addAnnotation, enabled, finishSegment, segmentStart, tool])
+  }, [addAnnotation, enabled, finishSegment, onAnnounce, segmentStart, tool])
 
   useMapEvents({
     click: handleMapClick,
@@ -283,7 +289,11 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => onToolChange('note')}
+              onClick={() => {
+                onToolChange('note')
+                onAnnounce?.('Annotation tool set to note')
+              }}
+              aria-pressed={tool === 'note'}
               className={tool === 'note'
                 ? 'rounded-full border border-sky-400 bg-sky-500/15 px-3 py-1 text-xs font-medium text-sky-700'
                 : 'rounded-full border border-slate-300 bg-transparent px-3 py-1 text-xs font-medium text-inherit'}
@@ -292,7 +302,11 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onToolChange('highlight')}
+              onClick={() => {
+                onToolChange('highlight')
+                onAnnounce?.('Annotation tool set to highlight')
+              }}
+              aria-pressed={tool === 'highlight'}
               className={tool === 'highlight'
                 ? 'rounded-full border border-amber-400 bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-700'
                 : 'rounded-full border border-slate-300 bg-transparent px-3 py-1 text-xs font-medium text-inherit'}
@@ -301,7 +315,11 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onToolChange('arrow')}
+              onClick={() => {
+                onToolChange('arrow')
+                onAnnounce?.('Annotation tool set to arrow')
+              }}
+              aria-pressed={tool === 'arrow'}
               className={tool === 'arrow'
                 ? 'rounded-full border border-cyan-400 bg-cyan-500/15 px-3 py-1 text-xs font-medium text-cyan-700'
                 : 'rounded-full border border-slate-300 bg-transparent px-3 py-1 text-xs font-medium text-inherit'}
@@ -310,7 +328,11 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onToolChange('region')}
+              onClick={() => {
+                onToolChange('region')
+                onAnnounce?.('Annotation tool set to region')
+              }}
+              aria-pressed={tool === 'region'}
               className={tool === 'region'
                 ? 'rounded-full border border-emerald-400 bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-700'
                 : 'rounded-full border border-slate-300 bg-transparent px-3 py-1 text-xs font-medium text-inherit'}
@@ -319,7 +341,11 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onToolChange('link')}
+              onClick={() => {
+                onToolChange('link')
+                onAnnounce?.('Annotation tool set to link')
+              }}
+              aria-pressed={tool === 'link'}
               className={tool === 'link'
                 ? 'rounded-full border border-fuchsia-400 bg-fuchsia-500/15 px-3 py-1 text-xs font-medium text-fuchsia-700'
                 : 'rounded-full border border-slate-300 bg-transparent px-3 py-1 text-xs font-medium text-inherit'}
@@ -330,7 +356,10 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
           {segmentStart && tool !== 'region' && (
             <button
               type="button"
-              onClick={() => setSegmentStart(null)}
+              onClick={() => {
+                setSegmentStart(null)
+                onAnnounce?.('Line annotation cancelled')
+              }}
               className={isLight ? 'mt-3 rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50' : 'mt-3 rounded-lg border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:bg-slate-900'}
             >
               Cancel line
@@ -352,6 +381,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
                   },
                 ])
                 setDraftRegion([])
+                onAnnounce?.('Region annotation added')
               }}
               className={isLight ? 'mt-3 rounded-lg border border-emerald-300 px-3 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-50' : 'mt-3 rounded-lg border border-emerald-500/40 px-3 py-1 text-xs font-medium text-emerald-200 transition hover:bg-emerald-500/10'}
             >

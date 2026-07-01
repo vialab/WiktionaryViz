@@ -1,6 +1,7 @@
-import { FC, useState } from 'react'
+import { FC, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { GuideLayerKey } from '@/types/mapState'
+import useFocusTrap from '@/hooks/useFocusTrap'
 
 type GuideLayerInfo = {
   title: string
@@ -94,7 +95,10 @@ const GeospatialGuideOverlay: FC<Props> = ({
 }) => {
   const selected = selectedLayer ? guideLayers[selectedLayer] : null
   const [hoveredRecommendation, setHoveredRecommendation] = useState<GuideLayerKey | null>(null)
+  const dialogRef = useRef<HTMLDivElement | null>(null)
   const isLight = theme === 'light'
+
+  useFocusTrap(open, dialogRef)
 
   const recommendationTooltip =
     hoveredRecommendation != null ? recommendationReason : null
@@ -237,6 +241,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
               onClick={() => onChooseLayer(layer)}
               disabled={disabled}
               aria-disabled={disabled}
+              aria-pressed={selectedLayer === layer}
               title={disabled ? 'No data available for this layer' : undefined}
               className={isLight
                 ? 'group rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-60'
@@ -284,6 +289,8 @@ const GeospatialGuideOverlay: FC<Props> = ({
     <AnimatePresence>
       {open && (
         <motion.div
+          role="dialog"
+          aria-modal="true"
           className={isLight ? 'absolute inset-0 z-[12000] flex items-center justify-center bg-slate-900/15 px-6 py-6 backdrop-blur-sm sm:px-8 sm:py-8 lg:px-12 lg:py-10' : 'absolute inset-0 z-[12000] flex items-center justify-center bg-slate-950/75 px-6 py-6 backdrop-blur-sm sm:px-8 sm:py-8 lg:px-12 lg:py-10'}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -291,6 +298,8 @@ const GeospatialGuideOverlay: FC<Props> = ({
           transition={{ duration: 0.16, ease: 'easeOut' }}
         >
           <motion.div
+            ref={dialogRef}
+            tabIndex={-1}
             className={isLight ? 'flex min-h-[36rem] max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/97 shadow-2xl shadow-blue-100/60 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]' : 'flex min-h-[36rem] max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-neutral-950/95 shadow-2xl shadow-black/30 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]'}
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}

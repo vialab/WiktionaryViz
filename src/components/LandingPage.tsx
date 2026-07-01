@@ -203,10 +203,11 @@ export default function LandingPage({
 
             <div className="flex flex-col gap-3">
               <div>
-                <label className="sr-only">Word and language</label>
                 <div className={isLight ? 'flex w-full items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white' : 'flex w-full items-stretch overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900'}>
                   <div className="flex-1">
                     <WordLanguageInput
+                      id="landing-word-input"
+                      label="Word and language"
                       word={word}
                       onWordChange={setWord}
                       inputBaseStyles={isLight ? 'w-full rounded-none bg-transparent px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none' : 'w-full rounded-none bg-transparent px-4 py-3 text-slate-100 placeholder-slate-400 focus:outline-none'}

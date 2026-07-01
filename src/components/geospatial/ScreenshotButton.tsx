@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import html2canvas from 'html2canvas'
 import type L from 'leaflet'
+import useFocusTrap from '@/hooks/useFocusTrap'
 
 interface ScreenshotButtonProps {
   word?: string
@@ -12,6 +13,9 @@ const ScreenshotButton: React.FC<ScreenshotButtonProps> = ({ word, language, map
   const [capturing, setCapturing] = useState(false)
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const previewRef = React.useRef<HTMLDivElement | null>(null)
+
+  useFocusTrap(Boolean(previewDataUrl), previewRef)
 
   const tryFindTarget = () => {
     const byId = document.getElementById('map-root')
@@ -219,6 +223,8 @@ const ScreenshotButton: React.FC<ScreenshotButtonProps> = ({ word, language, map
           onClick={handleCapture}
           disabled={capturing}
           className="bg-slate-700/90 hover:bg-slate-600 text-white font-medium px-4 py-2 rounded shadow text-sm backdrop-blur border border-slate-500/40"
+          aria-label={capturing ? 'Capturing screenshot' : 'Capture screenshot'}
+          type="button"
         >
           {capturing ? 'Capturing…' : 'Screenshot'}
         </button>
@@ -230,7 +236,7 @@ const ScreenshotButton: React.FC<ScreenshotButtonProps> = ({ word, language, map
           aria-modal="true"
           className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/60 p-4"
         >
-          <div className="bg-neutral-900 rounded-lg shadow-lg max-w-[90vw] max-h-[90vh] overflow-auto">
+          <div ref={previewRef} tabIndex={-1} className="bg-neutral-900 rounded-lg shadow-lg max-w-[90vw] max-h-[90vh] overflow-auto">
             <div className="p-3 flex items-center justify-between border-b border-neutral-800">
               <span className="text-sm text-gray-200">Screenshot Preview</span>
               <div className="flex items-center gap-2">
@@ -238,6 +244,7 @@ const ScreenshotButton: React.FC<ScreenshotButtonProps> = ({ word, language, map
                   onClick={() => setPreviewDataUrl(null)}
                   className="text-gray-400 hover:text-gray-200 text-sm px-2"
                   aria-label="Close preview"
+                  type="button"
                 >
                   ✕
                 </button>
@@ -260,6 +267,8 @@ const ScreenshotButton: React.FC<ScreenshotButtonProps> = ({ word, language, map
               <button
                 onClick={() => setPreviewDataUrl(null)}
                 className="bg-slate-700/90 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm"
+                aria-label="Close screenshot preview"
+                type="button"
               >
                 Close
               </button>
@@ -269,6 +278,8 @@ const ScreenshotButton: React.FC<ScreenshotButtonProps> = ({ word, language, map
                 className={`${
                   error ? 'bg-gray-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
                 } text-white px-3 py-1 rounded text-sm`}
+                aria-label="Download screenshot"
+                type="button"
               >
                 Download
               </button>

@@ -6,6 +6,7 @@ import type { TranslationMarker } from './TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
 import type { AnnotationKind } from '@/types/mapState'
 import { buildGeoJSON, downloadGeoJSON, type ExportOptions } from '@/utils/geojsonExport'
+import useFocusTrap from '@/hooks/useFocusTrap'
 
 type LayerOpacityKey = 'translations' | 'protoZones' | 'languageFamilies' | 'etymology' | 'descendants'
 
@@ -70,6 +71,11 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     lineagePath: true,
   })
   const menuRef = useRef<HTMLDivElement | null>(null)
+  const panelRef = useRef<HTMLDivElement | null>(null)
+  const previewRef = useRef<HTMLDivElement | null>(null)
+
+  useFocusTrap(open, panelRef)
+  useFocusTrap(Boolean(previewDataUrl), previewRef)
 
   const closeMenu = useCallback(() => setOpen(false), [])
   const toggleMenu = () => setOpen(prev => !prev)
@@ -353,6 +359,8 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
         <div
           role="menu"
           aria-label="Map settings"
+          ref={panelRef}
+          tabIndex={-1}
           className={isLight
             ? 'absolute bottom-full left-0 mb-2 max-h-[70vh] w-80 overflow-y-auto rounded-xl border border-slate-200 bg-white/95 p-3 shadow-2xl shadow-blue-100/50 backdrop-blur'
             : 'absolute bottom-full left-0 mb-2 max-h-[70vh] w-80 overflow-y-auto rounded-xl border border-slate-700/80 bg-slate-950/95 p-3 shadow-2xl backdrop-blur'}
@@ -459,6 +467,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                 <button
                   type="button"
                   onClick={() => onAnnotationModeChange(!annotationMode)}
+                  aria-pressed={annotationMode}
                   className={isLight
                     ? 'inline-flex w-full items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900 transition hover:border-amber-400 hover:bg-amber-100'
                     : 'inline-flex w-full items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-200 transition hover:border-amber-400 hover:bg-amber-500/20'}
@@ -476,6 +485,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                       key={item.key}
                       type="button"
                       onClick={() => onAnnotationToolChange(item.key)}
+                      aria-pressed={annotationTool === item.key}
                       className={annotationTool === item.key
                         ? (isLight
                           ? 'flex w-full flex-col rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-left text-sm text-blue-900'
@@ -591,7 +601,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
           aria-modal="true"
           className={isLight ? 'fixed inset-0 z-[11000] flex items-center justify-center bg-slate-900/20 p-4' : 'fixed inset-0 z-[11000] flex items-center justify-center bg-black/60 p-4'}
         >
-          <div className={isLight ? 'max-h-[90vh] max-w-[90vw] overflow-auto rounded-lg bg-white shadow-lg shadow-blue-100/60' : 'max-h-[90vh] max-w-[90vw] overflow-auto rounded-lg bg-neutral-900 shadow-lg'}>
+          <div ref={previewRef} tabIndex={-1} className={isLight ? 'max-h-[90vh] max-w-[90vw] overflow-auto rounded-lg bg-white shadow-lg shadow-blue-100/60' : 'max-h-[90vh] max-w-[90vw] overflow-auto rounded-lg bg-neutral-900 shadow-lg'}>
             <div className={isLight ? 'flex items-center justify-between border-b border-slate-200 p-3' : 'flex items-center justify-between border-b border-neutral-800 p-3'}>
               <span className={isLight ? 'text-sm text-slate-700' : 'text-sm text-gray-200'}>Screenshot Preview</span>
               <button
@@ -619,6 +629,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
               <button
                 onClick={() => setPreviewDataUrl(null)}
                 className={isLight ? 'rounded bg-slate-900 px-3 py-1 text-sm text-white transition hover:bg-slate-800' : 'rounded bg-slate-700/90 px-3 py-1 text-sm text-white transition hover:bg-slate-600'}
+                aria-label="Close screenshot preview"
               >
                 Close
               </button>
@@ -626,6 +637,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                 onClick={handleDownload}
                 disabled={!!error}
                 className={`rounded px-3 py-1 text-sm text-white ${error ? 'cursor-not-allowed bg-gray-600' : 'bg-green-600 hover:bg-green-700'}`}
+                aria-label="Download screenshot preview"
               >
                 Download
               </button>

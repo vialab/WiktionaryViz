@@ -185,22 +185,22 @@ P1 — HIGH-VALUE THESIS / DEMO FEATURES
     Use case: Lets users switch between clean source-data view and interpreted/annotated view.
     Research context: Participants wanted both exploration and communication modes.
 
-[ ] P1 — Add timeline slider
+[X] P1 — Add timeline slider
     Description: A slider that filters visible nodes/routes by time period, century, or approximate date.
     Use case: Lets users see how a word’s geographic/etymological spread changes over time.
     Research context: Participants wanted diachronic exploration of language movement and historical development.
 
-[ ] P1 — Add timeline playback
+[X] P1 — Add timeline playback
     Description: A play/pause animation that reveals nodes/routes in chronological order.
     Use case: Useful for showing linguistic spread as a story over time.
     Research context: Participants were interested in movement, history, and temporal storytelling.
 
-[ ] P1 — Add uncertain-date handling
+[X] P1 — Add uncertain-date handling
     Description: Items with unknown or approximate dates are shown with special styling or grouped into an “unknown date” category.
     Use case: Prevents incomplete data from disappearing or being misrepresented.
     Research context: Linguistic historical data is often partial or uncertain.
 
-[ ] P1 — Sync timeline with map layers
+[X] P1 — Sync timeline with map layers
     Description: Timeline changes update visible markers, routes, labels, and regions.
     Use case: Makes time manipulation affect the whole geospatial visualization consistently.
     Research context: Supports integrated exploration rather than separate disconnected views.
@@ -305,7 +305,7 @@ P2 — EXPORT, PRESENTATION, AND POLISH FEATURES
     Use case: Helps users quickly access features without hunting through panels.
     Research context: Useful as the tool gains more interaction options.
 
-[ ] P2 — Add onboarding guide
+[X] P2 — Add onboarding guide
     Description: A short guided tour explaining map layers, filters, evidence drawer, annotations, and saving.
     Use case: Helps new users understand the interaction model quickly.
     Research context: Participants noted that tools can fail adoption when users do not understand how to use them.
@@ -335,12 +335,37 @@ P2 — EXPORT, PRESENTATION, AND POLISH FEATURES
     Use case: Makes the visualization more usable for diverse users.
     Research context: Participants discussed communication barriers and the need for multiple ways to understand information.
 
+[X] P2 — Add keyboard support for map overlays
+    Description: Ensure drawers, menus, dialogs, scrubbers, and annotation tools can be operated without a mouse.
+    Use case: Lets keyboard-only users fully navigate the visualization.
+    Research context: Interactive visual tools need equivalent access for users who cannot or do not use pointer input.
+
+[X] P2 — Add screen-reader announcements for state changes
+    Description: Announce selection changes, playback progress, filter updates, and guide actions through aria-live regions.
+    Use case: Keeps screen-reader users informed about map changes that are otherwise visual only.
+    Research context: Participants discussed the need for multiple ways to understand changing information.
+
+[X] P2 — Add focus management for overlays and drawers
+    Description: Trap focus inside open modals, restore focus on close, and make Escape close transient UI.
+    Use case: Prevents users from getting lost when panels and dialogs open on top of the map.
+    Research context: Dense interfaces need predictable focus behavior for accessibility and usability.
+
+[X] P2 — Add accessible labels for icon-only controls
+    Description: Review all icon buttons, toggles, and map controls for clear aria-labels, descriptions, and state text.
+    Use case: Makes controls understandable to screen-reader users and reduces ambiguity for everyone.
+    Research context: Several controls rely on icons or compact UI, which can hide meaning without explicit labels.
+
+[X] P2 — Add non-color encodings for uncertainty and selection
+    Description: Pair color cues with patterns, icons, outlines, or text badges for selected items, uncertain data, and filtered states.
+    Use case: Ensures information stays readable for color-blind users and in low-contrast conditions.
+    Research context: Visual meaning should not depend on color alone.
+
 [ ] P2 — Add performance optimization for dense maps
     Description: Use clustering, canvas/WebGL rendering, memoization, or viewport-based rendering for large datasets.
     Use case: Keeps the map responsive when many markers/routes are visible.
     Research context: Participants noted that large linguistic datasets can become difficult to visualize and manipulate.
 
-[ ] P2 — Add marker clustering
+[X] P2 — Add marker clustering
     Description: Combine nearby markers into clusters at low zoom levels, then expand them when zooming in.
     Use case: Reduces clutter on global maps.
     Research context: Helps maintain overview readability with dense geographic data.
@@ -349,51 +374,3 @@ P2 — EXPORT, PRESENTATION, AND POLISH FEATURES
     Description: Reduce visual clutter by bundling similar routes or simplifying paths at low zoom.
     Use case: Makes borrowing/descent routes easier to read.
     Research context: Participants noted that complex visualizations can lose their purpose if they become too crowded.
-
-
-================================================================================
-RECOMMENDED IMPLEMENTATION ORDER
-================================================================================
-
-[ ] 1. Build LayerPanel and layer registry
-    Description: Establishes the foundation for all geospatial manipulation.
-
-[ ] 2. Add marker/route selection and EvidenceDrawer
-    Description: Connects visual elements to underlying Wiktionary evidence.
-
-[ ] 3. Add relation filters and path-focused views
-    Description: Lets users simplify the map according to linguistic task.
-
-[ ] 4. Add VisualizationState object
-    Description: Creates the foundation for saving, sharing, annotations, and comparison.
-
-[ ] 5. Add local state-saving and saved view manager
-    Description: Lets users preserve meaningful map states.
-
-[ ] 6. Add AnnotationMode
-    Description: Supports live interpretation, teaching notes, and user-generated hypotheses.
-
-[ ] 7. Add timeline slider and timeline-map synchronization
-    Description: Supports diachronic exploration of linguistic spread.
-
-[ ] 8. Add shareable state links
-    Description: Lets users communicate exact visualization states.
-
-[ ] 9. Add compare mode
-    Description: Supports side-by-side analysis of words, languages, relations, or time periods.
-
-[ ] 10. Add export tools
-    Description: Supports thesis writing, presentations, teaching, and publication-style outputs.
-
-[ ] 11. Add presentation mode and saved view sequence
-    Description: Turns exploratory work into a guided visual story.
-
-[ ] 12. Add offline/demo mode
-    Description: Makes thesis demos and study sessions more reliable
-
-
-================================================================================
-ONE-SENTENCE DESIGN GOAL
-================================================================================
-
-Build WiktionaryViz as an interactive geospatial sensemaking workspace where users can manipulate linguistic map layers, inspect evidence, annotate interpretations, save/share visualization states, and compare historical-geographic views.

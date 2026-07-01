@@ -22,14 +22,15 @@ const Navbar: React.FC<NavbarProps> = ({
   onToggleTheme,
 }) => (
   <nav className="navbar flex items-center justify-between gap-4">
-    <h1
+    <button
+      type="button"
       className={theme === 'light'
-        ? 'navbar-title cursor-pointer text-left text-3xl text-slate-900 transition hover:text-slate-700'
-        : 'navbar-title cursor-pointer text-left text-3xl text-slate-100 transition hover:text-slate-50'}
+        ? 'navbar-title text-left text-3xl text-slate-900 transition hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white'
+        : 'navbar-title text-left text-3xl text-slate-100 transition hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900'}
       onClick={onTitleClick}
     >
       {title}
-    </h1>
+    </button>
     <div className="flex items-center gap-2">
       {showBackHomeButton && onBackHomeClick && (
         <button

@@ -16,6 +16,7 @@ interface TimelineScrubberProps {
   onToggleLoop?: () => void
   onReset?: () => void // full reset (stop + show full)
   theme?: 'dark' | 'light'
+  onAnnounce?: (message: string) => void
 }
 
 // Simple horizontal scrubber with markers for each node.
@@ -32,6 +33,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
     onToggleLoop,
     onReset,
     theme = 'dark',
+    onAnnounce,
   } = props
   // TODO (API Extension): Expose callbacks (onStepShow / onStepHide / onComplete) for parent coordination.
   // TODO (Accessibility): Announce active node change via aria-live region for screen readers during autoplay.
@@ -47,11 +49,15 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
   const handleRange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10)
     onChange(Number.isNaN(value) ? undefined : value)
+    if (!Number.isNaN(value) && nodes[value]) {
+      onAnnounce?.(`Timeline focused on step ${value + 1} of ${nodes.length}: ${nodes[value].word} (${nodes[value].lang_code})`)
+    }
   }
 
   const handleReset = () => {
     if (onReset) onReset()
     else onChange(undefined)
+    onAnnounce?.('Timeline reset to full view')
   }
 
   // Do not early-return before hooks (lint compliance); handle empty case in render.
@@ -80,8 +86,8 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
     restoreRef.current = null
   }
 
-  const stop = (e: React.SyntheticEvent) => {
-    e.stopPropagation()
+  const stop = (event: React.SyntheticEvent) => {
+    event.stopPropagation()
   }
 
   if (!nodes.length) return null
@@ -91,9 +97,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
       style={{ pointerEvents: 'auto' }}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
-      onMouseDown={stop}
       onWheel={stop}
-      onClick={stop}
       ref={containerRef}
     >
       <div className={isLight ? 'flex flex-wrap items-center justify-between gap-4 text-slate-700' : 'flex flex-wrap items-center justify-between gap-4 text-slate-300'}>
@@ -102,6 +106,8 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
             onClick={onTogglePlay}
             className={isLight ? 'rounded border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:border-blue-300 hover:bg-slate-50' : 'rounded border border-slate-500/50 bg-slate-700/60 px-2 py-1 text-xs font-medium text-slate-200 hover:bg-slate-600'}
             title={isPlaying ? 'Pause playback' : 'Play lineage'}
+            type="button"
+            aria-label={isPlaying ? 'Pause lineage playback' : 'Play lineage playback'}
           >
             {isPlaying ? 'Pause' : 'Play'}
           </button>
@@ -111,6 +117,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
               value={speed}
               onChange={e => onSpeedChange?.(parseInt(e.target.value, 10))}
               className={isLight ? 'rounded border border-slate-200 bg-white px-1 py-0.5 text-xs text-slate-700 focus:outline-none' : 'rounded border border-slate-500/50 bg-slate-700/60 px-1 py-0.5 text-xs text-slate-200 focus:outline-none'}
+              aria-label="Playback speed"
             >
               <option value={1200}>Slow</option>
               <option value={800}>Normal</option>
@@ -122,6 +129,8 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
             onClick={onToggleLoop}
             className={`px-2 py-1 rounded text-xs font-medium border ${loop ? (isLight ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-slate-500/20 border-slate-300 text-slate-100') : (isLight ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50' : 'bg-slate-700/60 border-slate-500/50 text-slate-300 hover:bg-slate-600')}`}
             title={loop ? 'Loop enabled (click to disable)' : 'Loop disabled (click to enable)'}
+            aria-pressed={loop}
+            type="button"
           >
             Loop
           </button>
@@ -131,6 +140,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
             onClick={handleReset}
             className={isLight ? 'text-slate-500 transition hover:text-slate-800' : 'text-slate-400 transition hover:text-slate-200'}
             title="Show full lineage"
+            type="button"
           >
             Full
           </button>
@@ -140,14 +150,6 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
         <div
           className="flex-1 relative select-none"
           ref={trackRef}
-          onMouseDown={e => {
-            e.stopPropagation()
-            if (!trackRef.current) return
-            const rect = trackRef.current.getBoundingClientRect()
-            const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
-            const idx = Math.round(ratio * maxIndex)
-            onChange(idx)
-          }}
         >
           {/* Custom track */}
           <div className={isLight ? 'h-2 w-full overflow-hidden rounded-full bg-slate-200' : 'h-2 w-full overflow-hidden rounded-full bg-slate-600/40'}>
@@ -184,7 +186,10 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
             })}
           </div>
           {/* Thumb */}
-          <div
+          <button
+            type="button"
+            aria-hidden="true"
+            tabIndex={-1}
             className={isLight ? 'absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border-2 border-blue-200 bg-blue-500 shadow active:cursor-grabbing' : 'absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-slate-300 border-2 border-slate-100 shadow -translate-x-1/2 cursor-grab active:cursor-grabbing'}
             style={{ left: `${((currentIndex ?? maxIndex) / (maxIndex || 1)) * 100}%` }}
             onMouseDown={e => {
@@ -213,8 +218,14 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
             step={1}
             value={currentIndex ?? maxIndex}
             onChange={handleRange}
+            aria-label="Etymology timeline scrubber"
+            aria-valuetext={currentIndex === undefined ? `All ${nodes.length} steps visible` : `Step ${currentIndex + 1} of ${nodes.length}: ${nodes[currentIndex]?.word ?? 'unknown'}`}
+            aria-describedby="timeline-scrubber-help"
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           />
+          <p id="timeline-scrubber-help" className="sr-only">
+            Use the slider or arrow keys to move through the timeline steps.
+          </p>
         </div>
         <div className="w-28 text-right">
           {currentIndex === undefined ? (

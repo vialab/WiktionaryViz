@@ -35,9 +35,11 @@
     "clsx": "^2.1.1",
     "d3": "^7.9.0",
     "framer-motion": "^12.15.0",
+    "html2canvas": "^1.4.1",
     "i18n-iso-countries": "^7.14.0",
     "leaflet": "^1.9.4",
     "leaflet-defaulticon-compatibility": "^0.1.2",
+    "leaflet-image": "^0.0.4",
     "lucide-react": "^0.477.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -45,9 +47,7 @@
     "react-leaflet": "^5.0.0",
     "react-leaflet-markercluster": "^5.0.0-rc.0",
     "react-papaparse": "^4.4.0",
-    "simple-icons": "^14.15.0",
-    "html2canvas": "^1.4.1",
-    "leaflet-image": "^0.0.4"
+    "simple-icons": "^14.15.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
@@ -63,6 +63,7 @@
     "concurrently": "^9.1.2",
     "eslint": "^9.21.0",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "gh-pages": "^6.3.0",
