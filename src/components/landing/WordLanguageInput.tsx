@@ -16,16 +16,10 @@ const WordLanguageInput: React.FC<WordLanguageInputProps> = ({
   word,
   onWordChange,
   id = 'word-language-input',
-  label,
   inputBaseStyles = '',
   placeholder = 'Enter a word',
 }) => (
   <div className="space-y-2">
-    {label && (
-      <label htmlFor={id} className="block font-medium text-[#F5F5F5]">
-        {label}
-      </label>
-    )}
     <input
       id={id}
       type="text"
