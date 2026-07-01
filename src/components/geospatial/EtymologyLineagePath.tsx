@@ -38,6 +38,10 @@ export interface EtymologyLineagePathProps {
   selectedIndex?: number | null
 }
 
+const LINE_PANE = 'etymology-lineage-lines'
+const MARKER_PANE = 'etymology-lineage-markers'
+const LABEL_PANE = 'etymology-lineage-labels'
+
 /**
  * Renders the etymology lineage as a sequence of CircleMarkers, Polylines, and arrow Markers.
  * Memoized for performance.
@@ -136,7 +140,7 @@ const AnimatedSegment: FC<{
     <>
       <Polyline
         positions={[start, end]}
-        pane="etymology-lineage"
+        pane={LINE_PANE}
         pathOptions={{
           className: `etymology-segment etymology-segment-animating ${proto ? 'proto-dotted' : ''}`,
           dashArray: proto ? '6 6' : undefined,
@@ -149,7 +153,7 @@ const AnimatedSegment: FC<{
       />
       {mounted && (
         <Marker
-          pane="etymology-lineage"
+          pane={MARKER_PANE}
           ref={ref => {
             markerRef.current = ref as unknown as L.Marker | null
           }}
@@ -167,7 +171,7 @@ const AnimatedSegment: FC<{
       )}
       {showEndpoint && (
         <CircleMarker
-          pane="etymology-lineage"
+          pane={MARKER_PANE}
           center={end}
           radius={7}
           fillColor={proto ? '#e11d48' : '#3388ff'}
@@ -204,7 +208,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
           completedSegments.push(
             <CircleMarker
               key={`circle-${word}-${lang_code}`}
-              pane="etymology-lineage"
+              pane={MARKER_PANE}
               center={center}
               radius={isActive ? 10 : 7}
               fillColor={isActive ? '#fbbf24' : '#3388ff'}
@@ -218,11 +222,11 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
               }}
             >
               <Tooltip
-                pane="etymology-lineage"
+                pane={LABEL_PANE}
                 permanent={tooltipPermanent}
                 direction="top"
                 offset={[0, -6]}
-                  opacity={opacity}
+                opacity={opacity}
                 className={showAllPopups ? 'etymology-tooltip-final' : 'etymology-tooltip-active'}
               >
                 <div className="space-y-1 leading-tight">
@@ -254,8 +258,8 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
             const edgeStyle = edgeStyleBetween(lang_code, node.next.lang_code)
             const dash = edgeStyle.dashArray
             completedSegments.push(
-                <Polyline
-                  pane="etymology-lineage"
+              <Polyline
+                pane={LINE_PANE}
                 key={`polyline-static-${word}-${node.next.word}`}
                 positions={[start, end]}
                 pathOptions={{
@@ -263,14 +267,14 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
                   weight: edgeStyle.weight,
                   color: edgeStyle.color,
                   dashArray: dash || undefined,
-                    opacity: (((edgeStyle as L.PathOptions).opacity ?? 1) * opacity),
+                  opacity: (((edgeStyle as L.PathOptions).opacity ?? 1) * opacity),
                 }}
               />,
             )
             // Arrow at end of completed segment
             completedSegments.push(
               <Marker
-                pane="etymology-lineage"
+                pane={MARKER_PANE}
                 key={`arrow-static-${word}-${node.next.word}`}
                 position={getTrailingPosition(map, start, end, 1)}
                 icon={createArrowIcon(angle, {
@@ -314,12 +318,14 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
     }
     if (!lineage) return null
     return (
-      <Pane name="etymology-lineage" style={{ zIndex }}>
-        <>
+      <>
+        <Pane name={LINE_PANE} style={{ zIndex }}>
           {completedSegments}
           {activeSegments}
-        </>
-      </Pane>
+        </Pane>
+        <Pane name={MARKER_PANE} style={{ zIndex: zIndex + 60 }} />
+        <Pane name={LABEL_PANE} style={{ zIndex: zIndex + 140 }} />
+      </>
     )
   },
 )
