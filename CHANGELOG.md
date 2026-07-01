@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.30](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.29...wiktionaryviz-v0.1.30) (2026-06-30)
+
+
+### Features
+
+* **annotations:** implement annotation mode with various tools for user interaction on the map ([d8cd146](https://github.com/vialab/WiktionaryViz/commit/d8cd1460e8305ca64bc33f8bc7e8030a2e99e081))
+
 ## [0.1.29](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.28...wiktionaryviz-v0.1.29) (2026-06-30)
 
 
