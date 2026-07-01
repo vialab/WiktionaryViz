@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Settings } from 'lucide-react'
+import { ChevronDown, Settings } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import type L from 'leaflet'
 import type { TranslationMarker } from './TranslationMarkers'
@@ -17,6 +17,62 @@ type LayerOrderKey = LayerOpacityKey
 type LayerOrderState = LayerOrderKey[]
 
 type LayerOrderDirection = 'up' | 'down'
+
+interface SettingsSectionProps {
+  title: string
+  description: string
+  defaultOpen?: boolean
+  isLight: boolean
+  children: React.ReactNode
+}
+
+const SettingsSection: React.FC<SettingsSectionProps> = ({
+  title,
+  description,
+  defaultOpen = false,
+  isLight,
+  children,
+}) => (
+  <details
+    open={defaultOpen}
+    className={isLight ? 'group rounded-xl border border-slate-200 bg-slate-50/80 p-2' : 'group rounded-xl border border-slate-800 bg-slate-900/60 p-2'}
+  >
+    <summary
+      className={isLight
+        ? 'flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left transition hover:bg-white/80 [&::-webkit-details-marker]:hidden'
+        : 'flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left transition hover:bg-slate-950/50 [&::-webkit-details-marker]:hidden'}
+    >
+      <div>
+        <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+          {title}
+        </div>
+        <p className={isLight ? 'mt-1 text-xs leading-5 text-slate-500' : 'mt-1 text-xs leading-5 text-slate-400'}>
+          {description}
+        </p>
+      </div>
+      <ChevronDown
+        size={14}
+        aria-hidden="true"
+        className={isLight ? 'shrink-0 text-slate-500 transition duration-200 group-open:rotate-180 group-open:text-slate-700' : 'shrink-0 text-slate-400 transition duration-200 group-open:rotate-180 group-open:text-slate-200'}
+      />
+    </summary>
+    <div className="mt-3 space-y-3">{children}</div>
+  </details>
+)
+
+const neutralButtonClasses = (isLight: boolean, disabled = false) =>
+  isLight
+    ? `inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 ${
+        disabled ? 'disabled:cursor-not-allowed disabled:opacity-40' : ''
+      }`
+    : `inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900 ${
+        disabled ? 'disabled:cursor-not-allowed disabled:opacity-40' : ''
+      }`
+
+const selectedNeutralButtonClasses = (isLight: boolean) =>
+  isLight
+    ? 'flex w-full flex-col rounded-md border border-slate-400 bg-white px-3 py-2 text-left text-sm text-slate-700 transition hover:border-slate-500 hover:bg-slate-50'
+    : 'flex w-full flex-col rounded-md border border-slate-600 bg-slate-950/20 px-3 py-2 text-left text-sm text-slate-200 transition hover:border-slate-500 hover:bg-slate-900'
 
 interface GeospatialSettingsMenuProps {
   markers: TranslationMarker[]
@@ -408,116 +464,152 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
           </div>
 
           <div className="space-y-3 pt-3">
-            <section className="space-y-2">
+            <section className="grid gap-2 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={onFitToData}
                 disabled={!canFitToData}
-                className={isLight
-                  ? 'inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 transition hover:border-blue-300 hover:bg-blue-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400'
-                  : 'inline-flex w-full items-center justify-center rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm font-medium text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900/40 disabled:text-slate-500'}
+                className={neutralButtonClasses(isLight, true)}
               >
                 Fit to data
               </button>
-              <p className={isLight ? 'px-1 text-xs leading-5 text-slate-500' : 'px-1 text-xs leading-5 text-slate-400'}>
-                Zooms to the currently visible markers, lineage, or descendant branches.
-              </p>
-            </section>
-
-            <section className="space-y-2">
               <button
                 type="button"
                 onClick={() => {
                   closeMenu()
                   onOpenCommandPalette()
                 }}
-                className={isLight ? 'inline-flex w-full items-center justify-center rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 transition hover:border-blue-400 hover:bg-blue-100' : 'inline-flex w-full items-center justify-center rounded-lg border border-sky-400/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-100 transition hover:border-sky-300 hover:bg-sky-500/20'}
+                className={neutralButtonClasses(isLight)}
               >
                 Open command palette
               </button>
-              <p className={isLight ? 'px-1 text-xs leading-5 text-slate-500' : 'px-1 text-xs leading-5 text-slate-400'}>
-                Search map actions like layer toggles, view controls, and annotation tools.
-              </p>
-            </section>
-
-            <section className="space-y-2">
               <button
                 type="button"
-                onClick={onResetLayers}
-                className={isLight ? 'inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800' : 'inline-flex w-full items-center justify-center rounded-lg bg-slate-700/90 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-600'}
+                onClick={onSaveState}
+                className={neutralButtonClasses(isLight)}
               >
-                Reset layers
+                Copy shareable link
               </button>
-              <p className={isLight ? 'px-1 text-xs leading-5 text-slate-500' : 'px-1 text-xs leading-5 text-slate-400'}>
-                Restores layer visibility, opacity, and stacking order to their defaults.
-              </p>
+              <button
+                type="button"
+                onClick={onResetView}
+                className={neutralButtonClasses(isLight)}
+              >
+                Reset view
+              </button>
             </section>
 
-            <section className="space-y-2">
-              <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
-                Layer Order
-              </div>
-              <div className={isLight ? 'space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2' : 'space-y-2 rounded-lg border border-slate-800 bg-slate-900/60 p-2'}>
-                {layerOrder.map((layerKey, index) => {
-                  const item = orderControls.find(entry => entry.key === layerKey)
-                  if (!item) return null
-                  const isTop = index === 0
-                  const isBottom = index === layerOrder.length - 1
-                  const rankLabel = isTop ? 'Top' : isBottom ? 'Bottom' : `#${index + 1}`
-                  return (
-                    <div key={item.key} className={isLight ? 'rounded-md border border-slate-200 bg-white p-2' : 'rounded-md border border-slate-800 bg-slate-950/40 p-2'}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className={isLight ? 'text-sm font-medium text-slate-700' : 'text-sm font-medium text-slate-100'}>{item.label}</div>
-                          <div className={isLight ? 'text-xs text-slate-500' : 'text-xs text-slate-400'}>{item.hint}</div>
+            <SettingsSection
+              title="Layers"
+              description="Adjust stacking and opacity for map content without losing any controls."
+              defaultOpen
+              isLight={isLight}
+            >
+              <div className="space-y-3">
+                <div>
+                  <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+                    Layer order
+                  </div>
+                  <div className={isLight ? 'mt-2 space-y-2 rounded-lg border border-slate-200 bg-white p-2' : 'mt-2 space-y-2 rounded-lg border border-slate-800 bg-slate-950/40 p-2'}>
+                    {layerOrder.map((layerKey, index) => {
+                      const item = orderControls.find(entry => entry.key === layerKey)
+                      if (!item) return null
+                      const isTop = index === 0
+                      const isBottom = index === layerOrder.length - 1
+                      const rankLabel = isTop ? 'Top' : isBottom ? 'Bottom' : `#${index + 1}`
+                      return (
+                        <div key={item.key} className={isLight ? 'rounded-md border border-slate-200 bg-slate-50 p-2' : 'rounded-md border border-slate-800 bg-slate-950/30 p-2'}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className={isLight ? 'text-sm font-medium text-slate-700' : 'text-sm font-medium text-slate-100'}>{item.label}</div>
+                              <div className={isLight ? 'text-xs text-slate-500' : 'text-xs text-slate-400'}>{item.hint}</div>
+                            </div>
+                            <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+                              {rankLabel}
+                            </div>
+                          </div>
+                          <div className="mt-2 flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => onLayerMove(item.key, 'up')}
+                              disabled={isTop}
+                              className={isLight ? 'rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40' : 'rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40'}
+                            >
+                              Move up
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onLayerMove(item.key, 'down')}
+                              disabled={isBottom}
+                              className={isLight ? 'rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40' : 'rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40'}
+                            >
+                              Move down
+                            </button>
+                          </div>
                         </div>
-                        <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
-                          {rankLabel}
-                        </div>
-                      </div>
-                      <div className="mt-2 flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onLayerMove(item.key, 'up')}
-                          disabled={isTop}
-                          className={isLight ? 'rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40' : 'rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40'}
-                        >
-                          Move up
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onLayerMove(item.key, 'down')}
-                          disabled={isBottom}
-                          className={isLight ? 'rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40' : 'rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40'}
-                        >
-                          Move down
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-                <button
-                  type="button"
-                  onClick={onResetLayers}
-                  className={isLight ? 'inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800' : 'inline-flex w-full items-center justify-center rounded-lg bg-slate-700/90 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-600'}
-                >
-                  Reset layers
-                </button>
-              </div>
-            </section>
+                      )
+                    })}
+                    <button
+                      type="button"
+                      onClick={onResetLayers}
+                      className={neutralButtonClasses(isLight)}
+                    >
+                      Reset layers
+                    </button>
+                  </div>
+                </div>
 
-            <section className="space-y-2">
-              <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
-                Annotation Mode
+                <div>
+                  <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+                    Layer opacity
+                  </div>
+                  <div className={isLight ? 'mt-2 space-y-3 rounded-lg border border-slate-200 bg-white p-2' : 'mt-2 space-y-3 rounded-lg border border-slate-800 bg-slate-950/40 p-2'}>
+                    {opacityControls.map(item => {
+                      const value = Math.round(layerOpacities[item.key] * 100)
+                      return (
+                        <div key={item.key} className="space-y-1">
+                          <div className="flex items-center justify-between gap-3">
+                            <label className={isLight ? 'text-sm text-slate-700' : 'text-sm text-slate-200'} htmlFor={`opacity-${item.key}`}>
+                              {item.label}
+                            </label>
+                            <span className={isLight ? 'text-xs font-medium text-slate-500' : 'text-xs font-medium text-slate-400'}>
+                              {value}%
+                            </span>
+                          </div>
+                          <input
+                            id={`opacity-${item.key}`}
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={value}
+                            onChange={event => onLayerOpacityChange(item.key, Number(event.target.value) / 100)}
+                            aria-label={`${item.label} opacity`}
+                            aria-describedby={`opacity-hint-${item.key}`}
+                            className="h-2 w-full cursor-pointer accent-sky-500"
+                          />
+                          <p id={`opacity-hint-${item.key}`} className={isLight ? 'text-xs leading-4 text-slate-500' : 'text-xs leading-4 text-slate-400'}>
+                            {item.hint}
+                          </p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
-              <div className={isLight ? 'space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-2' : 'space-y-3 rounded-lg border border-slate-800 bg-slate-900/60 p-2'}>
+            </SettingsSection>
+
+            <SettingsSection
+              title="Annotation"
+              description="Turn editing on, choose a tool, or hide the annotation layer."
+              isLight={isLight}
+            >
+              <div className={isLight ? 'space-y-3 rounded-lg border border-slate-200 bg-white p-2' : 'space-y-3 rounded-lg border border-slate-800 bg-slate-950/40 p-2'}>
                 <button
                   type="button"
                   onClick={() => onAnnotationModeChange(!annotationMode)}
                   aria-pressed={annotationMode}
-                  className={isLight
-                    ? 'inline-flex w-full items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900 transition hover:border-amber-400 hover:bg-amber-100'
-                    : 'inline-flex w-full items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-200 transition hover:border-amber-400 hover:bg-amber-500/20'}
+                  className={neutralButtonClasses(isLight)}
                 >
                   {annotationMode ? 'Disable annotation mode' : 'Enable annotation mode'}
                 </button>
@@ -530,9 +622,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                   type="button"
                   onClick={() => onAnnotationsVisibleChange(!annotationsVisible)}
                   aria-pressed={annotationsVisible}
-                  className={isLight
-                    ? 'inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50'
-                    : 'inline-flex w-full items-center justify-center rounded-lg border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900'}
+                  className={neutralButtonClasses(isLight)}
                 >
                   {annotationsVisible ? 'Hide annotation layer' : 'Show annotation layer'}
                 </button>
@@ -541,7 +631,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                     ? 'Annotations are visible as their own layer and can be exported.'
                     : 'Annotations remain in map state but are hidden from the canvas and export.'}
                 </p>
-                <div className={isLight ? 'space-y-2 rounded-md border border-slate-200 bg-white p-2' : 'space-y-2 rounded-md border border-slate-800 bg-slate-950/40 p-2'}>
+                <div className={isLight ? 'space-y-2 rounded-md border border-slate-200 bg-slate-50 p-2' : 'space-y-2 rounded-md border border-slate-800 bg-slate-900/60 p-2'}>
                   {annotationControls.map(item => (
                     <button
                       key={item.key}
@@ -549,9 +639,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                       onClick={() => onAnnotationToolChange(item.key)}
                       aria-pressed={annotationTool === item.key}
                       className={annotationTool === item.key
-                        ? (isLight
-                          ? 'flex w-full flex-col rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-left text-sm text-blue-900'
-                          : 'flex w-full flex-col rounded-md border border-sky-400/60 bg-sky-500/15 px-3 py-2 text-left text-sm text-sky-100')
+                        ? selectedNeutralButtonClasses(isLight)
                         : (isLight
                           ? 'flex w-full flex-col rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-700 transition hover:border-slate-300 hover:bg-slate-50'
                           : 'flex w-full flex-col rounded-md border border-slate-800 bg-slate-950/20 px-3 py-2 text-left text-sm text-slate-200 transition hover:border-slate-700 hover:bg-slate-900')}
@@ -565,86 +653,71 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                   type="button"
                   onClick={onClearAnnotations}
                   disabled={annotationCount === 0}
-                  className={isLight
-                    ? 'inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40'
-                    : 'inline-flex w-full items-center justify-center rounded-lg border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-40'}
+                  className={neutralButtonClasses(isLight, true)}
                 >
                   Clear annotations
                 </button>
               </div>
-            </section>
+            </SettingsSection>
 
-            <section className="space-y-2">
-              <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
-                Layer Opacity
-              </div>
-              <div className={isLight ? 'space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-2' : 'space-y-3 rounded-lg border border-slate-800 bg-slate-900/60 p-2'}>
-                {opacityControls.map(item => {
-                  const value = Math.round(layerOpacities[item.key] * 100)
-                  return (
-                    <div key={item.key} className="space-y-1">
-                      <div className="flex items-center justify-between gap-3">
-                        <label className={isLight ? 'text-sm text-slate-700' : 'text-sm text-slate-200'} htmlFor={`opacity-${item.key}`}>
-                          {item.label}
-                        </label>
-                        <span className={isLight ? 'text-xs font-medium text-slate-500' : 'text-xs font-medium text-slate-400'}>
-                          {value}%
-                        </span>
-                      </div>
-                      <input
-                        id={`opacity-${item.key}`}
-                        type="range"
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={value}
-                        onChange={event => onLayerOpacityChange(item.key, Number(event.target.value) / 100)}
-                        aria-label={`${item.label} opacity`}
-                        aria-describedby={`opacity-hint-${item.key}`}
-                        className="h-2 w-full cursor-pointer accent-sky-500"
-                      />
-                      <p id={`opacity-hint-${item.key}`} className={isLight ? 'text-xs leading-4 text-slate-500' : 'text-xs leading-4 text-slate-400'}>
-                        {item.hint}
-                      </p>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
+            <SettingsSection
+              title="Export and Capture"
+              description="Download GeoJSON or capture a preview without leaving the panel."
+              isLight={isLight}
+            >
+              <div className="space-y-3">
+                <div>
+                  <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+                    Export GeoJSON
+                  </div>
+                  <fieldset className={isLight ? 'mt-2 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2' : 'mt-2 space-y-2 rounded-lg border border-slate-800 bg-slate-900/60 p-2'}>
+                    <legend className="sr-only">Include layers</legend>
+                    {exportLayerToggles.map(item => (
+                      <label key={item.key} className={isLight ? 'flex items-center gap-2 text-sm text-slate-700' : 'flex items-center gap-2 text-sm text-slate-200'}>
+                        <input
+                          type="checkbox"
+                          checked={options[item.key] !== false}
+                          onChange={onChange(item.key)}
+                          className={isLight ? 'h-4 w-4 rounded border-slate-300 bg-white text-blue-600' : 'h-4 w-4 rounded border-slate-600 bg-slate-900 text-indigo-400'}
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                    ))}
+                  </fieldset>
+                  <button
+                    onClick={handleExport}
+                    className={neutralButtonClasses(isLight)}
+                  >
+                    Download GeoJSON
+                  </button>
+                </div>
 
-            <section className="space-y-2">
-              <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
-                Export GeoJSON
+                <div>
+                  <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+                    Screenshot
+                  </div>
+                  <p className={isLight ? 'mt-2 text-xs leading-5 text-slate-500' : 'mt-2 text-xs leading-5 text-slate-400'}>
+                    Capture the current map view and open a preview before downloading.
+                  </p>
+                  <button
+                    onClick={handleCapture}
+                    disabled={capturing}
+                    className={neutralButtonClasses(isLight, true)}
+                  >
+                    {capturing ? 'Capturing…' : 'Capture Screenshot'}
+                  </button>
+                </div>
               </div>
-              <fieldset className={isLight ? 'space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2' : 'space-y-2 rounded-lg border border-slate-800 bg-slate-900/60 p-2'}>
-                <legend className="sr-only">Include layers</legend>
-                {exportLayerToggles.map(item => (
-                  <label key={item.key} className={isLight ? 'flex items-center gap-2 text-sm text-slate-700' : 'flex items-center gap-2 text-sm text-slate-200'}>
-                    <input
-                      type="checkbox"
-                      checked={options[item.key] !== false}
-                      onChange={onChange(item.key)}
-                      className={isLight ? 'h-4 w-4 rounded border-slate-300 bg-white text-blue-600' : 'h-4 w-4 rounded border-slate-600 bg-slate-900 text-indigo-400'}
-                    />
-                    <span>{item.label}</span>
-                  </label>
-                ))}
-              </fieldset>
-              <button
-                onClick={handleExport}
-                className={isLight ? 'inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-500' : 'inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-700'}
-              >
-                Download GeoJSON
-              </button>
-            </section>
+            </SettingsSection>
 
-            <section className={isLight ? 'space-y-2 border-t border-slate-200 pt-3' : 'space-y-2 border-t border-slate-800 pt-3'}>
-              <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
-                Keyboard Shortcuts
-              </div>
+            <SettingsSection
+              title="Keyboard shortcuts"
+              description="Use quick keys when you want to move faster than the mouse."
+              isLight={isLight}
+            >
               <div className={isLight ? 'space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2' : 'space-y-2 rounded-lg border border-slate-800 bg-slate-900/60 p-2'}>
                 <p className={isLight ? 'text-xs leading-5 text-slate-500' : 'text-xs leading-5 text-slate-400'}>
-                  Shortcuts only fire when you are not typing in a field. Use them to move faster without hunting through the panel.
+                  Shortcuts only fire when you are not typing in a field.
                 </p>
                 <div className="grid gap-2">
                   {shortcutHelpItems.map(item => (
@@ -660,40 +733,8 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                     </div>
                   ))}
                 </div>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={onSaveState}
-                    className={isLight ? 'inline-flex items-center justify-center rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 transition hover:border-blue-400 hover:bg-blue-100' : 'inline-flex items-center justify-center rounded-lg border border-sky-400/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-100 transition hover:border-sky-300 hover:bg-sky-500/20'}
-                  >
-                    Copy shareable link
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onResetView}
-                    className={isLight ? 'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50' : 'inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900'}
-                  >
-                    Reset view
-                  </button>
-                </div>
               </div>
-            </section>
-
-            <section className={isLight ? 'space-y-2 border-t border-slate-200 pt-3' : 'space-y-2 border-t border-slate-800 pt-3'}>
-              <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
-                Screenshot
-              </div>
-              <p className={isLight ? 'text-xs leading-5 text-slate-500' : 'text-xs leading-5 text-slate-400'}>
-                Capture the current map view and open a preview before downloading.
-              </p>
-              <button
-                onClick={handleCapture}
-                disabled={capturing}
-                className={isLight ? 'inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300' : 'inline-flex w-full items-center justify-center rounded-lg bg-slate-700/90 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:bg-slate-700/60'}
-              >
-                {capturing ? 'Capturing…' : 'Capture Screenshot'}
-              </button>
-            </section>
+            </SettingsSection>
           </div>
         </div>
       )}
