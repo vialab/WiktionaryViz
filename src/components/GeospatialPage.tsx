@@ -308,8 +308,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   useEffect(() => {
     if (!mapInstance) return
 
+    const translationsPane = mapInstance.getPane('translations') ?? mapInstance.createPane('translations')
+    translationsPane.style.zIndex = String(layerZIndex('translations'))
+
     const paneZIndexes: Array<[string, number]> = [
-      ['translations', layerZIndex('translations')],
+      ['translation-labels', layerZIndex('translations') + 80],
       ['proto-zones', layerZIndex('protoZones')],
       ['language-families-bubbles', layerZIndex('languageFamilies')],
       ['etymology-lineage-lines', layerZIndex('etymology')],
@@ -888,9 +891,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     })
   }, [currentIndex, lineage, setSelectedItem])
 
-  const selectedTranslationIndex = mapState.selectedItem.kind === 'translation-marker'
-    ? mapState.selectedItem.index
-    : null
   const selectedLineageIndex = mapState.selectedItem.kind === 'lineage-node'
     ? mapState.selectedItem.index
     : null
@@ -1069,10 +1069,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
               {showTranslations && (
                 <TranslationMarkers
                   markers={markers}
-                  opacity={layerOpacities.translations}
-                  zIndex={layerZIndex('translations')}
                   onMarkerClick={handleMarkerSelect}
-                  selectedIndex={selectedTranslationIndex}
                 />
               )}
             </MarkerClusterGroup>
