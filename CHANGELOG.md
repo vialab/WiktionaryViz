@@ -2,6 +2,37 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.31](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.30...wiktionaryviz-v0.1.31) (2026-07-01)
+
+
+### Features
+
+* **GeospatialPage, EtymologyLineagePath:** refactor etymology lineage layers to improve organization and clarity by separating lines, markers, and labels into distinct panes ([29fafed](https://github.com/vialab/WiktionaryViz/commit/29fafed820ea324466389df5aaa0e0d6d4e79c2c))
+* **GeospatialPage:** add accessible labels for icon-only controls to improve usability ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **GeospatialPage:** add live announcements for user actions to improve accessibility ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **GeospatialPage:** add screen-reader announcements for state changes to improve accessibility ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **GeospatialPage:** add translations pane and adjust z-index for layers to improve map rendering ([2535bce](https://github.com/vialab/WiktionaryViz/commit/2535bcebd1a3f72906287f6d8044464b0f547669))
+* **GeospatialPage:** implement keyboard support for map overlays to enhance usability ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **GeospatialPage:** implement non-color encodings for uncertainty and selection to support color-blind users ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **GeospatialPage:** manage focus for overlays and drawers to enhance user experience ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **GeospatialSettingsMenu:** add focus trap to settings menu for better accessibility ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **ScreenshotButton:** add focus trap to screenshot preview for improved accessibility ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **TODO_LIST:** mark completed tasks in the TODO list to track progress ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **useFocusTrap:** create a custom hook to manage focus trapping in modal components ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+
+
+### Bug Fixes
+
+* **AnnotationModeOverlay:** add announcements for annotation tool changes to improve user feedback ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **ExportGeoJSONButton:** add aria labels for buttons to improve accessibility ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **GeospatialGuideOverlay:** add aria attributes for better accessibility ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **GeospatialPage:** ensure proper cleanup of timers to prevent memory leaks ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **GeospatialSettingsMenu:** ensure proper aria attributes for interactive elements ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **Navbar:** change title to button for better accessibility and interaction ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **TimelineScrubber:** add announcements for timeline interactions to enhance accessibility ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **TranslationMarkers:** highlight selected markers for better user feedback ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+* **WordLanguageInput:** ensure label is associated with input for better accessibility ([95046fe](https://github.com/vialab/WiktionaryViz/commit/95046fe21fbdfbd386013aaff5ad3c27e59e3efd))
+
 ## [0.1.30](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.29...wiktionaryviz-v0.1.30) (2026-06-30)
 
 
