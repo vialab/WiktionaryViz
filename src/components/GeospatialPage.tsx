@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { MapContainer, TileLayer, LayersControl, LayerGroup, useMap } from 'react-leaflet'
 import useWordData from '@/hooks/useWordData'
 import useLanguoidData from '@/hooks/useLanguoidData'
@@ -19,6 +19,7 @@ import LanguageFamiliesBubbles from './geospatial/LanguageFamiliesBubbles'
 import DescendantLineagePaths from './geospatial/DescendantLineagePaths'
 import GeospatialGuideOverlay from './geospatial/GeospatialGuideOverlay'
 import AnnotationModeOverlay from './geospatial/AnnotationModeOverlay'
+import CommandPalette, { type CommandPaletteAction } from './geospatial/CommandPalette'
 import type { EtymologyNode } from '@/types/etymology'
 import type { LanguoidData } from '@/types/languoid'
 import type { Translation } from '@/utils/mapUtils'
@@ -160,6 +161,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const [etymologyLineageGroup, setEtymologyLineageGroup] = useState<L.LayerGroup | null>(null)
   const [descendantCoordinates, setDescendantCoordinates] = useState<[number, number][]>([])
   const [liveMessage, setLiveMessage] = useState('')
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const annotations = mapState.annotations
   const hasAdjustedZoomRef = useRef(false)
   const playbackTimerRef = useRef<number | null>(null)
@@ -993,6 +995,197 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     }
   }, [descendantCoordinates, lineageCoordinates, markers, mapInstance, showDescendantPaths, showEtymologyLineage, showTranslations])
 
+  const canFitToData = showTranslations || showEtymologyLineage || showDescendantPaths
+
+  const commandPaletteActions = useMemo<CommandPaletteAction[]>(() => [
+    {
+      id: 'open-guide',
+      label: 'Open geospatial guide',
+      description: 'Open the layer guide and recommendation overlay.',
+      group: 'Navigation',
+      keywords: ['guide', 'layer help', 'onboarding'],
+      onSelect: () => {
+        setFilterState({ guideOpen: true })
+        announce('Guide opened')
+      },
+    },
+    {
+      id: 'fit-to-data',
+      label: 'Fit to data',
+      description: 'Zoom to the currently visible markers, lineage, and descendant paths.',
+      group: 'View',
+      keywords: ['zoom to data', 'frame data'],
+      disabled: !canFitToData,
+      onSelect: () => {
+        fitToData()
+        announce('Map fitted to visible data')
+      },
+    },
+    {
+      id: 'reset-view',
+      label: 'Reset map view',
+      description: 'Return to the default center and zoom for this word.',
+      group: 'View',
+      keywords: ['reset camera', 'reset zoom'],
+      onSelect: () => {
+        resetView()
+      },
+    },
+    {
+      id: 'copy-shareable-link',
+      label: 'Copy shareable link',
+      description: 'Copy the current map state URL to the clipboard.',
+      group: 'View',
+      keywords: ['save view', 'share state', 'copy url'],
+      onSelect: () => {
+        void saveShareableState()
+      },
+    },
+    {
+      id: 'reset-layers',
+      label: 'Reset layers',
+      description: 'Restore layer visibility, opacity, and order to defaults.',
+      group: 'View',
+      keywords: ['clear layers', 'restore defaults'],
+      onSelect: () => {
+        resetLayers()
+      },
+    },
+    {
+      id: 'toggle-translations-layer',
+      label: showTranslations ? 'Hide translations layer' : 'Show translations layer',
+      description: 'Toggle translation markers and cluster popups.',
+      group: 'Layers',
+      keywords: ['toggle labels', 'translation markers', 'markers'],
+      onSelect: () => {
+        toggleLayerVisibility('translations')
+        announce(`Translations layer ${showTranslations ? 'hidden' : 'shown'}`)
+      },
+    },
+    {
+      id: 'toggle-etymology-layer',
+      label: showEtymologyLineage ? 'Hide etymology layer' : 'Show etymology layer',
+      description: 'Toggle the animated lineage path.',
+      group: 'Layers',
+      keywords: ['show path to root', 'lineage', 'etymology'],
+      onSelect: () => {
+        toggleLayerVisibility('etymology')
+        announce(`Etymology layer ${showEtymologyLineage ? 'hidden' : 'shown'}`)
+      },
+    },
+    {
+      id: 'toggle-descendants-layer',
+      label: showDescendantPaths ? 'Hide descendant paths' : 'Show descendants',
+      description: 'Toggle branching descendant routes on the map.',
+      group: 'Layers',
+      keywords: ['show descendants', 'descendant paths', 'branching'],
+      onSelect: () => {
+        toggleLayerVisibility('descendants')
+        announce(`Descendant paths ${showDescendantPaths ? 'hidden' : 'shown'}`)
+      },
+    },
+    {
+      id: 'toggle-proto-zones',
+      label: showProtoZones ? 'Hide proto-language zones' : 'Show proto-language zones',
+      description: 'Toggle historical proto-region polygons.',
+      group: 'Layers',
+      keywords: ['proto regions', 'historical regions', 'zones'],
+      onSelect: () => {
+        toggleLayerVisibility('protoZones')
+        announce(`Proto-language zones ${showProtoZones ? 'hidden' : 'shown'}`)
+      },
+    },
+    {
+      id: 'toggle-language-families',
+      label: showLanguageFamilies ? 'Hide language families' : 'Show language families',
+      description: 'Toggle family bubbles and labels.',
+      group: 'Layers',
+      keywords: ['family bubbles', 'language families'],
+      onSelect: () => {
+        toggleLayerVisibility('languageFamilies')
+        announce(`Language families ${showLanguageFamilies ? 'hidden' : 'shown'}`)
+      },
+    },
+    {
+      id: 'toggle-annotation-mode',
+      label: mapState.filters.annotationMode ? 'Disable annotation mode' : 'Enable annotation mode',
+      description: 'Switch between exploratory mode and map annotation mode.',
+      group: 'Annotations',
+      keywords: ['notes', 'highlights', 'arrows', 'regions', 'links'],
+      onSelect: () => {
+        setAnnotationMode(!mapState.filters.annotationMode)
+        announce(`Annotation mode ${mapState.filters.annotationMode ? 'disabled' : 'enabled'}`)
+      },
+    },
+    {
+      id: 'annotation-tool-note',
+      label: 'Use note tool',
+      description: 'Add a text note directly onto the map.',
+      group: 'Annotations',
+      keywords: ['marker note', 'annotation note'],
+      onSelect: () => {
+        setAnnotationTool('note')
+        announce('Annotation tool set to note')
+      },
+    },
+    {
+      id: 'annotation-tool-highlight',
+      label: 'Use highlight tool',
+      description: 'Mark an area of interest with a highlight.',
+      group: 'Annotations',
+      keywords: ['highlight area'],
+      onSelect: () => {
+        setAnnotationTool('highlight')
+        announce('Annotation tool set to highlight')
+      },
+    },
+    {
+      id: 'annotation-tool-arrow',
+      label: 'Use arrow tool',
+      description: 'Draw a directional annotation.',
+      group: 'Annotations',
+      keywords: ['direction', 'arrow annotation'],
+      onSelect: () => {
+        setAnnotationTool('arrow')
+        announce('Annotation tool set to arrow')
+      },
+    },
+    {
+      id: 'clear-annotations',
+      label: 'Clear annotations',
+      description: 'Remove all annotations from the current map state.',
+      group: 'Annotations',
+      keywords: ['delete notes', 'remove annotations'],
+      disabled: annotations.length === 0,
+      onSelect: () => {
+        updateMapState(current => ({
+          ...current,
+          annotations: [],
+        }))
+        announce('Annotations cleared')
+      },
+    },
+  ], [
+    annotations.length,
+    announce,
+    canFitToData,
+    fitToData,
+    mapState.filters.annotationMode,
+    resetLayers,
+    resetView,
+    saveShareableState,
+    setAnnotationMode,
+    setAnnotationTool,
+    setFilterState,
+    showDescendantPaths,
+    showEtymologyLineage,
+    showLanguageFamilies,
+    showProtoZones,
+    showTranslations,
+    toggleLayerVisibility,
+    updateMapState,
+  ])
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return
@@ -1001,6 +1194,14 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) {
         return
       }
+
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setCommandPaletteOpen(current => !current)
+        return
+      }
+
+      if (commandPaletteOpen) return
 
       if (!event.altKey || event.ctrlKey || event.metaKey) return
 
@@ -1028,9 +1229,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
 
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [fitToData, mapState.filters.annotationMode, resetView, saveShareableState, setAnnotationMode, toggleLayerVisibility])
-
-  const canFitToData = showTranslations || showEtymologyLineage || showDescendantPaths
+  }, [commandPaletteOpen, fitToData, mapState.filters.annotationMode, resetView, saveShareableState, setAnnotationMode, toggleLayerVisibility])
 
   return (
     <section
@@ -1075,6 +1274,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             announce(`${layer} moved ${direction}`)
           }}
           onResetLayers={resetLayers}
+          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
           annotationMode={mapState.filters.annotationMode}
           annotationTool={mapState.filters.annotationTool}
           annotationCount={annotations.length}
@@ -1273,6 +1473,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             setActiveLayerState({ etymology: false })
             announce('Guide restarted')
           }}
+          theme={theme}
+        />
+        <CommandPalette
+          open={commandPaletteOpen}
+          actions={commandPaletteActions}
+          onClose={() => setCommandPaletteOpen(false)}
           theme={theme}
         />
       </MapContainer>

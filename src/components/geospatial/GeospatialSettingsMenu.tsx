@@ -33,6 +33,7 @@ interface GeospatialSettingsMenuProps {
   layerOrder: LayerOrderState
   onLayerMove: (layer: LayerOrderKey, direction: LayerOrderDirection) => void
   onResetLayers: () => void
+  onOpenCommandPalette: () => void
   annotationMode: boolean
   annotationTool: AnnotationKind
   annotationCount: number
@@ -56,6 +57,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   onResetView,
   onSaveState,
   onResetLayers,
+  onOpenCommandPalette,
   annotationMode,
   annotationTool,
   annotationCount,
@@ -355,6 +357,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
       { keys: ['Alt', 'F'], label: 'Fit the map to visible data' },
       { keys: ['Alt', 'R'], label: 'Reset the map view' },
       { keys: ['Alt', 'S'], label: 'Copy the current shareable state link' },
+      { keys: ['Ctrl', 'K'], label: 'Open the command palette' },
     ],
     [],
   )
@@ -409,6 +412,22 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
               </button>
               <p className={isLight ? 'px-1 text-xs leading-5 text-slate-500' : 'px-1 text-xs leading-5 text-slate-400'}>
                 Zooms to the currently visible markers, lineage, or descendant branches.
+              </p>
+            </section>
+
+            <section className="space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  closeMenu()
+                  onOpenCommandPalette()
+                }}
+                className={isLight ? 'inline-flex w-full items-center justify-center rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 transition hover:border-blue-400 hover:bg-blue-100' : 'inline-flex w-full items-center justify-center rounded-lg border border-sky-400/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-100 transition hover:border-sky-300 hover:bg-sky-500/20'}
+              >
+                Open command palette
+              </button>
+              <p className={isLight ? 'px-1 text-xs leading-5 text-slate-500' : 'px-1 text-xs leading-5 text-slate-400'}>
+                Search map actions like layer toggles, view controls, and annotation tools.
               </p>
             </section>
 

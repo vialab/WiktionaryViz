@@ -300,7 +300,7 @@ P2 — EXPORT, PRESENTATION, AND POLISH FEATURES
     Use case: Speeds up expert workflows.
     Research context: Participants differed in interaction preferences; some prefer efficient control over point-and-click UI.
 
-[ ] P2 — Add command palette
+[X] P2 — Add command palette
     Description: A searchable menu for actions like “toggle labels,” “save view,” “show descendants,” or “export PNG.”
     Use case: Helps users quickly access features without hunting through panels.
     Research context: Useful as the tool gains more interaction options.
