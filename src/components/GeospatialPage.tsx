@@ -72,6 +72,8 @@ interface GeospatialPageProps {
   openGuideOnLoad?: boolean
   theme?: 'dark' | 'light'
   inspireCategory?: string | null
+  embedded?: boolean
+  instanceId?: string
 }
 
 /**
@@ -87,6 +89,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   openGuideOnLoad = true,
   theme = 'dark',
   inspireCategory,
+  embedded = false,
+  instanceId,
 }) => {
   const isLight = theme === 'light'
   const urlInitialMapState = typeof window === 'undefined'
@@ -197,6 +201,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const layerOpacities = mapState.activeLayers.opacities
   const layerOrder = mapState.activeLayers.order
   const currentWordKey = mapState.currentWord.key
+  const sectionId = instanceId ? `geospatial-${instanceId}` : 'geospatial'
+  const mapRootId = instanceId ? `map-root-${instanceId}` : 'map-root'
   const lineageCoordinates = useCallback(() => {
     if (!lineage) return [] as [number, number][]
     return flattenLineage(lineage)
@@ -1270,8 +1276,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
 
   return (
     <section
-      id="geospatial"
-      className={isLight ? 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-white text-slate-900' : 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-gray-900 text-white'}
+      id={sectionId}
+      className={embedded ? (isLight ? 'h-full min-h-0 w-full overflow-hidden bg-white text-slate-900' : 'h-full min-h-0 w-full overflow-hidden bg-gray-900 text-white') : (isLight ? 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-white text-slate-900' : 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-gray-900 text-white')}
     >
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {liveMessage}
@@ -1284,7 +1290,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         wheelPxPerZoomLevel={240}
         className="relative w-full h-full"
         style={{ background: isLight ? '#f8fafc' : '#0b0f1a' }}
-        id="map-root"
+        id={mapRootId}
       >
         <MapInstanceRegistrar onReady={handleMapReady} />
         <GeospatialSettingsMenu

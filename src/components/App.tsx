@@ -33,6 +33,14 @@ function App() {
     setMapStateReady(true)
   }, [])
 
+  const handleExploreCompare = useCallback((leftWord: string, leftLanguage: string, rightWord: string, rightLanguage: string) => {
+    setWord1(leftWord)
+    setLanguage1(leftLanguage)
+    setWord2(rightWord)
+    setLanguage2(rightLanguage)
+    setVisibleSection('geospatial')
+  }, [])
+
   useEffect(() => {
     if (typeof document === 'undefined') return
     document.body.dataset.theme = theme
@@ -71,6 +79,8 @@ function App() {
   // Rationale: Participant 6 requested presets and saved configurations.
   // TODO [LOW LEVEL]: Implement a lightweight preset registry and a bookmarks context with localStorage persistence.
 
+  const compareViewActive = visibleSection === 'geospatial' && word2.trim().length > 0
+
   return (
     <div className={theme === 'light' ? 'flex min-h-screen flex-col bg-white text-slate-900' : 'flex min-h-screen flex-col bg-neutral-900 text-slate-100'}>
       {/* Navbar */}
@@ -98,13 +108,14 @@ function App() {
             setLanguage1={setLanguage1}
             setLanguage2={setLanguage2}
             setInspireCategory={setInspireCategory}
+            onExploreCompare={handleExploreCompare}
             word1={word1}
             word2={word2}
             language1={language1}
             language2={language2}
           />
         )}
-        {visibleSection === 'geospatial' && (
+        {visibleSection === 'geospatial' && !compareViewActive && (
           <GeospatialPage
             word={word1}
             language={language1}
@@ -113,7 +124,48 @@ function App() {
             initialMapState={shareableMapState}
             onMapStateChange={handleMapStateChange}
             theme={theme}
+            instanceId="primary"
           />
+        )}
+        {compareViewActive && (
+          <div className="flex w-full flex-1 min-h-0 flex-col gap-4 p-4 lg:p-6">
+            <div className={theme === 'light' ? 'rounded-xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-700 shadow-sm' : 'rounded-xl border border-slate-800 bg-neutral-950/70 px-4 py-3 text-slate-200 shadow-sm'}>
+              <div className="text-xs uppercase tracking-[0.24em] opacity-70">Compare view</div>
+              <div className="mt-1 text-sm">
+                <span className="font-semibold">{word1 || 'Left word'}</span>
+                <span className="opacity-70"> {language1 ? `(${language1})` : ''}</span>
+                <span className="mx-2 opacity-50">vs</span>
+                <span className="font-semibold">{word2 || 'Right word'}</span>
+                <span className="opacity-70"> {language2 ? `(${language2})` : ''}</span>
+              </div>
+            </div>
+            <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
+              <div className={theme === 'light' ? 'min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm' : 'min-h-0 overflow-hidden rounded-2xl border border-slate-800 bg-neutral-950 shadow-sm'}>
+                <GeospatialPage
+                  word={word1}
+                  language={language1}
+                  inspireCategory={inspireCategory}
+                  onGuideOpenRegister={setGeospatialGuideOpenHandler}
+                  initialMapState={shareableMapState}
+                  onMapStateChange={handleMapStateChange}
+                  theme={theme}
+                  embedded
+                  instanceId="left"
+                />
+              </div>
+              <div className={theme === 'light' ? 'min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm' : 'min-h-0 overflow-hidden rounded-2xl border border-slate-800 bg-neutral-950 shadow-sm'}>
+                <GeospatialPage
+                  word={word2}
+                  language={language2}
+                  inspireCategory={inspireCategory}
+                  initialMapState={shareableMapState}
+                  theme={theme}
+                  embedded
+                  instanceId="right"
+                />
+              </div>
+            </div>
+          </div>
         )}
         {/* TODO [HIGH LEVEL]: Add a "Lecture/Presentation" mode that scripts camera pans/zooms and reveals, with narration hooks. */}
         {/* TODO [LOW LEVEL]: Provide a presentation controller component to step through saved view states across pages. */}

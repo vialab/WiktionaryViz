@@ -12,8 +12,8 @@ interface LandingPageProps {
   suggestedWords?: string[]
   isLoading?: boolean
   onExplore?: (word: string, language: string) => void
-  onSelectCompareMode?: () => void
   onExploreCompare?: (a: string, aLang: string, b: string, bLang: string) => void
+  onSelectCompareMode?: () => void
   onBackToSearch?: () => void
   setWord2?: (word: string) => void
   setLanguage2?: (lang: string) => void
@@ -45,16 +45,25 @@ export default function LandingPage({
   suggestedWords = ['world', 'love', 'sun', 'orange'],
   isLoading = false,
   onExplore,
+  onExploreCompare,
+  onSelectCompareMode,
   setVisibleSection,
   setWord1,
   setLanguage1,
+  setWord2,
+  setLanguage2,
   setInspireCategory,
   word1,
+  word2,
   language1,
+  language2,
 }: LandingPageProps) {
   const [word, setWord] = useState<string>(initialWord ?? word1 ?? '')
   // prefer any legacy controlled language props when provided (fall back to initialLanguage)
   const [language, setLanguage] = useState<string>(language1 || initialLanguage)
+  const [compareMode, setCompareMode] = useState(Boolean(word2?.trim() || language2?.trim()))
+  const [compareWord, setCompareWord] = useState<string>(word2 ?? '')
+  const [compareLanguage, setCompareLanguage] = useState<string>(language2 || language1 || initialLanguage)
   const isLight = theme === 'light'
 
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -64,12 +73,21 @@ export default function LandingPage({
 
   // hooks for available languages and interesting word suggestions
   const { languages: availableLangs, loading: langsLoading } = useAvailableLanguages(word)
+  const { languages: compareAvailableLangs, loading: compareLangsLoading } = useAvailableLanguages(compareWord)
   const { loading: interestingLoading, refresh } = useInterestingWord()
 
   // Autofocus on mount
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
+
+  useEffect(() => {
+    setCompareWord(word2 ?? '')
+  }, [word2])
+
+  useEffect(() => {
+    setCompareLanguage(language2 || language1 || initialLanguage)
+  }, [initialLanguage, language1, language2])
 
   // helper to call parent handler with backwards-compat fallback
   const triggerExplore = (w: string, lang: string) => {
@@ -84,6 +102,23 @@ export default function LandingPage({
     // fallback behavior for existing App: set the word and language and navigate to geospatial
     setWord1?.(trimmed)
     setLanguage1?.(lang)
+    setVisibleSection?.('geospatial')
+  }
+
+  const triggerCompareExplore = (a: string, aLang: string, b: string, bLang: string) => {
+    const leftWord = a.trim()
+    const rightWord = b.trim()
+    if (!leftWord || !rightWord) return
+
+    if (onExploreCompare) {
+      onExploreCompare(leftWord, aLang, rightWord, bLang)
+      return
+    }
+
+    setWord1?.(leftWord)
+    setLanguage1?.(aLang)
+    setWord2?.(rightWord)
+    setLanguage2?.(bLang)
     setVisibleSection?.('geospatial')
   }
 
@@ -140,7 +175,27 @@ export default function LandingPage({
   const onSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
     if (isLoading) return
+    if (compareMode) {
+      triggerCompareExplore(word, language, compareWord, compareLanguage)
+      return
+    }
     triggerExplore(word, language)
+  }
+
+  const toggleCompareMode = () => {
+    setCompareMode(current => {
+      const next = !current
+      onSelectCompareMode?.()
+
+      if (!next) {
+        setCompareWord('')
+        setCompareLanguage(language1 || initialLanguage)
+        setWord2?.('')
+        setLanguage2?.('')
+      }
+
+      return next
+    })
   }
 
   return (
@@ -168,25 +223,24 @@ export default function LandingPage({
             Search a word
           </h2>
 
-          {/* Compare mode is intentionally disabled for now. */}
-          <div className={isLight ? 'mb-4 flex items-center justify-between opacity-40' : 'mb-4 flex items-center justify-between opacity-40'}>
+          <div className={isLight ? 'mb-4 flex items-center justify-between' : 'mb-4 flex items-center justify-between'}>
             <div className="flex items-center gap-3">
               <span className={isLight ? 'text-sm text-slate-500' : 'text-sm text-slate-300'}>Compare mode</span>
 
               <button
                 type="button"
                 role="switch"
-                aria-checked={false}
-                aria-disabled="true"
-                disabled
-                className={isLight ? 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full bg-slate-200 transition-colors focus:outline-none' : 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-not-allowed rounded-full bg-slate-700 transition-colors focus:outline-none'}
+                aria-checked={compareMode}
+                aria-label="Toggle compare mode"
+                onClick={toggleCompareMode}
+                className={isLight ? `relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors focus:outline-none ${compareMode ? 'bg-blue-500' : 'bg-slate-200'}` : `relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors focus:outline-none ${compareMode ? 'bg-blue-500' : 'bg-slate-700'}`}
               >
-                <span className="sr-only">Compare mode disabled</span>
+                <span className="sr-only">Compare mode {compareMode ? 'enabled' : 'disabled'}</span>
                 <motion.span
-                  initial={{ left: 4 }}
-                  animate={{ left: 4 }}
+                  initial={{ left: compareMode ? 20 : 4 }}
+                  animate={{ left: compareMode ? 20 : 4 }}
                   transition={{ type: 'spring', stiffness: 700, damping: 30 }}
-                  className={isLight ? 'pointer-events-none absolute top-0.5 left-1 h-5 w-5 rounded-full bg-white shadow-md' : 'pointer-events-none absolute top-0.5 left-1 h-5 w-5 rounded-full bg-slate-100 shadow-md'}
+                  className={isLight ? 'pointer-events-none absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md' : 'pointer-events-none absolute top-0.5 h-5 w-5 rounded-full bg-slate-100 shadow-md'}
                 />
               </button>
             </div>
@@ -243,14 +297,60 @@ export default function LandingPage({
                 </div>
               </div>
 
+              {compareMode && (
+                <div className={isLight ? 'rounded-lg border border-dashed border-slate-200 bg-slate-50/70 p-4' : 'rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-4'}>
+                  <div className="mb-2 text-left text-sm font-medium text-slate-500">
+                    Compare with
+                  </div>
+                  <div className={isLight ? 'flex w-full items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white' : 'flex w-full items-stretch overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900'}>
+                    <div className="flex-1">
+                      <WordLanguageInput
+                        id="landing-compare-word-input"
+                        label="Compare word and language"
+                        word={compareWord}
+                        onWordChange={setCompareWord}
+                        inputBaseStyles={isLight ? 'w-full rounded-none bg-transparent px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none' : 'w-full rounded-none bg-transparent px-4 py-3 text-slate-100 placeholder-slate-400 focus:outline-none'}
+                        placeholder="Enter a second word or phrase…"
+                      />
+                    </div>
+
+                    {compareWord && compareWord.trim().length > 0 && (
+                      <div className={isLight ? 'flex w-40 items-center border-l border-slate-200 bg-white px-2 md:w-44' : 'flex w-40 items-center border-l border-slate-800 bg-slate-900 px-2 md:w-44'}>
+                        {compareLangsLoading ? (
+                          <p className={isLight ? 'text-slate-500' : 'text-slate-300'}>Loading…</p>
+                        ) : (
+                          <select
+                            className={isLight ? 'h-11 w-full appearance-none bg-white px-2 text-slate-900 focus:outline-none' : 'h-11 w-full appearance-none bg-slate-900 px-2 text-slate-100 focus:outline-none'}
+                            value={compareLanguage}
+                            onChange={e => setCompareLanguage(e.target.value)}
+                            aria-label="Compare language"
+                            disabled={isLoading}
+                          >
+                            <option value="">Select a language</option>
+                            {compareAvailableLangs.map(l => {
+                              const obj = typeof l === 'string' ? { code: l, name: l } : (l as { code: string; name: string })
+                              return (
+                                <option key={obj.code} value={obj.code}>
+                                  {obj.name}
+                                </option>
+                              )
+                            })}
+                          </select>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Submit button below inputs */}
               <div className="flex items-end">
                 <button
                   type="submit"
                   className={`w-full inline-flex items-center justify-center rounded-lg px-4 py-3 font-semibold transition-transform focus:outline-none focus:ring-2 ${isLight ? 'focus:ring-blue-400' : 'focus:ring-slate-500'}
-                    ${isLoading ? (isLight ? 'bg-blue-200 text-slate-600 cursor-not-allowed opacity-90' : 'bg-slate-600 text-slate-100 cursor-not-allowed opacity-90') : (isLight ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-slate-700 text-slate-100 hover:bg-slate-600')}`}
-                  disabled={isLoading}
-                  aria-disabled={isLoading}
+                    ${isLoading || (compareMode && !compareWord.trim()) ? (isLight ? 'bg-blue-200 text-slate-600 cursor-not-allowed opacity-90' : 'bg-slate-600 text-slate-100 cursor-not-allowed opacity-90') : (isLight ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-slate-700 text-slate-100 hover:bg-slate-600')}`}
+                  disabled={isLoading || (compareMode && !compareWord.trim())}
+                  aria-disabled={isLoading || (compareMode && !compareWord.trim())}
                 >
                   {isLoading ? (
                     <>
@@ -274,10 +374,10 @@ export default function LandingPage({
                           d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                         ></path>
                       </svg>
-                      Exploring…
+                      {compareMode ? 'Comparing…' : 'Exploring…'}
                     </>
                   ) : (
-                    'Explore'
+                    compareMode ? 'Compare' : 'Explore'
                   )}
                 </button>
               </div>
