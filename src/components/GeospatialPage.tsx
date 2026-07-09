@@ -1277,7 +1277,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   return (
     <section
       id={sectionId}
-      className={embedded ? (isLight ? 'h-full min-h-0 w-full overflow-hidden bg-white text-slate-900' : 'h-full min-h-0 w-full overflow-hidden bg-gray-900 text-white') : (isLight ? 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-white text-slate-900' : 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-gray-900 text-white')}
+      className={embedded ? (isLight ? 'flex h-full min-h-0 w-full flex-col overflow-hidden bg-white text-slate-900' : 'flex h-full min-h-0 w-full flex-col overflow-hidden bg-gray-900 text-white') : (isLight ? 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-white text-slate-900' : 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-gray-900 text-white')}
     >
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {liveMessage}
@@ -1288,7 +1288,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         minZoom={2}
         scrollWheelZoom={true}
         wheelPxPerZoomLevel={240}
-        className="relative w-full h-full"
+        className={embedded ? 'relative w-full flex-1 min-h-0' : 'relative w-full h-full'}
         style={{ background: isLight ? '#f8fafc' : '#0b0f1a' }}
         id={mapRootId}
       >
