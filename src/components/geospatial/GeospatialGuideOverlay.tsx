@@ -80,6 +80,24 @@ interface Props {
 
 const layerOrder: GuideLayerKey[] = ['translations', 'etymology', 'descendants', 'protoZones', 'families']
 
+const guidePreviewBasePath = import.meta.env.BASE_URL || '/'
+
+const guidePreviewGifs: Record<GuideLayerKey, string> = {
+  translations: `${guidePreviewBasePath}geospatial-guide-previews/translations.gif`,
+  etymology: `${guidePreviewBasePath}geospatial-guide-previews/etymology.gif`,
+  descendants: `${guidePreviewBasePath}geospatial-guide-previews/descendants.gif`,
+  protoZones: `${guidePreviewBasePath}geospatial-guide-previews/proto-zones.gif`,
+  families: `${guidePreviewBasePath}geospatial-guide-previews/families.gif`,
+}
+
+const getSelectedPreviewGif = (layer: GuideLayerKey | null) => {
+  if (layer == null) {
+    return guidePreviewGifs.translations
+  }
+
+  return guidePreviewGifs[layer]
+}
+
 interface GuideLayerCardProps {
   layer: GuideLayerKey
   info: GuideLayerInfo
@@ -279,14 +297,20 @@ const GeospatialGuideOverlay: FC<Props> = ({
 
       <div className={isLight ? 'space-y-4 bg-slate-50 px-4 py-4 sm:px-6 sm:py-6' : 'space-y-4 bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6'}>
         <div className={isLight ? 'overflow-hidden rounded-2xl border border-slate-200 bg-white p-3' : 'overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-3'}>
-          <div className={isLight ? 'flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-blue-200 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.12),rgba(248,250,252,0.95))] px-4 text-center' : 'flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-slate-600/80 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),rgba(15,23,42,0.95))] px-4 text-center'}>
-            <div>
-              <div className={isLight ? 'text-sm font-semibold uppercase tracking-[0.28em] text-blue-700/90' : 'text-sm font-semibold uppercase tracking-[0.28em] text-slate-300/90'}>
-                Preview demo gif
-              </div>
-              <div className={isLight ? 'mt-3 text-sm leading-6 text-slate-600' : 'mt-3 text-sm leading-6 text-slate-300'}>
-                This space will later show a short preview of the layer in action.
-              </div>
+          <div className={isLight ? 'relative aspect-video w-full overflow-hidden rounded-xl border border-blue-200 bg-slate-950 shadow-lg shadow-blue-100/50' : 'relative aspect-video w-full overflow-hidden rounded-xl border border-slate-700/80 bg-slate-950 shadow-lg shadow-black/30'}>
+            <img
+              src={getSelectedPreviewGif(selectedLayer)}
+              alt={`${selected.title} preview gif`}
+              className="h-full w-full object-cover"
+              loading="eager"
+              decoding="async"
+            />
+            <div className={isLight ? 'absolute inset-0 bg-[linear-gradient(to_top,rgba(248,250,252,0.08),rgba(15,23,42,0.05))]' : 'absolute inset-0 bg-[linear-gradient(to_top,rgba(2,6,23,0.18),rgba(2,6,23,0.04))]'} />
+            <div className={isLight ? 'absolute left-4 top-4 inline-flex rounded-full border border-blue-200 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-blue-700 shadow-sm' : 'absolute left-4 top-4 inline-flex rounded-full border border-slate-600/80 bg-slate-950/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-200 shadow-sm'}>
+              Preview gif
+            </div>
+            <div className={isLight ? 'absolute bottom-4 left-4 right-4 rounded-2xl border border-white/70 bg-white/88 px-3 py-2 text-sm leading-6 text-slate-700 shadow-lg shadow-slate-200/40' : 'absolute bottom-4 left-4 right-4 rounded-2xl border border-slate-700/80 bg-slate-950/80 px-3 py-2 text-sm leading-6 text-slate-200 shadow-lg shadow-black/30'}>
+              A short animated preview for the selected layer.
             </div>
           </div>
         </div>
