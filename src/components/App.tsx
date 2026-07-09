@@ -6,7 +6,6 @@ import type { MapState } from '@/types/mapState'
 import { decodeShareableStateFromSearch, encodeShareableStateToSearch } from '@/utils/shareableState'
 
 type ThemeMode = 'dark' | 'light'
-type CompareViewMode = 'split' | 'single'
 
 function App() {
   const initialShareableState = (() => {
@@ -22,7 +21,6 @@ function App() {
   const [shareableMapState, setShareableMapState] = useState<MapState | null>(initialShareableState.mapState)
   const [mapStateReady, setMapStateReady] = useState(Boolean(initialShareableState.mapState))
   const [geospatialGuideOpenHandler, setGeospatialGuideOpenHandler] = useState<(() => void) | null>(null)
-  const [compareViewMode, setCompareViewMode] = useState<CompareViewMode>('split')
   const [theme, setTheme] = useState<ThemeMode>(() => {
     if (initialShareableState.theme) return initialShareableState.theme
     if (typeof window === 'undefined') return 'dark'
@@ -82,9 +80,7 @@ function App() {
   // TODO [LOW LEVEL]: Implement a lightweight preset registry and a bookmarks context with localStorage persistence.
 
   const compareViewActive = visibleSection === 'geospatial' && word2.trim().length > 0
-  const compareViewLayoutClasses = compareViewMode === 'single'
-    ? 'flex min-h-0 flex-1 flex-col gap-4'
-    : 'grid min-h-0 flex-1 gap-4 lg:grid-cols-2'
+  const compareViewLayoutClasses = 'grid min-h-0 flex-1 gap-4 lg:grid-cols-2'
 
   const renderComparePane = (word: string, language: string, instanceId: string, interactive: boolean) => (
     <GeospatialPage
@@ -163,23 +159,22 @@ function App() {
                 <div className={theme === 'light' ? 'flex flex-wrap gap-1 rounded-full border border-slate-200 bg-slate-50 p-1' : 'flex flex-wrap gap-1 rounded-full border border-slate-800 bg-neutral-900 p-1'}>
                   <button
                     type="button"
-                    onClick={() => setCompareViewMode('split')}
-                    className={compareViewMode === 'split'
-                      ? 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap bg-blue-600 text-white'
-                      : theme === 'light'
-                        ? 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-slate-600 hover:text-slate-900'
-                        : 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-slate-300 hover:text-slate-100'}
+                    disabled
+                    aria-disabled="true"
+                    className={theme === 'light'
+                      ? 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap bg-blue-600 text-white opacity-100 cursor-default'
+                      : 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap bg-blue-600 text-white opacity-100 cursor-default'}
                   >
                     Split view
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCompareViewMode('single')}
-                    className={compareViewMode === 'single'
-                      ? 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap bg-blue-600 text-white'
-                      : theme === 'light'
-                        ? 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-slate-600 hover:text-slate-900'
-                        : 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-slate-300 hover:text-slate-100'}
+                    disabled
+                    aria-disabled="true"
+                    title="Single view is temporarily unavailable"
+                    className={theme === 'light'
+                      ? 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-slate-400 opacity-60 cursor-not-allowed'
+                      : 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-slate-500 opacity-60 cursor-not-allowed'}
                   >
                     Single view
                   </button>
@@ -187,35 +182,12 @@ function App() {
               </div>
             </div>
             <div className={compareViewLayoutClasses}>
-              {compareViewMode === 'split' ? (
-                <>
-                  <div className={theme === 'light' ? 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm' : 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-neutral-950 shadow-sm'}>
-                    {renderComparePane(word1, language1, 'left', true)}
-                  </div>
-                  <div className={theme === 'light' ? 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm' : 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-neutral-950 shadow-sm'}>
-                    {renderComparePane(word2, language2, 'right', false)}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className={theme === 'light' ? 'flex min-h-[34rem] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm' : 'flex min-h-[34rem] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-neutral-950 shadow-sm'}>
-                    <div className={theme === 'light' ? 'border-b border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500' : 'border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400'}>
-                      Primary compare
-                    </div>
-                    <div className="flex min-h-0 flex-1">
-                      {renderComparePane(word1, language1, 'left', true)}
-                    </div>
-                  </div>
-                  <div className={theme === 'light' ? 'flex min-h-[34rem] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm' : 'flex min-h-[34rem] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-neutral-950 shadow-sm'}>
-                    <div className={theme === 'light' ? 'border-b border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500' : 'border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400'}>
-                      Secondary compare
-                    </div>
-                    <div className="flex min-h-0 flex-1">
-                      {renderComparePane(word2, language2, 'right', false)}
-                    </div>
-                  </div>
-                </>
-              )}
+              <div className={theme === 'light' ? 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm' : 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-neutral-950 shadow-sm'}>
+                {renderComparePane(word1, language1, 'left', true)}
+              </div>
+              <div className={theme === 'light' ? 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm' : 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-neutral-950 shadow-sm'}>
+                {renderComparePane(word2, language2, 'right', false)}
+              </div>
             </div>
           </div>
         )}
