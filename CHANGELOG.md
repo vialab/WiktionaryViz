@@ -2,6 +2,14 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.33](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.32...wiktionaryviz-v0.1.33) (2026-07-09)
+
+
+### Features
+
+* **App, LandingPage, GeospatialPage:** implement compare mode functionality to allow users to compare two words and their languages in the geospatial view ([c1b6735](https://github.com/vialab/WiktionaryViz/commit/c1b67356a9d01639c3e6da154f8e3c9ab4483e38))
+* **App.tsx, GeospatialPage.tsx:** implement compare view mode with split and single options for enhanced user experience ([ae21775](https://github.com/vialab/WiktionaryViz/commit/ae217750feee3f8b9fc2ebf88da5b6468d57ce04))
+
 ## [0.1.32](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.31...wiktionaryviz-v0.1.32) (2026-07-01)
 
 
