@@ -449,8 +449,8 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
           ref={panelRef}
           tabIndex={-1}
           className={isLight
-            ? 'absolute bottom-full left-0 mb-2 max-h-[70vh] w-80 overflow-y-auto rounded-xl border border-slate-200 bg-white/95 p-3 shadow-2xl shadow-blue-100/50 backdrop-blur'
-            : 'absolute bottom-full left-0 mb-2 max-h-[70vh] w-80 overflow-y-auto rounded-xl border border-slate-700/80 bg-slate-950/95 p-3 shadow-2xl backdrop-blur'}
+            ? 'absolute bottom-full left-0 mb-2 max-h-[70vh] w-[min(20rem,calc(100vw-1rem))] overflow-y-auto rounded-xl border border-slate-200 bg-white/95 p-3 shadow-2xl shadow-blue-100/50 backdrop-blur'
+            : 'absolute bottom-full left-0 mb-2 max-h-[70vh] w-[min(20rem,calc(100vw-1rem))] overflow-y-auto rounded-xl border border-slate-700/80 bg-slate-950/95 p-3 shadow-2xl backdrop-blur'}
         >
           <div className={isLight ? 'flex items-center justify-between border-b border-slate-200 pb-2' : 'flex items-center justify-between border-b border-slate-800 pb-2'}>
             <span className={isLight ? 'text-sm font-semibold text-blue-700' : 'text-sm font-semibold text-indigo-300'}>Map Settings</span>

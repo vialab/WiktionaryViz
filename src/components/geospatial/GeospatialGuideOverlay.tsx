@@ -1,4 +1,4 @@
-import { FC, useRef, useState } from 'react'
+import { FC, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { GuideLayerKey } from '@/types/mapState'
 import useFocusTrap from '@/hooks/useFocusTrap'
@@ -79,6 +79,96 @@ interface Props {
 }
 
 const layerOrder: GuideLayerKey[] = ['translations', 'etymology', 'descendants', 'protoZones', 'families']
+
+interface GuideLayerCardProps {
+  layer: GuideLayerKey
+  info: GuideLayerInfo
+  isLight: boolean
+  disabled: boolean
+  selected: boolean
+  isRecommended: boolean
+  recommendationTooltip: string | null
+  hoveredRecommendation: GuideLayerKey | null
+  setHoveredRecommendation: (layer: GuideLayerKey | null) => void
+  onChooseLayer: (layer: GuideLayerKey) => void
+}
+
+const GuideLayerCard: FC<GuideLayerCardProps> = ({
+  layer,
+  info,
+  isLight,
+  disabled,
+  selected,
+  isRecommended,
+  recommendationTooltip,
+  hoveredRecommendation,
+  setHoveredRecommendation,
+  onChooseLayer,
+}) => {
+  const cardRef = useRef<HTMLButtonElement | null>(null)
+  const [isCompact, setIsCompact] = useState(false)
+
+  useEffect(() => {
+    const element = cardRef.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+
+    const updateLayout = () => {
+      setIsCompact(element.offsetWidth < 240)
+    }
+
+    updateLayout()
+    const observer = new ResizeObserver(updateLayout)
+    observer.observe(element)
+
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <button
+      ref={cardRef}
+      onClick={() => onChooseLayer(layer)}
+      disabled={disabled}
+      aria-disabled={disabled}
+      aria-pressed={selected}
+      title={disabled ? 'No data available for this layer' : undefined}
+      className={isLight
+        ? 'group rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-60'
+        : 'group rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-left transition hover:border-slate-400 hover:bg-slate-800/90 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900/40 disabled:text-slate-500 disabled:opacity-55'}
+    >
+      <div className={isCompact ? 'flex flex-col gap-2' : 'flex items-start justify-between gap-3'}>
+        {isRecommended && (
+          <div className={isCompact ? 'relative self-start' : 'relative shrink-0'}>
+            <span
+              className={isLight ? 'rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-700' : 'rounded-full border border-slate-300/60 bg-slate-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-200'}
+              onMouseEnter={() => setHoveredRecommendation(layer)}
+              onMouseLeave={() => setHoveredRecommendation(null)}
+            >
+              Recommended
+            </span>
+            {hoveredRecommendation === layer && recommendationTooltip && (
+              <div className={isLight ? 'pointer-events-none absolute left-0 top-full z-20 mt-2 w-[min(14rem,calc(100vw-2rem))] rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs leading-5 text-slate-700 shadow-xl shadow-blue-100/60 sm:left-auto sm:right-0 sm:w-56' : 'pointer-events-none absolute left-0 top-full z-20 mt-2 w-[min(14rem,calc(100vw-2rem))] rounded-xl border border-slate-700 bg-slate-950/95 px-3 py-2 text-left text-xs leading-5 text-slate-200 shadow-xl shadow-black/30 sm:left-auto sm:right-0 sm:w-56'}>
+                {recommendationTooltip}
+              </div>
+            )}
+          </div>
+        )}
+        <div className={isLight ? 'min-w-0 text-lg font-semibold text-slate-900' : 'min-w-0 text-lg font-semibold text-white'}>{info.title}</div>
+      </div>
+      <p className={isLight ? 'mt-3 text-sm leading-6 text-slate-600' : 'mt-3 text-sm leading-6 text-slate-300'}>{info.summary}</p>
+      {disabled && (
+        <div className={isLight ? 'mt-3 inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500' : 'mt-3 inline-flex rounded-full border border-slate-700 bg-slate-800/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400'}>
+          No data available
+        </div>
+      )}
+      <div className={isLight ? 'mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100' : 'mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100'}>
+        Best for
+      </div>
+      <p className={isLight ? 'max-h-0 overflow-hidden text-sm leading-6 text-slate-700 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100' : 'max-h-0 overflow-hidden text-sm leading-6 text-slate-200 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100'}>
+        {info.bestFor}
+      </p>
+    </button>
+  )
+}
 
 const GeospatialGuideOverlay: FC<Props> = ({
   open,
@@ -236,49 +326,19 @@ const GeospatialGuideOverlay: FC<Props> = ({
           const isRecommended = layer === recommendedLayer
           const disabled = !ready
           return (
-            <button
+            <GuideLayerCard
               key={layer}
-              onClick={() => onChooseLayer(layer)}
+              layer={layer}
+              info={info}
+              isLight={isLight}
               disabled={disabled}
-              aria-disabled={disabled}
-              aria-pressed={selectedLayer === layer}
-              title={disabled ? 'No data available for this layer' : undefined}
-              className={isLight
-                ? 'group rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-60'
-                : 'group rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-left transition hover:border-slate-400 hover:bg-slate-800/90 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900/40 disabled:text-slate-500 disabled:opacity-55'}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className={isLight ? 'text-lg font-semibold text-slate-900' : 'text-lg font-semibold text-white'}>{info.title}</div>
-                {isRecommended && (
-                  <div className="relative">
-                    <span
-                      className={isLight ? 'rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-700' : 'rounded-full border border-slate-300/60 bg-slate-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-200'}
-                      onMouseEnter={() => setHoveredRecommendation(layer)}
-                      onMouseLeave={() => setHoveredRecommendation(null)}
-                    >
-                      Recommended
-                    </span>
-                    {hoveredRecommendation === layer && recommendationTooltip && (
-                      <div className={isLight ? 'pointer-events-none absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs leading-5 text-slate-700 shadow-xl shadow-blue-100/60' : 'pointer-events-none absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-700 bg-slate-950/95 px-3 py-2 text-left text-xs leading-5 text-slate-200 shadow-xl shadow-black/30'}>
-                        {recommendationTooltip}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              <p className={isLight ? 'mt-3 text-sm leading-6 text-slate-600' : 'mt-3 text-sm leading-6 text-slate-300'}>{info.summary}</p>
-              {disabled && (
-                <div className={isLight ? 'mt-3 inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500' : 'mt-3 inline-flex rounded-full border border-slate-700 bg-slate-800/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400'}>
-                  No data available
-                </div>
-              )}
-              <div className={isLight ? 'mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100' : 'mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100'}>
-                Best for
-              </div>
-              <p className={isLight ? 'max-h-0 overflow-hidden text-sm leading-6 text-slate-700 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100' : 'max-h-0 overflow-hidden text-sm leading-6 text-slate-200 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100'}>
-                {info.bestFor}
-              </p>
-            </button>
+              selected={selectedLayer === layer}
+              isRecommended={isRecommended}
+              recommendationTooltip={recommendationTooltip}
+              hoveredRecommendation={hoveredRecommendation}
+              setHoveredRecommendation={setHoveredRecommendation}
+              onChooseLayer={onChooseLayer}
+            />
           )
         })}
       </div>
@@ -291,7 +351,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
         <motion.div
           role="dialog"
           aria-modal="true"
-          className={isLight ? 'absolute inset-0 z-[12000] flex items-center justify-center bg-slate-900/15 px-6 py-6 backdrop-blur-sm sm:px-8 sm:py-8 lg:px-12 lg:py-10' : 'absolute inset-0 z-[12000] flex items-center justify-center bg-slate-950/75 px-6 py-6 backdrop-blur-sm sm:px-8 sm:py-8 lg:px-12 lg:py-10'}
+          className={isLight ? 'absolute inset-0 z-[12000] flex items-start justify-center overflow-y-auto bg-slate-900/15 px-4 py-4 backdrop-blur-sm sm:items-center sm:px-8 sm:py-8 lg:px-12 lg:py-10' : 'absolute inset-0 z-[12000] flex items-start justify-center overflow-y-auto bg-slate-950/75 px-4 py-4 backdrop-blur-sm sm:items-center sm:px-8 sm:py-8 lg:px-12 lg:py-10'}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -300,7 +360,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
           <motion.div
             ref={dialogRef}
             tabIndex={-1}
-            className={isLight ? 'flex min-h-[36rem] max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/97 shadow-2xl shadow-blue-100/60 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]' : 'flex min-h-[36rem] max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-neutral-950/95 shadow-2xl shadow-black/30 sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]'}
+            className={isLight ? 'flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/97 shadow-2xl shadow-blue-100/60 max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]' : 'flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-neutral-950/95 shadow-2xl shadow-black/30 max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]'}
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}

@@ -257,8 +257,8 @@ export default function LandingPage({
 
             <div className="flex flex-col gap-3">
               <div>
-                <div className={isLight ? 'flex w-full items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white' : 'flex w-full items-stretch overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900'}>
-                  <div className="flex-1">
+                <div className={isLight ? 'flex w-full flex-col items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white sm:flex-row' : 'flex w-full flex-col items-stretch overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900 sm:flex-row'}>
+                  <div className="min-w-0 flex-1">
                     <WordLanguageInput
                       id="landing-word-input"
                       label="Word and language"
@@ -270,12 +270,12 @@ export default function LandingPage({
                   </div>
 
                   {word && word.trim().length > 0 && (
-                    <div className={isLight ? 'flex w-40 items-center border-l border-slate-200 bg-white px-2 md:w-44' : 'flex w-40 items-center border-l border-slate-800 bg-slate-900 px-2 md:w-44'}>
+                    <div className={isLight ? 'flex w-full items-center border-t border-slate-200 bg-white px-2 py-1 sm:w-40 sm:border-l sm:border-t-0 sm:py-0 md:w-44' : 'flex w-full items-center border-t border-slate-800 bg-slate-900 px-2 py-1 sm:w-40 sm:border-l sm:border-t-0 sm:py-0 md:w-44'}>
                       {langsLoading ? (
                         <p className={isLight ? 'text-slate-500' : 'text-slate-300'}>Loading…</p>
                       ) : (
                         <select
-                          className={isLight ? 'h-11 w-full appearance-none bg-white px-2 text-slate-900 focus:outline-none' : 'h-11 w-full appearance-none bg-slate-900 px-2 text-slate-100 focus:outline-none'}
+                          className={isLight ? 'h-11 w-full min-w-0 appearance-none bg-white px-2 text-slate-900 focus:outline-none' : 'h-11 w-full min-w-0 appearance-none bg-slate-900 px-2 text-slate-100 focus:outline-none'}
                           value={language}
                           onChange={e => setLanguage(e.target.value)}
                           aria-label="Language"
@@ -302,8 +302,8 @@ export default function LandingPage({
                   <div className="mb-2 text-left text-sm font-medium text-slate-500">
                     Compare with
                   </div>
-                  <div className={isLight ? 'flex w-full items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white' : 'flex w-full items-stretch overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900'}>
-                    <div className="flex-1">
+                  <div className={isLight ? 'flex w-full flex-col items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white sm:flex-row' : 'flex w-full flex-col items-stretch overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900 sm:flex-row'}>
+                    <div className="min-w-0 flex-1">
                       <WordLanguageInput
                         id="landing-compare-word-input"
                         label="Compare word and language"
@@ -315,12 +315,12 @@ export default function LandingPage({
                     </div>
 
                     {compareWord && compareWord.trim().length > 0 && (
-                      <div className={isLight ? 'flex w-40 items-center border-l border-slate-200 bg-white px-2 md:w-44' : 'flex w-40 items-center border-l border-slate-800 bg-slate-900 px-2 md:w-44'}>
+                      <div className={isLight ? 'flex w-full items-center border-t border-slate-200 bg-white px-2 py-1 sm:w-40 sm:border-l sm:border-t-0 sm:py-0 md:w-44' : 'flex w-full items-center border-t border-slate-800 bg-slate-900 px-2 py-1 sm:w-40 sm:border-l sm:border-t-0 sm:py-0 md:w-44'}>
                         {compareLangsLoading ? (
                           <p className={isLight ? 'text-slate-500' : 'text-slate-300'}>Loading…</p>
                         ) : (
                           <select
-                            className={isLight ? 'h-11 w-full appearance-none bg-white px-2 text-slate-900 focus:outline-none' : 'h-11 w-full appearance-none bg-slate-900 px-2 text-slate-100 focus:outline-none'}
+                            className={isLight ? 'h-11 w-full min-w-0 appearance-none bg-white px-2 text-slate-900 focus:outline-none' : 'h-11 w-full min-w-0 appearance-none bg-slate-900 px-2 text-slate-100 focus:outline-none'}
                             value={compareLanguage}
                             onChange={e => setCompareLanguage(e.target.value)}
                             aria-label="Compare language"

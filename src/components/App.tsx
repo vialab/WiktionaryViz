@@ -150,7 +150,7 @@ function App() {
           <div className="flex w-full flex-1 min-h-0 flex-col gap-4 p-4 lg:p-6">
             <div className={theme === 'light' ? 'rounded-xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-700 shadow-sm' : 'rounded-xl border border-slate-800 bg-neutral-950/70 px-4 py-3 text-slate-200 shadow-sm'}>
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
+                <div className="min-w-0">
                   <div className="text-xs uppercase tracking-[0.24em] opacity-70">Compare view</div>
                   <div className="mt-1 text-sm">
                     <span className="font-semibold">{word1 || 'Left word'}</span>
@@ -160,15 +160,15 @@ function App() {
                     <span className="opacity-70"> {language2 ? `(${language2})` : ''}</span>
                   </div>
                 </div>
-                <div className={theme === 'light' ? 'inline-flex rounded-full border border-slate-200 bg-slate-50 p-1' : 'inline-flex rounded-full border border-slate-800 bg-neutral-900 p-1'}>
+                <div className={theme === 'light' ? 'flex flex-wrap gap-1 rounded-full border border-slate-200 bg-slate-50 p-1' : 'flex flex-wrap gap-1 rounded-full border border-slate-800 bg-neutral-900 p-1'}>
                   <button
                     type="button"
                     onClick={() => setCompareViewMode('split')}
                     className={compareViewMode === 'split'
-                      ? 'rounded-full px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white'
+                      ? 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap bg-blue-600 text-white'
                       : theme === 'light'
-                        ? 'rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900'
-                        : 'rounded-full px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-slate-100'}
+                        ? 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-slate-600 hover:text-slate-900'
+                        : 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-slate-300 hover:text-slate-100'}
                   >
                     Split view
                   </button>
@@ -176,10 +176,10 @@ function App() {
                     type="button"
                     onClick={() => setCompareViewMode('single')}
                     className={compareViewMode === 'single'
-                      ? 'rounded-full px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white'
+                      ? 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap bg-blue-600 text-white'
                       : theme === 'light'
-                        ? 'rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900'
-                        : 'rounded-full px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-slate-100'}
+                        ? 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-slate-600 hover:text-slate-900'
+                        : 'rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-slate-300 hover:text-slate-100'}
                   >
                     Single view
                   </button>
