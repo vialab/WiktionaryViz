@@ -30,11 +30,6 @@ P2 = polish, export, or quality-of-life feature
     Use case: Makes the timeline control behave like users expect.
     Research context: The playback appeared to start completed and did not reset cleanly.
 
-[ ] P0 — Slow or make configurable the playback speed
-    Description: Lower the default animation speed and consider explicit speed controls.
-    Use case: Gives users enough time to follow the historical movement.
-    Research context: The participant said the animation moved too fast.
-
 [ ] P0 — Fix compare-mode control overlap
     Description: Prevent the playback and control bar from overlapping other UI in compare layouts.
     Use case: Keeps controls usable in the dual-view mode.
