@@ -1,4 +1,4 @@
-export type GuideLayerKey = 'translations' | 'etymology' | 'descendants' | 'protoZones' | 'families'
+export type GuideLayerKey = 'translations' | 'etymology' | 'descendants'
 
 export type MapLayerKey = 'translations' | 'protoZones' | 'languageFamilies' | 'etymology' | 'descendants'
 

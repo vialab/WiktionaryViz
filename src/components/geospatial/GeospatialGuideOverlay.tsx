@@ -42,26 +42,6 @@ const guideLayers: Record<GuideLayerKey, GuideLayerInfo> = {
     ],
       accent: 'from-emerald-400/20 via-slate-400/10 to-slate-900',
   },
-  protoZones: {
-    title: 'Proto-language zones',
-    summary: 'Proto regions give broad historical context for where a family may have been centered.',
-    bestFor: 'Getting a wide historical geography before drilling into a specific path.',
-    steps: [
-      'Pick this when you want a geography-first introduction before digging into the lineage.',
-      'Compare the proto region with the lineage and translation layers for broader context.',
-    ],
-      accent: 'from-violet-400/20 via-slate-400/10 to-slate-900',
-  },
-  families: {
-    title: 'Language families',
-    summary: 'Family bubbles provide a higher-level structural view of the map and its clusters.',
-    bestFor: 'Orienting yourself with the broadest map structure first.',
-    steps: [
-      'This is the broadest starting point if you want to orient yourself before drilling down.',
-      'Use the family context to narrow your search before switching to a specific path layer.',
-    ],
-      accent: 'from-fuchsia-400/20 via-slate-400/10 to-slate-900',
-  },
 }
 
 interface Props {
@@ -78,7 +58,7 @@ interface Props {
   theme?: 'dark' | 'light'
 }
 
-const layerOrder: GuideLayerKey[] = ['translations', 'etymology', 'descendants', 'protoZones', 'families']
+const layerOrder: GuideLayerKey[] = ['translations', 'etymology', 'descendants']
 
 const guidePreviewBasePath = import.meta.env.BASE_URL || '/'
 
@@ -86,8 +66,6 @@ const guidePreviewVideos: Record<GuideLayerKey, string> = {
   translations: `${guidePreviewBasePath}geospatial-guide-previews/translations.mp4`,
   etymology: `${guidePreviewBasePath}geospatial-guide-previews/etymology.mp4`,
   descendants: `${guidePreviewBasePath}geospatial-guide-previews/descendants.mp4`,
-  protoZones: `${guidePreviewBasePath}geospatial-guide-previews/proto-zones.mp4`,
-  families: `${guidePreviewBasePath}geospatial-guide-previews/families.mp4`,
 }
 
 const getSelectedPreviewVideo = (layer: GuideLayerKey | null) => {
@@ -255,11 +233,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
                 ? 'The lineage animates node by node, showing how the word changes across time.'
                 : selectedLayer === 'translations'
                   ? 'Translations are grouped by geography so you can compare where the word appears.'
-                  : selectedLayer === 'descendants'
-                    ? 'The view expands outward from a root and reveals descendant branches as you explore.'
-                    : selectedLayer === 'protoZones'
-                      ? 'The proto-zone layer frames the lineage inside a broader historical region.'
-                      : 'The family layer groups languages into broader families for a higher-level view.'}
+                  : 'The view expands outward from a root and reveals descendant branches as you explore.'}
             </p>
           </div>
 
@@ -272,11 +246,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
                 ? 'Use the timeline scrubber to step through each node or press play to watch the path animate.'
                 : selectedLayer === 'translations'
                   ? 'Hover the markers and open popups to compare the spread across regions.'
-                  : selectedLayer === 'descendants'
-                    ? 'Click into branches to reveal deeper descendant paths and inspect the structure.'
-                    : selectedLayer === 'protoZones'
-                      ? 'Compare the backdrop with the active lineage to understand the broader setting.'
-                      : 'Use the family overview first, then switch to a more specific layer when you want detail.'}
+                  : 'Click into branches to reveal deeper descendant paths and inspect the structure.'}
             </p>
           </div>
         </div>

@@ -370,8 +370,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     translations: translationCount > 0,
     etymology: hasPlayableLineage,
     descendants: hasPlayableLineage,
-    protoZones: true,
-    families: true,
   }
   const translationHeavy = translationCount >= 25 && translationBreadth >= 10
   // If an Inspire-Me category was provided, prefer mapping it to a guided layer.
@@ -379,7 +377,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     if (!cat) return null
     const c = cat.toLowerCase()
     if (c.includes('translation') || c.includes('most_translations') || c.includes('translations')) return 'translations'
-    if (c.includes('longest') || c.includes('long')) return 'families'
     if (c.includes('descend') || c.includes('most_descendants')) return 'descendants'
     // fallback: null
     return null
@@ -387,13 +384,13 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
 
   const inspiredLayer = mapCategoryToLayer(inspireCategory)
 
-  const recommendedLayer: GuideLayerKey = inspiredLayer ?? (translationHeavy
+  const recommendedLayer: GuideLayerKey | null = inspiredLayer ?? (translationHeavy
     ? 'translations'
     : hasPlayableLineage
       ? 'etymology'
       : translationCount > 0
         ? 'translations'
-        : 'protoZones')
+        : null)
   const recommendationLoading =
     guideOpen &&
     guideLayer === null &&
@@ -469,9 +466,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
 
     setActiveLayerState({
       translations: guideLayer === 'translations',
-      protoZones: guideLayer === 'protoZones',
       descendants: guideLayer === 'descendants',
-      languageFamilies: guideLayer === 'families',
       etymology: guideLayer === 'etymology',
     })
 
@@ -544,16 +539,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         label: 'Descendant Paths',
         enabled: guideAvailability.descendants,
         description: 'Highlights how the word branches into descendant forms.',
-      },
-      {
-        label: 'Proto-Language Zones',
-        enabled: guideAvailability.protoZones,
-        description: 'Shows estimated proto-language regions on the map.',
-      },
-      {
-        label: 'Language Families',
-        enabled: guideAvailability.families,
-        description: 'Displays broad family-level geographic groupings.',
       },
     ]
 
