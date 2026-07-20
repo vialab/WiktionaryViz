@@ -5,11 +5,6 @@ P0 = must-have for the core prototype
 P1 = high-value thesis/demo feature
 P2 = polish, export, or quality-of-life feature
 
-[X] P0 — Unify layer and annotation controls into a single sidebar
-    Description: Replace the split controls between settings, the top-right menu, and map controls with one persistent panel.
-    Use case: Makes the core interaction model easier to discover and reduces duplicated controls.
-    Research context: The transcript repeatedly called out the current control layout as confusing and fragmented.
-
 [ ] P0 — Make annotation tools visually obvious and show a two-step arrow prompt
     Description: Add clear icons and feedback after the first click of an arrow so users know a second point is required.
     Use case: Reduces confusion when creating arrows or other drawn annotations.
@@ -19,16 +14,6 @@ P2 = polish, export, or quality-of-life feature
     Description: Investigate why annotation UI elements or controls vanish during use and keep them persistently available.
     Use case: Prevents users from losing the tools they just enabled.
     Research context: The walkthrough exposed a bug where annotation controls disappeared.
-
-[X] P0 — Keep layer descriptions from shifting surrounding cards
-    Description: Reserve space for expandable text so hover or expansion does not push the layout around.
-    Use case: Keeps the layer chooser stable and easier to scan.
-    Research context: Participants disliked the vertical shifting caused by expanding descriptions.
-
-[X] P0 — Fix clipped layer and recommendation panels
-    Description: Ensure guide cards, tooltips, and recommendation text use the available screen space without clipping.
-    Use case: Improves readability of layer explanations and suggested actions.
-    Research context: The transcript noted clipped text and cramped panels.
 
 [ ] P0 — Remove duplicated theme and layer controls
     Description: Eliminate redundant day/night, layer, and opacity controls where the same action appears in more than one place.
@@ -135,61 +120,6 @@ P2 = polish, export, or quality-of-life feature
     Use case: Supports larger historical questions about language movement.
     Research context: The participant was interested in broader patterns like transportation or communication effects.
 
-[X] P0 — Implement a LayerPanel component
-    Description: A side panel where users can toggle map layers on/off, such as markers, routes, labels, regions, annotations, and uncertainty overlays.
-    Use case: Lets users control visual complexity instead of seeing every linguistic/geographic element at once.
-    Research context: Interview participants wanted filtering, hiding/showing categories, and better control over what appears in visualizations.
-
-[X] P0 — Create a layer registry/config system
-    Description: Define each map layer in one structured place with an ID, name, description, default visibility, opacity, z-index, and render function.
-    Use case: Makes the layer system easier to extend later without hardcoding every toggle into the map component.
-    Research context: Since WiktionaryViz is layer-heavy, the tool needs a scalable way to manage many geospatial information types.
-
-[X] P0 — Add layer visibility toggles
-    Description: Users can turn individual layers on/off, such as language markers, etymological paths, borrowing routes, labels, and annotations.
-    Use case: Helps users isolate one type of evidence at a time.
-    Research context: Participants wanted visualizations that support exploration without overwhelming them.
-
-[X] P0 — Add layer opacity controls
-    Description: Users can adjust opacity for each layer using sliders.
-    Use case: Lets users compare overlapping layers without fully hiding any of them.
-    Research context: Useful when route lines, markers, regions, and labels overlap on the same map.
-
-[X] P0 — Add layer ordering / z-index controls
-    Description: Users can move layers above or below each other.
-    Use case: Prevents important data from being hidden behind polygons, map regions, or dense marker clusters.
-    Research context: Geospatial participants often struggle with map legibility and visual clutter.
-
-[X] P0 — Add “reset layers” button
-    Description: Restores all layer visibility, opacity, and ordering settings to default.
-    Use case: Helps users recover from complex manipulation without manually undoing each change.
-    Research context: Important for usability during open-ended exploration.
-
-[X] P0 — Add map fit-to-data control
-    Description: A button that automatically zooms/pans the map to fit the currently visible word history, selected branch, or active filtered result.
-    Use case: Helps users quickly reorient after zooming, filtering, or changing layers.
-    Research context: Users need fluid movement between overview and detail.
-
-[X] P0 — Add marker hover previews
-    Description: Hovering over a map marker shows a small tooltip with word, language, region, date, and relation summary.
-    Use case: Lets users inspect data quickly without opening a full side panel.
-    Research context: Participants wanted fast access to details while exploring.
-
-[X] P0 — Add marker click selection
-    Description: Clicking a marker selects it and highlights related routes, ancestors, descendants, or evidence.
-    Use case: Turns the map from a passive display into an interactive investigation space.
-    Research context: Supports drill-down from geographic overview into specific linguistic evidence.
-
-[X] P0 — Add route/path click selection
-    Description: Clicking a route line selects the relationship between two nodes and opens relation-specific details.
-    Use case: Lets users ask “why are these two places/words connected?”
-    Research context: Participants emphasized the need to inspect evidence behind visual connections.
-
-[X] P0 — Add selected-item highlight styling
-    Description: Selected nodes and paths receive a distinct visual treatment, while unrelated elements are dimmed.
-    Use case: Makes the current focus visually clear.
-    Research context: Important for dense geospatial graphs where many elements compete for attention.
-
 [ ] P0 — Implement an EvidenceDrawer component
     Description: A right-side drawer that displays the underlying data for a selected marker, route, region, or annotation.
     Use case: Lets users inspect Wiktionary evidence instead of trusting the map blindly.
@@ -214,21 +144,6 @@ P2 = polish, export, or quality-of-life feature
     Description: Users can filter visible paths by relation type: borrowed from, derived from, descended from, cognate with, compound, affix, or uncertain.
     Use case: Lets users focus on one type of linguistic relationship at a time.
     Research context: Participants wanted more task-specific control over complex linguistic datasets.
-
-[X] P0 — Add “show path to root” filter
-    Description: Shows only the selected word’s ancestry path back through known source forms.
-    Use case: Useful for tracing the historical path of a single word.
-    Research context: Supports etymological storytelling and simplified exploration.
-
-[X] P0 — Add “show descendants” filter
-    Description: Shows only descendants or later forms branching out from the selected word.
-    Use case: Useful for showing how a word spread or diversified.
-    Research context: Participants were interested in historical spread, movement, and linguistic branching.
-
-[X] P0 — Add map state object
-    Description: Create a central state object for camera position, zoom, selected item, active layers, filters, and current word.
-    Use case: Provides the foundation for state-saving, share links, comparison, and reproducible views.
-    Research context: Users wanted to save, revisit, and communicate specific visualization states.
 
 [ ] P1 — Implement VisualizationState serialization
     Description: Convert the current map state into a JSON object containing search term, camera, zoom, layers, filters, timeline, selected item, and annotations.
@@ -255,11 +170,6 @@ P2 = polish, export, or quality-of-life feature
     Use case: Useful for reproducibility, debugging, sharing study tasks, and preserving analysis sessions.
     Research context: Supports transparent and reusable research workflows.
 
-[X] P1 — Implement AnnotationMode
-    Description: A toggle that lets users add notes, highlights, arrows, regions, and custom links directly onto the map.
-    Use case: Turns the map into a sensemaking workspace rather than just a display.
-    Research context: Participants wanted to annotate visualizations, add interpretations, and save observations.
-
 [ ] P1 — Add marker-attached annotations
     Description: Users can attach a note directly to a word/language marker.
     Use case: Useful for adding interpretation, questions, teaching notes, or reminders about specific data points.
@@ -269,16 +179,6 @@ P2 = polish, export, or quality-of-life feature
     Description: Users can attach a note to a specific etymological route or relationship.
     Use case: Useful for commenting on uncertain borrowing paths or interesting linguistic transitions.
     Research context: Participants wanted to explain or question relationships shown in the visualization.
-
-[X] P1 — Add free-floating map annotations
-    Description: Users can place notes anywhere on the map independent of existing data.
-    Use case: Useful for observations about regions, clusters, movement patterns, or map-level interpretation.
-    Research context: Supports exploratory thinking beyond what the dataset explicitly encodes.
-
-[X] P1 — Add region drawing annotations
-    Description: Users can draw circles, rectangles, or polygons around areas of interest.
-    Use case: Useful for marking geographic clusters, cultural zones, or suspected regions of influence.
-    Research context: Participants wanted more flexible region-based thinking than simple country/state maps.
 
 [ ] P1 — Add path highlighting annotations
     Description: Users can manually highlight a sequence of nodes/routes as an interpreted historical path.
@@ -299,31 +199,6 @@ P2 = polish, export, or quality-of-life feature
     Description: Let users tag notes as Observation, Hypothesis, Question, Teaching Note, or Presentation Note.
     Use case: Helps organize annotations by purpose.
     Research context: Supports multiple use cases: research, teaching, explanation, and exploratory analysis.
-
-[X] P1 — Add annotation layer toggle
-    Description: User annotations appear as their own layer that can be hidden, shown, or exported.
-    Use case: Lets users switch between clean source-data view and interpreted/annotated view.
-    Research context: Participants wanted both exploration and communication modes.
-
-[X] P1 — Add timeline slider
-    Description: A slider that filters visible nodes/routes by time period, century, or approximate date.
-    Use case: Lets users see how a word’s geographic/etymological spread changes over time.
-    Research context: Participants wanted diachronic exploration of language movement and historical development.
-
-[X] P1 — Add timeline playback
-    Description: A play/pause animation that reveals nodes/routes in chronological order.
-    Use case: Useful for showing linguistic spread as a story over time.
-    Research context: Participants were interested in movement, history, and temporal storytelling.
-
-[X] P1 — Add uncertain-date handling
-    Description: Items with unknown or approximate dates are shown with special styling or grouped into an “unknown date” category.
-    Use case: Prevents incomplete data from disappearing or being misrepresented.
-    Research context: Linguistic historical data is often partial or uncertain.
-
-[X] P1 — Sync timeline with map layers
-    Description: Timeline changes update visible markers, routes, labels, and regions.
-    Use case: Makes time manipulation affect the whole geospatial visualization consistently.
-    Research context: Supports integrated exploration rather than separate disconnected views.
 
 [ ] P1 — Add compare mode
     Description: A split-screen or toggle-based mode for comparing two words, language families, time periods, or relation types.
@@ -410,26 +285,6 @@ P2 = polish, export, or quality-of-life feature
     Use case: Makes the tool more usable in classrooms and presentations.
     Research context: Participants noted that visualizations need to be readable in real-world teaching/presentation contexts.
 
-[X] P2 — Add keyboard shortcuts
-    Description: Add shortcuts for toggling layers, saving state, opening annotation mode, resetting view, and opening the evidence drawer.
-    Use case: Speeds up expert workflows.
-    Research context: Participants differed in interaction preferences; some prefer efficient control over point-and-click UI.
-
-[X] P2 — Add command palette
-    Description: A searchable menu for actions like “toggle labels,” “save view,” “show descendants,” or “export PNG.”
-    Use case: Helps users quickly access features without hunting through panels.
-    Research context: Useful as the tool gains more interaction options.
-
-[X] P2 — Add onboarding guide
-    Description: A short guided tour explaining map layers, filters, evidence drawer, annotations, and saving.
-    Use case: Helps new users understand the interaction model quickly.
-    Research context: Participants noted that tools can fail adoption when users do not understand how to use them.
-
-[X] P2 — Add tooltip explanations for controls
-    Description: Hovering over buttons explains what they do.
-    Use case: Reduces confusion without cluttering the interface.
-    Research context: Supports usability for both experts and non-experts.
-
 [ ] P2 — Add offline/demo mode
     Description: Include preloaded example datasets and fallback behavior if live data or map tiles fail.
     Use case: Useful for thesis defense, demos, and conferences where internet may be unreliable.
@@ -445,45 +300,10 @@ P2 = polish, export, or quality-of-life feature
     Use case: Prevents total failure during presentations or studies.
     Research context: Reliability was a recurring adoption concern.
 
-[X] P2 — Add accessibility checks
-    Description: Check color contrast, keyboard navigation, screen-reader labels, and non-color encodings.
-    Use case: Makes the visualization more usable for diverse users.
-    Research context: Participants discussed communication barriers and the need for multiple ways to understand information.
-
-[X] P2 — Add keyboard support for map overlays
-    Description: Ensure drawers, menus, dialogs, scrubbers, and annotation tools can be operated without a mouse.
-    Use case: Lets keyboard-only users fully navigate the visualization.
-    Research context: Interactive visual tools need equivalent access for users who cannot or do not use pointer input.
-
-[X] P2 — Add screen-reader announcements for state changes
-    Description: Announce selection changes, playback progress, filter updates, and guide actions through aria-live regions.
-    Use case: Keeps screen-reader users informed about map changes that are otherwise visual only.
-    Research context: Participants discussed the need for multiple ways to understand changing information.
-
-[X] P2 — Add focus management for overlays and drawers
-    Description: Trap focus inside open modals, restore focus on close, and make Escape close transient UI.
-    Use case: Prevents users from getting lost when panels and dialogs open on top of the map.
-    Research context: Dense interfaces need predictable focus behavior for accessibility and usability.
-
-[X] P2 — Add accessible labels for icon-only controls
-    Description: Review all icon buttons, toggles, and map controls for clear aria-labels, descriptions, and state text.
-    Use case: Makes controls understandable to screen-reader users and reduces ambiguity for everyone.
-    Research context: Several controls rely on icons or compact UI, which can hide meaning without explicit labels.
-
-[X] P2 — Add non-color encodings for uncertainty and selection
-    Description: Pair color cues with patterns, icons, outlines, or text badges for selected items, uncertain data, and filtered states.
-    Use case: Ensures information stays readable for color-blind users and in low-contrast conditions.
-    Research context: Visual meaning should not depend on color alone.
-
 [ ] P2 — Add performance optimization for dense maps
     Description: Use clustering, canvas/WebGL rendering, memoization, or viewport-based rendering for large datasets.
     Use case: Keeps the map responsive when many markers/routes are visible.
     Research context: Participants noted that large linguistic datasets can become difficult to visualize and manipulate.
-
-[X] P2 — Add marker clustering
-    Description: Combine nearby markers into clusters at low zoom levels, then expand them when zooming in.
-    Use case: Reduces clutter on global maps.
-    Research context: Helps maintain overview readability with dense geographic data.
 
 [ ] P2 — Add route bundling or route simplification
     Description: Reduce visual clutter by bundling similar routes or simplifying paths at low zoom.
