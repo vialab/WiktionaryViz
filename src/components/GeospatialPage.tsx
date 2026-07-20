@@ -18,6 +18,7 @@ import ProtoLanguageZones from './geospatial/ProtoLanguageZones'
 import LanguageFamiliesBubbles from './geospatial/LanguageFamiliesBubbles'
 import DescendantLineagePaths from './geospatial/DescendantLineagePaths'
 import GeospatialGuideOverlay from './geospatial/GeospatialGuideOverlay'
+import MarkerEvidenceDrawer from './geospatial/MarkerEvidenceDrawer'
 import AnnotationModeOverlay from './geospatial/AnnotationModeOverlay'
 import CommandPalette, { type CommandPaletteAction } from './geospatial/CommandPalette'
 import type { EtymologyNode } from '@/types/etymology'
@@ -35,6 +36,7 @@ import {
   type MapSelection,
   type MapState,
 } from '@/types/mapState'
+import { buildWiktionaryUrl } from '@/utils/mapUtils'
 
 const layerOrderStep = 20
 const layerOrderBase = 500
@@ -833,6 +835,9 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       kind: 'translation-marker',
       index,
       label: marker.popupText,
+      word: marker.word,
+      language: marker.language,
+      wiktionaryUrl: marker.wiktionaryUrl || buildWiktionaryUrl(marker.word),
     })
     announce(`Selected translation marker ${index + 1}${popupText ? `: ${popupText}` : ''}`)
   }, [announce, setSelectedItem])
@@ -1364,6 +1369,14 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             setActiveLayerState({ etymology: false })
             announce('Guide restarted')
           }}
+          theme={theme}
+        />
+        <MarkerEvidenceDrawer
+          open={mapState.selectedItem.kind === 'translation-marker'}
+          word={mapState.selectedItem.kind === 'translation-marker' ? mapState.selectedItem.word : ''}
+          language={mapState.selectedItem.kind === 'translation-marker' ? mapState.selectedItem.language : ''}
+          wiktionaryUrl={mapState.selectedItem.kind === 'translation-marker' ? mapState.selectedItem.wiktionaryUrl : ''}
+          onClose={() => setSelectedItem({ kind: 'none' })}
           theme={theme}
         />
         <CommandPalette

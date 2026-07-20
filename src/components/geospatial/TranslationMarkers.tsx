@@ -7,6 +7,9 @@ import { Marker, Popup } from 'react-leaflet'
 export interface TranslationMarker {
   position: [number, number]
   popupText: string
+  word: string
+  language: string
+  wiktionaryUrl: string
 }
 
 export interface TranslationMarkersProps {

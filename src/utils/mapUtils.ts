@@ -37,6 +37,11 @@ interface LanguageMetadata {
   name?: string | string[]
 }
 
+export const buildWiktionaryUrl = (word: string) => {
+  const slug = word.trim().replace(/\s+/g, '_')
+  return `https://en.wiktionary.org/wiki/${encodeURIComponent(slug)}`
+}
+
 // Approximate representative centers for proto language macro-regions (lat,lng)
 const PROTO_CENTERS: Record<string, [number, number]> = {
   'ine-pro': [49.0, 45.0], // PIE Steppe (approx)
@@ -339,6 +344,9 @@ export const processTranslations = async (
       newMarkers.push({
         position: [parseFloat(lat), parseFloat(lng)],
         popupText: `${lang} (${code}): ${word} ${roman !== 'undefined' ? `(${roman})` : ''}<br>Meaning(s):${meanings.join('')}`,
+        word,
+        language: lang,
+        wiktionaryUrl: buildWiktionaryUrl(word),
       })
     })
 

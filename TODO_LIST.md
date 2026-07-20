@@ -25,11 +25,6 @@ P2 = polish, export, or quality-of-life feature
     Use case: Restores the intended historical branching view.
     Research context: The transcript exposed missing or disconnected descendant-path data.
 
-[X] P0 — Add directional arrows to descendant-path connections
-    Description: Render arrows so the direction of linguistic development is visually explicit.
-    Use case: Clarifies whether a path is showing ancestry or later branching.
-    Research context: Participants were confused that descendant paths were undirected.
-
 [ ] P0 — Distinguish etymology lineage from descendant paths more clearly
     Description: Make the two layers differ in both behavior and labeling so the relationship between them is obvious.
     Use case: Prevents users from treating the two layers as interchangeable.
@@ -115,12 +110,12 @@ P2 = polish, export, or quality-of-life feature
     Use case: Supports larger historical questions about language movement.
     Research context: The participant was interested in broader patterns like transportation or communication effects.
 
-[ ] P0 — Implement an EvidenceDrawer component
+[X] P0 — Implement an EvidenceDrawer component
     Description: A right-side drawer that displays the underlying data for a selected marker, route, region, or annotation.
     Use case: Lets users inspect Wiktionary evidence instead of trusting the map blindly.
     Research context: Participants wanted access to the data behind visualizations, especially for linguistic interpretation.
 
-[ ] P0 — Show marker evidence in EvidenceDrawer
+[X] P0 — Show marker evidence in EvidenceDrawer
     Description: For selected markers, show word/form, language, gloss, region, coordinates, date, source entry, and related terms.
     Use case: Helps users understand what each map point actually represents.
     Research context: Supports close reading after macro-level geographic exploration.
