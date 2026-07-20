@@ -43,6 +43,14 @@ const createNoteIcon = (theme: AnnotationTheme) =>
     iconAnchor: [14, 14],
   })
 
+const createStartMarkerIcon = (theme: AnnotationTheme) =>
+  L.divIcon({
+    className: 'annotation-start-marker-icon',
+    html: `<div style="width:24px;height:24px;border-radius:9999px;display:grid;place-items:center;font-size:12px;font-weight:800;box-shadow:0 8px 18px rgba(0,0,0,.24);background:${theme === 'light' ? '#ecfeff' : '#042f2e'};color:${theme === 'light' ? '#0f766e' : '#99f6e4'};border:2px solid ${theme === 'light' ? '#06b6d4' : '#14b8a6'};">1</div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  })
+
 const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   enabled,
   visible,
@@ -55,6 +63,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
 }) => {
   const isLight = theme === 'light'
   const [segmentStart, setSegmentStart] = useState<[number, number] | null>(null)
+  const [segmentHover, setSegmentHover] = useState<[number, number] | null>(null)
   const [draftRegion, setDraftRegion] = useState<[number, number][]>([])
 
   const annotationCursor = useMemo(() => {
@@ -78,6 +87,9 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
     }
     if (!enabled || tool === 'region') {
       setSegmentStart(null)
+    }
+    if (!enabled || tool !== 'arrow' && tool !== 'link') {
+      setSegmentHover(null)
     }
   }, [enabled, tool])
 
@@ -173,6 +185,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
     if (tool === 'arrow' || tool === 'link') {
       if (!segmentStart) {
         setSegmentStart(point)
+        setSegmentHover(point)
         onAnnounce?.(tool === 'arrow'
           ? 'Arrow started. Click a second point to finish the arrow.'
           : 'Custom link started. Click a second point to finish the link.')
@@ -181,6 +194,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
 
       finishSegment(tool, segmentStart, point)
       setSegmentStart(null)
+      setSegmentHover(null)
       onAnnounce?.(tool === 'arrow' ? 'Arrow annotation added' : 'Custom link annotation added')
       return
     }
@@ -193,7 +207,60 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
 
   useMapEvents({
     click: handleMapClick,
+    mousemove: event => {
+      if (!enabled) return
+      if ((tool === 'arrow' || tool === 'link') && segmentStart) {
+        setSegmentHover([event.latlng.lat, event.latlng.lng])
+      }
+    },
+    mouseout: () => {
+      if (!enabled) return
+      if (tool === 'arrow' || tool === 'link') {
+        setSegmentHover(null)
+      }
+    },
   })
+
+  const draftSegment = useMemo(() => {
+    if (!enabled || (tool !== 'arrow' && tool !== 'link') || !segmentStart || !segmentHover) return null
+    const isArrow = tool === 'arrow'
+    const bearing = calculateBearing(segmentStart, segmentHover)
+
+    return (
+      <>
+        <Marker
+          position={segmentStart}
+          interactive={false}
+          zIndexOffset={2100}
+          icon={createStartMarkerIcon(theme)}
+        />
+        <Polyline
+          positions={[segmentStart, segmentHover]}
+          pathOptions={{
+            color: isArrow ? '#38bdf8' : '#c084fc',
+            weight: 4,
+            dashArray: isArrow ? '10 10' : '8 8',
+            opacity: 0.85,
+          }}
+          interactive={false}
+        />
+        {isArrow && (
+          <Marker
+            position={segmentHover}
+            zIndexOffset={2100}
+            interactive={false}
+            icon={createArrowIcon(bearing, {
+              size: 24,
+              color: '#38bdf8',
+              outline: isLight ? '#ffffff' : '#082f49',
+              outlineWidth: 2,
+              opacity: 1,
+            })}
+          />
+        )}
+      </>
+    )
+  }, [enabled, isLight, segmentHover, segmentStart, tool, theme])
 
   const regionPreview = useMemo(() => {
     if (!enabled || tool !== 'region' || draftRegion.length < 2) return null
@@ -314,6 +381,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
           </>
         )
       })}
+      {draftSegment}
       {regionPreview}
       {enabled && (
         <div className={isLight ? 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-amber-300 bg-amber-50/95 p-3 text-sm text-slate-700 shadow-xl shadow-amber-100/60 backdrop-blur' : 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-amber-400/40 bg-slate-950/96 p-3 text-sm text-slate-100 shadow-xl shadow-black/30 backdrop-blur ring-1 ring-amber-400/15'}>
