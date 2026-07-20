@@ -42,7 +42,8 @@ export type LayerOrderState = MapLayerKey[]
 export type MapSelection =
   | { kind: 'none' }
   | { kind: 'translation-marker'; index: number; label: string; word: string; language: string; wiktionaryUrl: string }
-  | { kind: 'lineage-node'; index: number; word: string; language: string }
+  | { kind: 'lineage-node'; index: number; word: string; language: string; wiktionaryUrl: string }
+  | { kind: 'descendant-node'; index: number; word: string; language: string; wiktionaryUrl: string }
 
 export interface MapCameraState {
   center: [number, number]

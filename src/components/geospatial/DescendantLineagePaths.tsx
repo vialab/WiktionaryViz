@@ -183,12 +183,13 @@ const resolveLanguageName = async (langCode: string | null | undefined, languoid
  * - TODO: Add performance instrumentation (request size, traversal duration, cache hit rate).
  */
 
-const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opacity?: number; zIndex?: number; onVisibleCoordinatesChange?: (positions: [number, number][]) => void }> = ({
+const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opacity?: number; zIndex?: number; onVisibleCoordinatesChange?: (positions: [number, number][]) => void; onNodeSelect?: (node: DescNode, pathIndex: number, nodeIndex: number) => void }> = ({
   rootWord,
   rootLang,
   opacity = 1,
   zIndex = 560,
   onVisibleCoordinatesChange,
+  onNodeSelect,
 }) => {
   const { languoidData } = useLanguoidData() as { languoidData: LanguoidData[]; loading: boolean }
   const [paths, setPaths] = useState<DescPath[]>([])
@@ -561,6 +562,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
                   }}
                   eventHandlers={{
                     click: () => {
+                      onNodeSelect?.(p[i], idx, i)
                       const isExpandedHere = hasVisibleDescendants(paths, p, i)
                       if (isExpandedHere) {
                         collapseNode(p, i)

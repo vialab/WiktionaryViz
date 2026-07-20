@@ -813,6 +813,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       index: currentIndex,
       word: currentNode.word,
       language: currentNode.lang_code,
+      wiktionaryUrl: buildWiktionaryUrl(currentNode.word),
     })
   }, [currentIndex, lineage, setSelectedItem])
 
@@ -849,8 +850,20 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       index,
       word: node.word,
       language: node.lang_code,
+      wiktionaryUrl: buildWiktionaryUrl(node.word),
     })
   }, [setFilterState, setSelectedItem])
+
+  const handleDescendantNodeSelect = useCallback((node: { word?: string; lang_code?: string | null }, index: number) => {
+    if (!node.word || !node.lang_code) return
+    setSelectedItem({
+      kind: 'descendant-node',
+      index,
+      word: node.word,
+      language: node.lang_code,
+      wiktionaryUrl: buildWiktionaryUrl(node.word),
+    })
+  }, [setSelectedItem])
 
   const fitToData = useCallback(() => {
     if (!mapInstance) return
@@ -1285,6 +1298,9 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             opacity={layerOpacities.descendants}
             zIndex={layerZIndex('descendants')}
             onVisibleCoordinatesChange={setDescendantCoordinates}
+            onNodeSelect={(node, pathIndex) => {
+              handleDescendantNodeSelect(node, pathIndex)
+            }}
           />
         )}
         {showAnnotations && (
@@ -1372,10 +1388,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           theme={theme}
         />
         <MarkerEvidenceDrawer
-          open={mapState.selectedItem.kind === 'translation-marker'}
-          word={mapState.selectedItem.kind === 'translation-marker' ? mapState.selectedItem.word : ''}
-          language={mapState.selectedItem.kind === 'translation-marker' ? mapState.selectedItem.language : ''}
-          wiktionaryUrl={mapState.selectedItem.kind === 'translation-marker' ? mapState.selectedItem.wiktionaryUrl : ''}
+          open={mapState.selectedItem.kind !== 'none'}
+          sourceKind={mapState.selectedItem.kind}
+          word={mapState.selectedItem.kind === 'none' ? '' : mapState.selectedItem.word}
+          language={mapState.selectedItem.kind === 'none' ? '' : mapState.selectedItem.language}
+          wiktionaryUrl={mapState.selectedItem.kind === 'none' ? '' : mapState.selectedItem.wiktionaryUrl}
           onClose={() => setSelectedItem({ kind: 'none' })}
           theme={theme}
         />

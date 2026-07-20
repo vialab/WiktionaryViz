@@ -3,6 +3,7 @@ import { ExternalLink, X } from 'lucide-react'
 
 interface MarkerEvidenceDrawerProps {
   open: boolean
+  sourceKind: 'translation-marker' | 'lineage-node' | 'descendant-node' | 'none'
   word: string
   language: string
   wiktionaryUrl: string
@@ -12,6 +13,7 @@ interface MarkerEvidenceDrawerProps {
 
 const MarkerEvidenceDrawer: FC<MarkerEvidenceDrawerProps> = ({
   open,
+  sourceKind,
   word,
   language,
   wiktionaryUrl,
@@ -33,7 +35,11 @@ const MarkerEvidenceDrawer: FC<MarkerEvidenceDrawerProps> = ({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className={isLight ? 'text-[11px] font-semibold uppercase tracking-[0.34em] text-blue-700/80' : 'text-[11px] font-semibold uppercase tracking-[0.34em] text-slate-400'}>
-              Evidence drawer
+              {sourceKind === 'lineage-node'
+                ? 'Etymology evidence'
+                : sourceKind === 'descendant-node'
+                  ? 'Descendant evidence'
+                  : 'Evidence drawer'}
             </p>
             <h2 className={isLight ? 'mt-2 truncate text-xl font-semibold text-slate-900' : 'mt-2 truncate text-xl font-semibold text-white'}>
               {word}
