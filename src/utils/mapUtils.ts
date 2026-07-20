@@ -31,6 +31,9 @@ interface Coordinate {
 interface Marker {
   position: [number, number]
   popupText: string
+  word: string
+  language: string
+  wiktionaryUrl: string
 }
 
 interface LanguageMetadata {

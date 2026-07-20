@@ -270,17 +270,20 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     setFilterState({ guideLayer: nextGuideLayer })
   }, [setFilterState])
 
+  const setAnnotationsVisible = useCallback((enabled: boolean) => {
+    setActiveLayerState({ annotations: enabled })
+  }, [setActiveLayerState])
+
   const setAnnotationMode = useCallback((enabled: boolean) => {
     setFilterState({ annotationMode: enabled })
-  }, [setFilterState])
+    if (enabled) {
+      setAnnotationsVisible(true)
+    }
+  }, [setAnnotationsVisible, setFilterState])
 
   const setAnnotationTool = useCallback((tool: AnnotationKind) => {
     setFilterState({ annotationTool: tool })
   }, [setFilterState])
-
-  const setAnnotationsVisible = useCallback((enabled: boolean) => {
-    setActiveLayerState({ annotations: enabled })
-  }, [setActiveLayerState])
 
   const toggleLayerVisibility = useCallback((layer: MapLayerKey) => {
     updateMapState(current => ({
@@ -1306,7 +1309,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         {showAnnotations && (
           <AnnotationModeOverlay
             enabled={mapState.filters.annotationMode}
-            visible={showAnnotations}
+            visible={showAnnotations || mapState.filters.annotationMode}
             tool={mapState.filters.annotationTool}
             annotations={annotations}
             onAnnotationsChange={nextAnnotations => {

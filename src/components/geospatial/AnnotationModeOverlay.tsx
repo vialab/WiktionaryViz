@@ -57,6 +57,21 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   const [segmentStart, setSegmentStart] = useState<[number, number] | null>(null)
   const [draftRegion, setDraftRegion] = useState<[number, number][]>([])
 
+  const annotationCursor = useMemo(() => {
+    switch (tool) {
+      case 'note':
+      case 'highlight':
+        return 'crosshair'
+      case 'arrow':
+      case 'link':
+        return 'cell'
+      case 'region':
+        return 'crosshair'
+      default:
+        return 'crosshair'
+    }
+  }, [tool])
+
   useEffect(() => {
     if (!enabled || tool !== 'region') {
       setDraftRegion([])
@@ -68,12 +83,24 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
 
   useEffect(() => {
     if (!enabled) return
-    const previousCursor = document.body.style.cursor
-    document.body.style.cursor = tool === 'region' ? 'crosshair' : 'copy'
-    return () => {
-      document.body.style.cursor = previousCursor
+    const previousBodyCursor = document.body.style.cursor
+    const previousHtmlCursor = document.documentElement.style.cursor
+    const mapRoot = document.getElementById('map-root')
+    const previousMapCursor = mapRoot?.style.cursor ?? ''
+
+    document.body.style.cursor = annotationCursor
+    document.documentElement.style.cursor = annotationCursor
+    if (mapRoot) {
+      mapRoot.style.cursor = annotationCursor
     }
-  }, [enabled, tool])
+    return () => {
+      document.body.style.cursor = previousBodyCursor
+      document.documentElement.style.cursor = previousHtmlCursor
+      if (mapRoot) {
+        mapRoot.style.cursor = previousMapCursor
+      }
+    }
+  }, [annotationCursor, enabled])
 
   useEffect(() => {
     if (!enabled || tool !== 'region') return
@@ -105,6 +132,15 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
 
   const handleMapClick = useCallback((event: L.LeafletMouseEvent) => {
     if (!enabled) return
+
+    const originalEvent = event.originalEvent as Event | undefined
+    if (originalEvent) {
+      const target = originalEvent.target
+      if (target instanceof Element && target.closest('[data-map-ui-overlay="true"]')) {
+        return
+      }
+    }
+
     const point: [number, number] = [event.latlng.lat, event.latlng.lng]
 
     if (tool === 'note') {
@@ -280,7 +316,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
       })}
       {regionPreview}
       {enabled && (
-        <div className={isLight ? 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-slate-200 bg-white/96 p-3 text-sm text-slate-700 shadow-xl shadow-slate-200/60 backdrop-blur' : 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-slate-700/80 bg-slate-950/96 p-3 text-sm text-slate-100 shadow-xl shadow-black/30 backdrop-blur'}>
+        <div className={isLight ? 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-amber-300 bg-amber-50/95 p-3 text-sm text-slate-700 shadow-xl shadow-amber-100/60 backdrop-blur' : 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-amber-400/40 bg-slate-950/96 p-3 text-sm text-slate-100 shadow-xl shadow-black/30 backdrop-blur ring-1 ring-amber-400/15'}>
           <div className={isLight ? 'text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700' : 'text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-300'}>
             Annotation mode on
           </div>

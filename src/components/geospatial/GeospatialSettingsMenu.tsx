@@ -321,6 +321,9 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     <>
       <aside
         aria-label="Map sidebar"
+        data-map-ui-overlay="true"
+        onMouseDown={event => event.stopPropagation()}
+        onClick={event => event.stopPropagation()}
         data-collapsed={isCollapsed ? 'true' : 'false'}
         className={isLight
           ? `fixed inset-y-0 left-0 z-[10000] flex flex-col border-r border-slate-200/90 bg-white/96 text-slate-900 shadow-2xl shadow-slate-200/40 backdrop-blur transition-[width] duration-200 ease-out ${isCollapsed ? 'w-14' : 'w-[min(22rem,calc(100vw-1rem))]'}`

@@ -27,6 +27,9 @@ const MarkerEvidenceDrawer: FC<MarkerEvidenceDrawerProps> = ({
   return (
     <aside
       aria-label="Marker evidence drawer"
+      data-map-ui-overlay="true"
+      onMouseDown={event => event.stopPropagation()}
+      onClick={event => event.stopPropagation()}
       className={isLight
         ? 'fixed right-4 top-4 z-[11500] flex h-[calc(100vh-2rem)] w-[min(30rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-2xl shadow-slate-200/50 backdrop-blur'
         : 'fixed right-4 top-4 z-[11500] flex h-[calc(100vh-2rem)] w-[min(30rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-slate-950 text-slate-100 shadow-2xl shadow-black/40 backdrop-blur'}

@@ -5,12 +5,12 @@ P0 = must-have for the core prototype
 P1 = high-value thesis/demo feature
 P2 = polish, export, or quality-of-life feature
 
-[ ] P0 — Make annotation tools visually obvious and show a two-step arrow prompt
+[X] P0 — Make annotation tools visually obvious and show a two-step arrow prompt
     Description: Add clear icons and feedback after the first click of an arrow so users know a second point is required.
     Use case: Reduces confusion when creating arrows or other drawn annotations.
     Research context: The transcript showed uncertainty about how arrow creation worked.
 
-[ ] P0 — Fix the annotation control disappearance bug
+[X] P0 — Fix the annotation control disappearance bug
     Description: Investigate why annotation UI elements or controls vanish during use and keep them persistently available.
     Use case: Prevents users from losing the tools they just enabled.
     Research context: The walkthrough exposed a bug where annotation controls disappeared.
@@ -109,16 +109,6 @@ P2 = polish, export, or quality-of-life feature
     Description: Add a broader view that shows movement patterns across many words without requiring one word at a time.
     Use case: Supports larger historical questions about language movement.
     Research context: The participant was interested in broader patterns like transportation or communication effects.
-
-[X] P0 — Implement an EvidenceDrawer component
-    Description: A right-side drawer that displays the underlying data for a selected marker, route, region, or annotation.
-    Use case: Lets users inspect Wiktionary evidence instead of trusting the map blindly.
-    Research context: Participants wanted access to the data behind visualizations, especially for linguistic interpretation.
-
-[X] P0 — Show marker evidence in EvidenceDrawer
-    Description: For selected markers, show word/form, language, gloss, region, coordinates, date, source entry, and related terms.
-    Use case: Helps users understand what each map point actually represents.
-    Research context: Supports close reading after macro-level geographic exploration.
 
 [ ] P0 — Show route evidence in EvidenceDrawer
     Description: For selected routes, show source language, target language, relation type, etymology text, and supporting source data.
