@@ -141,6 +141,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     { key: 'note' as const, label: 'Note', hint: 'Click once to add text', icon: PencilLine },
     { key: 'highlight' as const, label: 'Highlight', hint: 'Click once to mark an area', icon: Highlighter },
     { key: 'arrow' as const, label: 'Arrow', hint: 'Two clicks: start, then end', icon: ArrowRight },
+    { key: 'freehand' as const, label: 'Freehand', hint: 'Press and drag to sketch a stroke', icon: PencilLine },
     { key: 'region' as const, label: 'Region', hint: 'Click multiple points to trace an area', icon: Radius },
     { key: 'link' as const, label: 'Link', hint: 'Two clicks to connect two points', icon: Link2 },
   ]), [])

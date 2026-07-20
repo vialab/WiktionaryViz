@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CircleMarker, Marker, Polygon, Popup, Polyline, useMapEvents } from 'react-leaflet'
+import { CircleMarker, Marker, Polygon, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import { calculateBearing, createArrowIcon } from '@/utils/mapUtils'
 import type {
@@ -36,6 +36,27 @@ const formatLabel = (value: string | null) => {
   return trimmed || 'Untitled annotation'
 }
 
+const getAnnotationLabel = (kind: 'note' | 'highlight' | 'arrow' | 'region' | 'link' | 'freehand', promptValue?: string | null) => {
+  if (kind === 'note') {
+    return formatLabel(promptValue ?? '')
+  }
+
+  switch (kind) {
+    case 'highlight':
+      return 'Highlight'
+    case 'arrow':
+      return 'Arrow'
+    case 'region':
+      return 'Region'
+    case 'link':
+      return 'Link'
+    case 'freehand':
+      return 'Freehand'
+    default:
+      return 'Annotation'
+  }
+}
+
 const createNoteIcon = (theme: AnnotationTheme) =>
   L.divIcon({
     className: 'annotation-note-icon',
@@ -50,6 +71,14 @@ const createStartMarkerIcon = (theme: AnnotationTheme) =>
     html: `<div style="width:18px;height:18px;border-radius:9999px;box-shadow:0 6px 14px rgba(0,0,0,.22);background:${theme === 'light' ? '#ecfeff' : '#042f2e'};border:2px solid ${theme === 'light' ? '#06b6d4' : '#14b8a6'};"></div>`,
     iconSize: [18, 18],
     iconAnchor: [9, 9],
+  })
+
+const createFreehandStartIcon = (theme: AnnotationTheme) =>
+  L.divIcon({
+    className: 'annotation-freehand-start-icon',
+    html: `<div style="width:16px;height:16px;border-radius:9999px;box-shadow:0 6px 14px rgba(0,0,0,.22);background:${theme === 'light' ? '#fdf2f8' : '#2a1220'};border:2px solid ${theme === 'light' ? '#ec4899' : '#f472b6'};"></div>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
   })
 
 const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
@@ -68,6 +97,9 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   const [draftRegion, setDraftRegion] = useState<[number, number][]>([])
   const [regionHover, setRegionHover] = useState<[number, number] | null>(null)
   const [regionCloseHover, setRegionCloseHover] = useState(false)
+  const [freehandStroke, setFreehandStroke] = useState<[number, number][]>([])
+  const [freehandDrawing, setFreehandDrawing] = useState(false)
+  const map = useMap()
 
   const annotationCursor = useMemo(() => {
     switch (tool) {
@@ -78,6 +110,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
       case 'link':
         return 'cell'
       case 'region':
+      case 'freehand':
         return 'crosshair'
       default:
         return 'crosshair'
@@ -89,6 +122,10 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
       setDraftRegion([])
       setRegionHover(null)
       setRegionCloseHover(false)
+    }
+    if (!enabled || tool !== 'freehand') {
+      setFreehandStroke([])
+      setFreehandDrawing(false)
     }
     if (!enabled || tool === 'region') {
       setSegmentStart(null)
@@ -121,6 +158,21 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   }, [annotationCursor, enabled, regionCloseHover])
 
   useEffect(() => {
+    if (!enabled || tool !== 'freehand') return
+
+    const draggingWasEnabled = map.dragging.enabled()
+    if (draggingWasEnabled) {
+      map.dragging.disable()
+    }
+
+    return () => {
+      if (draggingWasEnabled) {
+        map.dragging.enable()
+      }
+    }
+  }, [enabled, map, tool])
+
+  useEffect(() => {
     if (!enabled || tool !== 'region') return
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -136,14 +188,12 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   }, [annotations, onAnnotationsChange])
 
   const finishSegment = useCallback((kind: SegmentAnnotation['kind'], start: [number, number], end: [number, number]) => {
-    const promptLabel = kind === 'arrow' ? 'Label this arrow' : 'Label this custom link'
-    const text = formatLabel(window.prompt(promptLabel, ''))
     addAnnotation({
       id: makeId(),
       kind,
       start,
       end,
-      text,
+      text: getAnnotationLabel(kind),
       createdAt: new Date().toISOString(),
     })
   }, [addAnnotation])
@@ -175,13 +225,12 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
     }
 
     if (tool === 'highlight') {
-      const text = formatLabel(window.prompt('Label this highlight', ''))
       addAnnotation({
         id: makeId(),
         kind: 'highlight',
         center: point,
         radiusMeters: annotationRadiusMeters,
-        text,
+        text: getAnnotationLabel('highlight'),
         createdAt: new Date().toISOString(),
       })
       onAnnounce?.('Highlight annotation added')
@@ -212,14 +261,13 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         : false
 
       if (shouldCloseRegion) {
-        const text = formatLabel(window.prompt('Label this region', ''))
         onAnnotationsChange([
           ...annotations,
           {
             id: makeId(),
             kind: 'region',
             points: draftRegion,
-            text,
+            text: getAnnotationLabel('region'),
             createdAt: new Date().toISOString(),
           },
         ])
@@ -234,9 +282,20 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
       setRegionHover(point)
       onAnnounce?.('Region point added')
     }
-  }, [addAnnotation, annotations, enabled, finishSegment, onAnnounce, draftRegion, segmentStart, tool, onAnnotationsChange])
+
+    if (tool === 'freehand') {
+      return
+    }
+  }, [addAnnotation, annotations, enabled, finishSegment, freehandDrawing, freehandStroke, onAnnounce, draftRegion, segmentStart, tool, onAnnotationsChange])
 
   useMapEvents({
+    mousedown: event => {
+      if (!enabled || tool !== 'freehand') return
+      const point: [number, number] = [event.latlng.lat, event.latlng.lng]
+      setFreehandDrawing(true)
+      setFreehandStroke([point])
+      onAnnounce?.('Freehand drawing started')
+    },
     click: handleMapClick,
     mousemove: event => {
       if (!enabled) return
@@ -249,7 +308,46 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         setRegionHover(nextPoint)
         const startPoint = draftRegion[0]
         setRegionCloseHover(Boolean(startPoint) && draftRegion.length >= 3 && L.latLng(nextPoint).distanceTo(L.latLng(startPoint)) <= regionCloseThresholdMeters)
+        return
       }
+      if (tool === 'freehand' && freehandDrawing) {
+        const nextPoint = [event.latlng.lat, event.latlng.lng] as [number, number]
+        setFreehandStroke(current => {
+          if (!current.length) return [nextPoint]
+          const lastPoint = current[current.length - 1]
+          const samePoint = lastPoint[0] === nextPoint[0] && lastPoint[1] === nextPoint[1]
+          return samePoint ? current : [...current, nextPoint]
+        })
+      }
+    },
+    mouseup: event => {
+      if (!enabled || tool !== 'freehand' || !freehandDrawing) return
+      const point: [number, number] = [event.latlng.lat, event.latlng.lng]
+      setFreehandStroke(current => {
+        if (!current.length) return [point]
+        const lastPoint = current[current.length - 1]
+        const samePoint = lastPoint[0] === point[0] && lastPoint[1] === point[1]
+        return samePoint ? current : [...current, point]
+      })
+
+      setFreehandDrawing(false)
+      const path = freehandStroke.length > 1 ? freehandStroke : [point]
+      if (path.length < 2) {
+        setFreehandStroke([])
+        return
+      }
+      onAnnotationsChange([
+        ...annotations,
+        {
+          id: makeId(),
+          kind: 'freehand',
+          points: path,
+          text: getAnnotationLabel('freehand'),
+          createdAt: new Date().toISOString(),
+        },
+      ])
+      setFreehandStroke([])
+      onAnnounce?.('Freehand annotation added')
     },
     mouseout: () => {
       if (!enabled) return
@@ -261,8 +359,37 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         setRegionHover(null)
         setRegionCloseHover(false)
       }
+      if (tool === 'freehand' && !freehandDrawing) {
+        setFreehandStroke([])
+      }
     },
   })
+
+  const freehandPreview = useMemo(() => {
+    if (!enabled || tool !== 'freehand' || freehandStroke.length === 0) return null
+
+    const color = isLight ? '#db2777' : '#f472b6'
+
+    return (
+      <>
+        <Marker
+          position={freehandStroke[0]}
+          interactive={false}
+          zIndexOffset={2100}
+          icon={createFreehandStartIcon(theme)}
+        />
+        <Polyline
+          positions={freehandStroke}
+          pathOptions={{
+            color,
+            weight: 4,
+            opacity: 0.9,
+          }}
+          interactive={false}
+        />
+      </>
+    )
+  }, [enabled, freehandStroke, isLight, theme, tool])
 
   const draftSegment = useMemo(() => {
     if (!enabled || (tool !== 'arrow' && tool !== 'link') || !segmentStart || !segmentHover) return null
@@ -328,14 +455,13 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             },
             click: () => {
               if (draftRegion.length < 3) return
-              const text = formatLabel(window.prompt('Label this region', ''))
               onAnnotationsChange([
                 ...annotations,
                 {
                   id: makeId(),
                   kind: 'region',
                   points: draftRegion,
-                  text,
+                  text: getAnnotationLabel('region'),
                   createdAt: new Date().toISOString(),
                 },
               ])
@@ -445,6 +571,28 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
           )
         }
 
+        if (annotation.kind === 'freehand') {
+          return (
+            <Polyline
+              key={annotation.id}
+              positions={annotation.points}
+              pathOptions={{ color: isLight ? '#db2777' : '#f472b6', weight: 4, opacity: 0.9 }}
+              eventHandlers={{
+                click: event => {
+                  event.originalEvent.stopPropagation()
+                },
+              }}
+            >
+              <Popup>
+                <div className="space-y-1">
+                  <div className="text-xs uppercase tracking-wide opacity-70">Freehand</div>
+                  <div>{annotation.text}</div>
+                </div>
+              </Popup>
+            </Polyline>
+          )
+        }
+
         const bearing = calculateBearing(annotation.start, annotation.end)
         const isArrow = annotation.kind === 'arrow'
 
@@ -490,6 +638,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
       })}
       {draftSegment}
       {regionPreview}
+      {freehandPreview}
       {enabled && (
         <div className={isLight ? 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-amber-300 bg-amber-50/95 p-3 text-sm text-slate-700 shadow-xl shadow-amber-100/60 backdrop-blur' : 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-amber-400/40 bg-slate-950/96 p-3 text-sm text-slate-100 shadow-xl shadow-black/30 backdrop-blur ring-1 ring-amber-400/15'}>
           <div className={isLight ? 'text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700' : 'text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-300'}>
@@ -507,6 +656,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
               {tool === 'highlight' && 'Click once to mark a highlighted area.'}
               {tool === 'arrow' && (segmentStart ? 'Step 2 of 2: click a second point to finish the arrow.' : 'Click once to set the arrow start point, then click a second point to finish it.')}
               {tool === 'link' && (segmentStart ? 'Step 2 of 2: click a second point to finish the custom link.' : 'Click once to set the link start point, then click a second point to finish it.')}
+              {tool === 'freehand' && 'Press and hold, then drag to draw a freehand stroke. Release to label it.'}
               {tool === 'region' && 'Click several points to trace a region, then switch tools to stop drawing.'}
             </div>
           </div>
@@ -549,6 +699,19 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
                 : 'rounded-full border border-slate-300 bg-transparent px-3 py-1 text-xs font-medium text-inherit'}
             >
               Arrow
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onToolChange('freehand')
+                onAnnounce?.('Annotation tool set to freehand')
+              }}
+              aria-pressed={tool === 'freehand'}
+              className={tool === 'freehand'
+                ? 'rounded-full border border-rose-400 bg-rose-500/15 px-3 py-1 text-xs font-medium text-rose-700'
+                : 'rounded-full border border-slate-300 bg-transparent px-3 py-1 text-xs font-medium text-inherit'}
+            >
+              Freehand
             </button>
             <button
               type="button"

@@ -153,6 +153,23 @@ export function buildGeoJSON(
         return
       }
 
+      if (annotation.kind === 'freehand') {
+        features.push({
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: annotation.points.map(toLonLat),
+          },
+          properties: {
+            type: 'user_annotation',
+            annotationKind: annotation.kind,
+            text: annotation.text,
+            createdAt: annotation.createdAt,
+          },
+        })
+        return
+      }
+
       features.push({
         type: 'Feature',
         geometry: {

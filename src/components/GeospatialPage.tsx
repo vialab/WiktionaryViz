@@ -1071,6 +1071,17 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       },
     },
     {
+      id: 'annotation-tool-freehand',
+      label: 'Use freehand tool',
+      description: 'Sketch a freehand stroke on the map.',
+      group: 'Annotations',
+      keywords: ['draw', 'sketch', 'whiteboard'],
+      onSelect: () => {
+        setAnnotationTool('freehand')
+        announce('Annotation tool set to freehand')
+      },
+    },
+    {
       id: 'clear-annotations',
       label: 'Clear annotations',
       description: 'Remove all annotations from the current map state.',

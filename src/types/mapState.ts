@@ -2,7 +2,7 @@ export type GuideLayerKey = 'translations' | 'etymology' | 'descendants'
 
 export type MapLayerKey = 'translations' | 'protoZones' | 'languageFamilies' | 'etymology' | 'descendants'
 
-export type AnnotationKind = 'note' | 'highlight' | 'arrow' | 'region' | 'link'
+export type AnnotationKind = 'note' | 'highlight' | 'arrow' | 'region' | 'link' | 'freehand'
 
 export interface BaseAnnotation {
   id: string
@@ -33,7 +33,12 @@ export interface RegionAnnotation extends BaseAnnotation {
   points: [number, number][]
 }
 
-export type MapAnnotation = PointAnnotation | HighlightAnnotation | SegmentAnnotation | RegionAnnotation
+export interface FreehandAnnotation extends BaseAnnotation {
+  kind: 'freehand'
+  points: [number, number][]
+}
+
+export type MapAnnotation = PointAnnotation | HighlightAnnotation | SegmentAnnotation | RegionAnnotation | FreehandAnnotation
 
 export type LayerOpacityState = Record<MapLayerKey, number>
 
