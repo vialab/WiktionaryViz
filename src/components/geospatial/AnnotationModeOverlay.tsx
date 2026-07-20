@@ -22,6 +22,7 @@ interface AnnotationModeOverlayProps {
 }
 
 const annotationRadiusMeters = 40000
+const regionCloseThresholdMeters = 35000
 
 const makeId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -46,9 +47,9 @@ const createNoteIcon = (theme: AnnotationTheme) =>
 const createStartMarkerIcon = (theme: AnnotationTheme) =>
   L.divIcon({
     className: 'annotation-start-marker-icon',
-    html: `<div style="width:24px;height:24px;border-radius:9999px;display:grid;place-items:center;font-size:12px;font-weight:800;box-shadow:0 8px 18px rgba(0,0,0,.24);background:${theme === 'light' ? '#ecfeff' : '#042f2e'};color:${theme === 'light' ? '#0f766e' : '#99f6e4'};border:2px solid ${theme === 'light' ? '#06b6d4' : '#14b8a6'};">1</div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    html: `<div style="width:18px;height:18px;border-radius:9999px;box-shadow:0 6px 14px rgba(0,0,0,.22);background:${theme === 'light' ? '#ecfeff' : '#042f2e'};border:2px solid ${theme === 'light' ? '#06b6d4' : '#14b8a6'};"></div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
   })
 
 const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
@@ -65,6 +66,8 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   const [segmentStart, setSegmentStart] = useState<[number, number] | null>(null)
   const [segmentHover, setSegmentHover] = useState<[number, number] | null>(null)
   const [draftRegion, setDraftRegion] = useState<[number, number][]>([])
+  const [regionHover, setRegionHover] = useState<[number, number] | null>(null)
+  const [regionCloseHover, setRegionCloseHover] = useState(false)
 
   const annotationCursor = useMemo(() => {
     switch (tool) {
@@ -84,6 +87,8 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   useEffect(() => {
     if (!enabled || tool !== 'region') {
       setDraftRegion([])
+      setRegionHover(null)
+      setRegionCloseHover(false)
     }
     if (!enabled || tool === 'region') {
       setSegmentStart(null)
@@ -99,11 +104,12 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
     const previousHtmlCursor = document.documentElement.style.cursor
     const mapRoot = document.getElementById('map-root')
     const previousMapCursor = mapRoot?.style.cursor ?? ''
+    const nextCursor = regionCloseHover ? 'pointer' : annotationCursor
 
-    document.body.style.cursor = annotationCursor
-    document.documentElement.style.cursor = annotationCursor
+    document.body.style.cursor = nextCursor
+    document.documentElement.style.cursor = nextCursor
     if (mapRoot) {
-      mapRoot.style.cursor = annotationCursor
+      mapRoot.style.cursor = nextCursor
     }
     return () => {
       document.body.style.cursor = previousBodyCursor
@@ -112,7 +118,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         mapRoot.style.cursor = previousMapCursor
       }
     }
-  }, [annotationCursor, enabled])
+  }, [annotationCursor, enabled, regionCloseHover])
 
   useEffect(() => {
     if (!enabled || tool !== 'region') return
@@ -200,10 +206,35 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
     }
 
     if (tool === 'region') {
+      const startPoint = draftRegion[0]
+      const shouldCloseRegion = draftRegion.length >= 3 && startPoint
+        ? L.latLng(point).distanceTo(L.latLng(startPoint)) <= regionCloseThresholdMeters
+        : false
+
+      if (shouldCloseRegion) {
+        const text = formatLabel(window.prompt('Label this region', ''))
+        onAnnotationsChange([
+          ...annotations,
+          {
+            id: makeId(),
+            kind: 'region',
+            points: draftRegion,
+            text,
+            createdAt: new Date().toISOString(),
+          },
+        ])
+        setDraftRegion([])
+        setRegionHover(null)
+        setRegionCloseHover(false)
+        onAnnounce?.('Region annotation added')
+        return
+      }
+
       setDraftRegion(current => [...current, point])
+      setRegionHover(point)
       onAnnounce?.('Region point added')
     }
-  }, [addAnnotation, enabled, finishSegment, onAnnounce, segmentStart, tool])
+  }, [addAnnotation, annotations, enabled, finishSegment, onAnnounce, draftRegion, segmentStart, tool, onAnnotationsChange])
 
   useMapEvents({
     click: handleMapClick,
@@ -211,12 +242,24 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
       if (!enabled) return
       if ((tool === 'arrow' || tool === 'link') && segmentStart) {
         setSegmentHover([event.latlng.lat, event.latlng.lng])
+        return
+      }
+      if (tool === 'region' && draftRegion.length > 0) {
+        const nextPoint = [event.latlng.lat, event.latlng.lng] as [number, number]
+        setRegionHover(nextPoint)
+        const startPoint = draftRegion[0]
+        setRegionCloseHover(Boolean(startPoint) && draftRegion.length >= 3 && L.latLng(nextPoint).distanceTo(L.latLng(startPoint)) <= regionCloseThresholdMeters)
       }
     },
     mouseout: () => {
       if (!enabled) return
       if (tool === 'arrow' || tool === 'link') {
         setSegmentHover(null)
+        return
+      }
+      if (tool === 'region') {
+        setRegionHover(null)
+        setRegionCloseHover(false)
       }
     },
   })
@@ -263,9 +306,73 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   }, [enabled, isLight, segmentHover, segmentStart, tool, theme])
 
   const regionPreview = useMemo(() => {
-    if (!enabled || tool !== 'region' || draftRegion.length < 2) return null
-    return <Polygon positions={draftRegion} pathOptions={{ color: '#38bdf8', dashArray: '8 8', fillOpacity: 0.08 }} />
-  }, [draftRegion, enabled, tool])
+    if (!enabled || tool !== 'region' || draftRegion.length === 0 || !regionHover) return null
+
+    const previewPoints = [...draftRegion, regionHover]
+
+    return (
+      <>
+        <Marker
+          position={draftRegion[0]}
+          interactive={true}
+          zIndexOffset={2100}
+          icon={createStartMarkerIcon(theme)}
+          eventHandlers={{
+            mouseover: () => {
+              if (draftRegion.length >= 3) {
+                setRegionCloseHover(true)
+              }
+            },
+            mouseout: () => {
+              setRegionCloseHover(false)
+            },
+            click: () => {
+              if (draftRegion.length < 3) return
+              const text = formatLabel(window.prompt('Label this region', ''))
+              onAnnotationsChange([
+                ...annotations,
+                {
+                  id: makeId(),
+                  kind: 'region',
+                  points: draftRegion,
+                  text,
+                  createdAt: new Date().toISOString(),
+                },
+              ])
+              setDraftRegion([])
+              setRegionHover(null)
+              setRegionCloseHover(false)
+              onAnnounce?.('Region annotation added')
+            },
+          }}
+        />
+        {draftRegion.length === 1 ? (
+          <Polyline
+            positions={previewPoints}
+            pathOptions={{
+              color: '#38bdf8',
+              weight: 4,
+              dashArray: '10 10',
+              opacity: 0.85,
+            }}
+            interactive={false}
+          />
+        ) : (
+          <Polygon
+            positions={previewPoints}
+            pathOptions={{
+              color: '#38bdf8',
+              dashArray: '10 10',
+              fillOpacity: 0.08,
+              opacity: 0.9,
+              weight: 3,
+            }}
+            interactive={false}
+          />
+        )}
+      </>
+    )
+  }, [draftRegion, enabled, regionHover, theme, tool])
 
   return (
     <>
