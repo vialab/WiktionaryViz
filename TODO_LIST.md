@@ -15,11 +15,6 @@ P2 = polish, export, or quality-of-life feature
     Use case: Prevents users from losing the tools they just enabled.
     Research context: The walkthrough exposed a bug where annotation controls disappeared.
 
-[ ] P0 — Remove duplicated theme and layer controls
-    Description: Eliminate redundant day/night, layer, and opacity controls where the same action appears in more than one place.
-    Use case: Prevents users from wondering which control is authoritative.
-    Research context: The transcript flagged duplicated UI across settings and the map.
-
 [ ] P0 — Make selectable nodes and markers look clickable
     Description: Increase marker size or styling so the initial node and other interactive points are visually distinct from non-interactive ones.
     Use case: Helps users know where interaction is possible.
@@ -30,7 +25,7 @@ P2 = polish, export, or quality-of-life feature
     Use case: Restores the intended historical branching view.
     Research context: The transcript exposed missing or disconnected descendant-path data.
 
-[ ] P0 — Add directional arrows to descendant-path connections
+[X] P0 — Add directional arrows to descendant-path connections
     Description: Render arrows so the direction of linguistic development is visually explicit.
     Use case: Clarifies whether a path is showing ancestry or later branching.
     Research context: Participants were confused that descendant paths were undirected.

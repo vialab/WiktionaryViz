@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
-import { ArrowRight, ChevronDown, Highlighter, Link2, PencilLine, Radius, Settings } from 'lucide-react'
+import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Highlighter, Link2, PencilLine, Radius } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import type { TranslationMarker } from './TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
@@ -104,6 +104,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   theme = 'dark',
 }) => {
   const isLight = theme === 'light'
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const [capturing, setCapturing] = useState(false)
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -318,30 +319,58 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
 
   return (
     <>
-      <aside aria-label="Map sidebar" className={isLight ? 'fixed inset-y-0 left-0 z-[10000] flex w-[min(22rem,calc(100vw-1rem))] flex-col border-r border-slate-200/90 bg-white/96 text-slate-900 shadow-2xl shadow-slate-200/40 backdrop-blur' : 'fixed inset-y-0 left-0 z-[10000] flex w-[min(22rem,calc(100vw-1rem))] flex-col border-r border-slate-800/90 bg-slate-950/96 text-slate-100 shadow-2xl shadow-black/30 backdrop-blur'} style={{ pointerEvents: 'auto' }}>
-        <div className={isLight ? 'border-b border-slate-200 bg-gradient-to-b from-white via-slate-50 to-slate-100 px-4 py-4' : 'border-b border-slate-800 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900/80 px-4 py-4'}>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className={isLight ? 'text-[11px] font-semibold uppercase tracking-[0.34em] text-blue-700/80' : 'text-[11px] font-semibold uppercase tracking-[0.34em] text-slate-400'}>Map sidebar</div>
-              <h2 className={isLight ? 'mt-2 text-lg font-semibold text-slate-900' : 'mt-2 text-lg font-semibold text-white'}>{word && language ? `${word} · ${language}` : 'WiktionaryViz'}</h2>
-              <p className={isLight ? 'mt-1 text-sm leading-6 text-slate-600' : 'mt-1 text-sm leading-6 text-slate-300'}>Control layers, annotations, and exports from one persistent panel.</p>
-            </div>
-            <div className={isLight ? 'flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-blue-700 shadow-sm' : 'flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 text-slate-100'}>
-              <Settings size={18} />
-            </div>
+      <aside
+        aria-label="Map sidebar"
+        data-collapsed={isCollapsed ? 'true' : 'false'}
+        className={isLight
+          ? `fixed inset-y-0 left-0 z-[10000] flex flex-col border-r border-slate-200/90 bg-white/96 text-slate-900 shadow-2xl shadow-slate-200/40 backdrop-blur transition-[width] duration-200 ease-out ${isCollapsed ? 'w-14' : 'w-[min(22rem,calc(100vw-1rem))]'}`
+          : `fixed inset-y-0 left-0 z-[10000] flex flex-col border-r border-slate-800/90 bg-slate-950/96 text-slate-100 shadow-2xl shadow-black/30 backdrop-blur transition-[width] duration-200 ease-out ${isCollapsed ? 'w-14' : 'w-[min(22rem,calc(100vw-1rem))]'}`}
+        style={{ pointerEvents: 'auto' }}
+      >
+        <div className={isLight ? 'border-b border-slate-200 bg-gradient-to-b from-white via-slate-50 to-slate-100 px-3 py-3' : 'border-b border-slate-800 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900/80 px-3 py-3'}>
+          <div className={isCollapsed ? 'flex flex-col items-center gap-2' : 'flex items-start justify-between gap-3'}>
+            {!isCollapsed && (
+              <div>
+                <div className={isLight ? 'text-[11px] font-semibold uppercase tracking-[0.34em] text-blue-700/80' : 'text-[11px] font-semibold uppercase tracking-[0.34em] text-slate-400'}>Map sidebar</div>
+                <h2 className={isLight ? 'mt-2 text-lg font-semibold text-slate-900' : 'mt-2 text-lg font-semibold text-white'}>{word && language ? `${word} · ${language}` : 'WiktionaryViz'}</h2>
+                <p className={isLight ? 'mt-1 text-sm leading-6 text-slate-600' : 'mt-1 text-sm leading-6 text-slate-300'}>Control layers, annotations, and exports from one persistent panel.</p>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(prev => !prev)}
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-expanded={!isCollapsed}
+              className={isLight
+                ? 'inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-slate-50'
+                : 'inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 text-slate-100 shadow-sm transition hover:border-slate-500 hover:bg-slate-800'}
+            >
+              {isCollapsed ? <ChevronRight size={18} aria-hidden="true" /> : <ChevronLeft size={18} aria-hidden="true" />}
+            </button>
           </div>
 
-          <section className="mt-4 grid gap-2 sm:grid-cols-2">
-            <button type="button" onClick={onFitToData} disabled={!canFitToData} className={neutralButtonClasses(isLight, !canFitToData)}>Fit to data</button>
-            <button type="button" onClick={onOpenGuide} className={neutralButtonClasses(isLight)}>Open guide</button>
-            <button type="button" onClick={onOpenCommandPalette} className={neutralButtonClasses(isLight)}>Command palette</button>
-            <button type="button" onClick={onResetView} className={neutralButtonClasses(isLight)}>Reset view</button>
-            <button type="button" onClick={onSaveState} className={neutralButtonClasses(isLight)}>Copy shareable link</button>
-            <button type="button" onClick={onResetLayers} className={neutralButtonClasses(isLight)}>Reset layers</button>
-          </section>
+          {isCollapsed && (
+            <p className={isLight ? 'mt-3 text-center text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500' : 'mt-3 text-center text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400'}>
+              Sidebar
+            </p>
+          )}
+
+          {!isCollapsed && (
+            <>
+              <section className="mt-4 grid gap-2 sm:grid-cols-2">
+                <button type="button" onClick={onFitToData} disabled={!canFitToData} className={neutralButtonClasses(isLight, !canFitToData)}>Fit to data</button>
+                <button type="button" onClick={onOpenGuide} className={neutralButtonClasses(isLight)}>Open guide</button>
+                <button type="button" onClick={onOpenCommandPalette} className={neutralButtonClasses(isLight)}>Command palette</button>
+                <button type="button" onClick={onResetView} className={neutralButtonClasses(isLight)}>Reset view</button>
+                <button type="button" onClick={onSaveState} className={neutralButtonClasses(isLight)}>Copy shareable link</button>
+                <button type="button" onClick={onResetLayers} className={neutralButtonClasses(isLight)}>Reset layers</button>
+              </section>
+            </>
+          )}
         </div>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3">
+        {!isCollapsed && (
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3">
           <SettingsSection title="Layers" description="Turn map content on or off and adjust the visual stack in one place." defaultOpen isLight={isLight}>
             <div className="space-y-3">
               <div className="grid gap-2 sm:grid-cols-2">
@@ -365,50 +394,60 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
               </div>
 
               <div>
-                <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>Layer order</div>
-                <div className={isLight ? 'mt-2 space-y-2 rounded-lg border border-slate-200 bg-white p-2' : 'mt-2 space-y-2 rounded-lg border border-slate-800 bg-slate-950/40 p-2'}>
-                  {layerOrder.map((layerKey, index) => {
-                    const item = orderControls.find(entry => entry.key === layerKey)
-                    if (!item) return null
-                    const isTop = index === 0
-                    const isBottom = index === layerOrder.length - 1
-                    const rankLabel = isTop ? 'Top' : isBottom ? 'Bottom' : `#${index + 1}`
-                    return (
-                      <div key={item.key} className={isLight ? 'rounded-md border border-slate-200 bg-slate-50 p-2' : 'rounded-md border border-slate-800 bg-slate-950/30 p-2'}>
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className={isLight ? 'text-sm font-medium text-slate-700' : 'text-sm font-medium text-slate-100'}>{item.label}</div>
-                            <div className={isLight ? 'text-xs text-slate-500' : 'text-xs text-slate-400'}>{item.hint}</div>
+                <details open={false} className={isLight ? 'group rounded-lg border border-slate-200 bg-white' : 'group rounded-lg border border-slate-800 bg-slate-950/40'}>
+                  <summary className={isLight ? 'flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 [&::-webkit-details-marker]:hidden' : 'flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-400 [&::-webkit-details-marker]:hidden'}>
+                    <span>Layer order</span>
+                    <ChevronDown size={14} aria-hidden="true" className={isLight ? 'shrink-0 text-slate-500 transition duration-200 group-open:rotate-180 group-open:text-slate-700' : 'shrink-0 text-slate-400 transition duration-200 group-open:rotate-180 group-open:text-slate-200'} />
+                  </summary>
+                  <div className="space-y-2 px-2 pb-2">
+                    {layerOrder.map((layerKey, index) => {
+                      const item = orderControls.find(entry => entry.key === layerKey)
+                      if (!item) return null
+                      const isTop = index === 0
+                      const isBottom = index === layerOrder.length - 1
+                      const rankLabel = isTop ? 'Top' : isBottom ? 'Bottom' : `#${index + 1}`
+                      return (
+                        <div key={item.key} className={isLight ? 'rounded-md border border-slate-200 bg-slate-50 p-2' : 'rounded-md border border-slate-800 bg-slate-950/30 p-2'}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className={isLight ? 'text-sm font-medium text-slate-700' : 'text-sm font-medium text-slate-100'}>{item.label}</div>
+                              <div className={isLight ? 'text-xs text-slate-500' : 'text-xs text-slate-400'}>{item.hint}</div>
+                            </div>
+                            <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>{rankLabel}</div>
                           </div>
-                          <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>{rankLabel}</div>
+                          <div className="mt-2 flex gap-2">
+                            <button type="button" onClick={() => onLayerMove(item.key, 'up')} disabled={isTop} className={isLight ? 'rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40' : 'rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40'}>Move up</button>
+                            <button type="button" onClick={() => onLayerMove(item.key, 'down')} disabled={isBottom} className={isLight ? 'rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40' : 'rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40'}>Move down</button>
+                          </div>
                         </div>
-                        <div className="mt-2 flex gap-2">
-                          <button type="button" onClick={() => onLayerMove(item.key, 'up')} disabled={isTop} className={isLight ? 'rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40' : 'rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40'}>Move up</button>
-                          <button type="button" onClick={() => onLayerMove(item.key, 'down')} disabled={isBottom} className={isLight ? 'rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40' : 'rounded-full border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40'}>Move down</button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                      )
+                    })}
+                  </div>
+                </details>
               </div>
 
               <div>
-                <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>Layer opacity</div>
-                <div className={isLight ? 'mt-2 space-y-3 rounded-lg border border-slate-200 bg-white p-2' : 'mt-2 space-y-3 rounded-lg border border-slate-800 bg-slate-950/40 p-2'}>
-                  {opacityControls.map(item => {
-                    const value = Math.round(layerOpacities[item.key] * 100)
-                    return (
-                      <div key={item.key} className="space-y-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <label className={isLight ? 'text-sm text-slate-700' : 'text-sm text-slate-200'} htmlFor={`opacity-${item.key}`}>{item.label}</label>
-                          <span className={isLight ? 'text-xs font-medium text-slate-500' : 'text-xs font-medium text-slate-400'}>{value}%</span>
+                <details open={false} className={isLight ? 'group rounded-lg border border-slate-200 bg-white' : 'group rounded-lg border border-slate-800 bg-slate-950/40'}>
+                  <summary className={isLight ? 'flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 [&::-webkit-details-marker]:hidden' : 'flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-400 [&::-webkit-details-marker]:hidden'}>
+                    <span>Layer opacity</span>
+                    <ChevronDown size={14} aria-hidden="true" className={isLight ? 'shrink-0 text-slate-500 transition duration-200 group-open:rotate-180 group-open:text-slate-700' : 'shrink-0 text-slate-400 transition duration-200 group-open:rotate-180 group-open:text-slate-200'} />
+                  </summary>
+                  <div className={isLight ? 'space-y-3 px-2 pb-2' : 'space-y-3 px-2 pb-2'}>
+                    {opacityControls.map(item => {
+                      const value = Math.round(layerOpacities[item.key] * 100)
+                      return (
+                        <div key={item.key} className="space-y-1">
+                          <div className="flex items-center justify-between gap-3">
+                            <label className={isLight ? 'text-sm text-slate-700' : 'text-sm text-slate-200'} htmlFor={`opacity-${item.key}`}>{item.label}</label>
+                            <span className={isLight ? 'text-xs font-medium text-slate-500' : 'text-xs font-medium text-slate-400'}>{value}%</span>
+                          </div>
+                          <input id={`opacity-${item.key}`} type="range" min={0} max={100} step={1} value={value} onChange={event => onLayerOpacityChange(item.key, Number(event.target.value) / 100)} aria-label={`${item.label} opacity`} aria-describedby={`opacity-hint-${item.key}`} className="h-2 w-full cursor-pointer accent-sky-500" />
+                          <p id={`opacity-hint-${item.key}`} className={isLight ? 'text-xs leading-4 text-slate-500' : 'text-xs leading-4 text-slate-400'}>{item.hint}</p>
                         </div>
-                        <input id={`opacity-${item.key}`} type="range" min={0} max={100} step={1} value={value} onChange={event => onLayerOpacityChange(item.key, Number(event.target.value) / 100)} aria-label={`${item.label} opacity`} aria-describedby={`opacity-hint-${item.key}`} className="h-2 w-full cursor-pointer accent-sky-500" />
-                        <p id={`opacity-hint-${item.key}`} className={isLight ? 'text-xs leading-4 text-slate-500' : 'text-xs leading-4 text-slate-400'}>{item.hint}</p>
-                      </div>
-                    )
-                  })}
-                </div>
+                      )
+                    })}
+                  </div>
+                </details>
               </div>
 
               <button type="button" onClick={onResetLayers} className={neutralButtonClasses(isLight)}>Reset layers</button>
@@ -499,7 +538,8 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
               </div>
             </div>
           </SettingsSection>
-        </div>
+          </div>
+        )}
       </aside>
 
       {previewDataUrl && (

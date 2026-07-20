@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Pane, LayerGroup, Polyline, CircleMarker, Tooltip } from 'react-leaflet'
+import { Pane, LayerGroup, Polyline, CircleMarker, Marker, Tooltip } from 'react-leaflet'
 import * as L from 'leaflet'
 import type { LatLngExpression } from 'leaflet'
 import { getLanguage } from '@ladjs/country-language'
 import useLanguoidData from '@/hooks/useLanguoidData'
-import { normalizePosition, getCoordinatesForLanguage } from '@/utils/mapUtils'
+import { normalizePosition, getCoordinatesForLanguage, createArrowIcon, calculateBearing } from '@/utils/mapUtils'
 import { apiUrl } from '@/utils/apiBase'
 import { fallbackPoint } from './descendantPathHelpers'
 import type { LanguoidData } from '@/types/languoid'
@@ -108,6 +108,15 @@ const stablePathBase = (path: DescPath): [number, number] => {
   const lat = (hash % 12000) / 100 - 60
   const lng = ((Math.floor(hash / 12000) % 30000) / 100) - 150
   return [lat, lng]
+}
+
+const getArrowPosition = (start: [number, number], end: [number, number], offset = 0.14): [number, number] => {
+  const clampedOffset = Math.max(0, Math.min(0.35, offset))
+  const t = 1 - clampedOffset
+  return [
+    start[0] + (end[0] - start[0]) * t,
+    start[1] + (end[1] - start[1]) * t,
+  ]
 }
 
 const getLanguageLabel = (langCode: string | null | undefined, languoidData: LanguoidData[]) => {
@@ -492,28 +501,49 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
           return (
             <React.Fragment key={`path-${idx}`}>
               {coords.length >= 2 ? (
-                <Polyline
-                  positions={coords}
-                  pane="descendant-paths-lines"
-                  interactive={false}
-                  bubblingMouseEvents={false}
-                  pathOptions={{
-                    color: baseColor,
-                    weight: isActive ? 3.6 : hasAggregatedNode ? 2.6 : 2.2,
-                    opacity: (isActive ? 0.98 : hasAggregatedNode ? 0.72 : hasFallbackNode ? 0.68 : 0.6) * layerOpacity,
-                    dashArray: hasAggregatedNode ? '6 4' : hasFallbackNode ? '3 5' : undefined,
-                    className: `descendant-segment${isActive ? ' descendant-segment-active' : ''}`,
-                  }}
-                  ref={ref => {
-                    polyRefs.current[idx] = ref as unknown as L.Polyline | null
-                  }}
-                  eventHandlers={{
-                    click: () => {
-                      setSelected(prev => (prev === idx ? null : idx))
-                      activeBranchRef.current = { pathIndex: idx, nodeIndex: p.length - 1 }
-                    },
-                  }}
-                />
+                <>
+                  <Polyline
+                    positions={coords}
+                    pane="descendant-paths-lines"
+                    interactive={false}
+                    bubblingMouseEvents={false}
+                    pathOptions={{
+                      color: baseColor,
+                      weight: isActive ? 3.6 : hasAggregatedNode ? 2.6 : 2.2,
+                      opacity: (isActive ? 0.98 : hasAggregatedNode ? 0.72 : hasFallbackNode ? 0.68 : 0.6) * layerOpacity,
+                      dashArray: hasAggregatedNode ? '6 4' : hasFallbackNode ? '3 5' : undefined,
+                      className: `descendant-segment${isActive ? ' descendant-segment-active' : ''}`,
+                    }}
+                    ref={ref => {
+                      polyRefs.current[idx] = ref as unknown as L.Polyline | null
+                    }}
+                    eventHandlers={{
+                      click: () => {
+                        setSelected(prev => (prev === idx ? null : idx))
+                        activeBranchRef.current = { pathIndex: idx, nodeIndex: p.length - 1 }
+                      },
+                    }}
+                  />
+                  {coords.slice(0, -1).map((start, segmentIndex) => {
+                    const end = coords[segmentIndex + 1] as [number, number]
+                    const angle = calculateBearing(start as [number, number], end)
+                    return (
+                      <Marker
+                        key={`desc-arrow-${idx}-${segmentIndex}`}
+                        pane="descendant-paths-markers"
+                        position={getArrowPosition(start as [number, number], end)}
+                        icon={createArrowIcon(angle, {
+                          size: isActive ? 22 : hasAggregatedNode ? 20 : 18,
+                          color: baseColor,
+                          outline: '#082f49',
+                          outlineWidth: 2,
+                          opacity: layerOpacity,
+                        })}
+                        interactive={false}
+                      />
+                    )
+                  })}
+                </>
               ) : null}
               {points.map((point, i) => (
                 <CircleMarker
@@ -521,7 +551,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
                   center={point.position}
                   pane="descendant-paths-markers"
                   bubblingMouseEvents={false}
-                  radius={selected === idx ? 7 : point.aggregated ? 6 : point.fallback ? 4.5 : 4.5}
+                  radius={selected === idx ? 11 : point.aggregated ? 9 : point.fallback ? 7.5 : 7.5}
                   pathOptions={{
                     fillColor: point.aggregated ? '#fbbf24' : point.fallback ? '#60a5fa' : '#f97316',
                     color: point.aggregated ? '#a16207' : point.fallback ? '#1d4ed8' : '#92400e',
