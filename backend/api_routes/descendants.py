@@ -75,6 +75,11 @@ def _find_index_keys_for_word(w: str, lang_code: str = None, max_keys: int = 200
             exact = f"{variant}_{lang_key}"
             if exact in index and exact not in out:
                 return [exact]
+            bare_variant = variant.lstrip("*")
+            if bare_variant != variant:
+                exact_bare = f"{bare_variant}_{lang_key}"
+                if exact_bare in index and exact_bare not in out:
+                    return [exact_bare]
         wk = f"{variant}_"
         for k in index:
             if not k.startswith(wk):
@@ -98,10 +103,24 @@ def _index_word_variants(text: str):
     raw = _normalize_index_word(text)
     if not raw:
         return []
+
     variants = [raw]
-    stripped = "".join(ch for ch in unicodedata.normalize("NFKD", raw) if unicodedata.category(ch) != "Mn")
-    if stripped and stripped != raw:
+
+    # Reconstructed forms in the etymology templates commonly carry a leading "*"
+    # while the index stores the same form without that marker.
+    base = raw.lstrip("*")
+    if base and base != raw:
+        variants.append(base)
+
+    stripped = "".join(ch for ch in unicodedata.normalize("NFKD", base) if unicodedata.category(ch) != "Mn")
+    if stripped and stripped not in variants:
         variants.append(stripped)
+
+    if base.startswith("reconstruction:"):
+        bare = base[len("reconstruction:"):].strip()
+        if bare and bare not in variants:
+            variants.append(bare)
+
     return variants
 
 
@@ -251,14 +270,6 @@ def _resolve_ancestor_roots(mm, word: str, lang_code: str, max_depth: int, max_p
             continue
         root_index = len(p) - 1
         root_node = p[-1]
-        for rev_idx, node in enumerate(reversed(p)):
-            node_word = (node.get("word") or "").strip()
-            node_lang = (node.get("lang_code") or "").strip().lower() if node.get("lang_code") else None
-            if _is_proto_like(node_word, node_lang):
-                continue
-            root_index = len(p) - 1 - rev_idx
-            root_node = node
-            break
 
         r_word = (root_node.get("word") or "").strip()
         r_lang = (root_node.get("lang_code") or "").strip().lower() if root_node.get("lang_code") else None
@@ -284,8 +295,8 @@ def _resolve_ancestor_roots(mm, word: str, lang_code: str, max_depth: int, max_p
     roots = list(roots_by_key.values())
     roots.sort(
         key=lambda r: (
-            r.get("max_root_index", 0),
             r.get("proto_score", 0),
+            r.get("max_root_index", 0),
             r.get("max_path_length", 0),
             r.get("supporting_paths", 0),
         ),
