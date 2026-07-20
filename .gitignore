@@ -116,3 +116,8 @@ backend/data/
 __pycache__/
 *.py[cod]
 backend/.venv/
+public/geospatial-guide-previews/descendants.mp4
+public/geospatial-guide-previews/etymology.mp4
+public/geospatial-guide-previews/families.mp4
+public/geospatial-guide-previews/proto-zones.mp4
+public/geospatial-guide-previews/translations.mp4
