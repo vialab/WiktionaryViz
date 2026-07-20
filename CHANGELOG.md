@@ -2,6 +2,15 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.34](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.33...wiktionaryviz-v0.1.34) (2026-07-20)
+
+
+### Features
+
+* **App.tsx, LandingPage.tsx, GeospatialGuideOverlay.tsx, GeospatialSettingsMenu.tsx:** enhance UI components with improved layout and responsiveness for better user experience ([c6f34e0](https://github.com/vialab/WiktionaryViz/commit/c6f34e04d1d0b525a4268698bb86235ed601978d))
+* **GeospatialGuideOverlay:** add animated preview GIFs for guide layers to enhance user experience and provide visual context ([09c6d6e](https://github.com/vialab/WiktionaryViz/commit/09c6d6e995b16042c557197e1d1234ded640426f))
+* **geospatial:** replace GIF previews with video previews for better quality and performance ([4bac5d8](https://github.com/vialab/WiktionaryViz/commit/4bac5d8a8472f983a874c21fea2d6773962adaf3))
+
 ## [0.1.33](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.32...wiktionaryviz-v0.1.33) (2026-07-09)
 
 
