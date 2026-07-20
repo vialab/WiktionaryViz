@@ -137,6 +137,9 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
     if (tool === 'arrow' || tool === 'link') {
       if (!segmentStart) {
         setSegmentStart(point)
+        onAnnounce?.(tool === 'arrow'
+          ? 'Arrow started. Click a second point to finish the arrow.'
+          : 'Custom link started. Click a second point to finish the link.')
         return
       }
 
@@ -277,16 +280,24 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
       })}
       {regionPreview}
       {enabled && (
-        <div className={isLight ? 'fixed left-4 top-20 z-[1601] max-w-xs rounded-xl border border-slate-200 bg-white/95 p-3 text-sm text-slate-700 shadow-xl shadow-slate-200/60 backdrop-blur' : 'fixed left-4 top-20 z-[1601] max-w-xs rounded-xl border border-slate-700/80 bg-slate-950/95 p-3 text-sm text-slate-100 shadow-xl shadow-black/30 backdrop-blur'}>
-          <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-amber-700' : 'text-xs font-semibold uppercase tracking-wide text-amber-300'}>
+        <div className={isLight ? 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-slate-200 bg-white/96 p-3 text-sm text-slate-700 shadow-xl shadow-slate-200/60 backdrop-blur' : 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-slate-700/80 bg-slate-950/96 p-3 text-sm text-slate-100 shadow-xl shadow-black/30 backdrop-blur'}>
+          <div className={isLight ? 'text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700' : 'text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-300'}>
             Annotation mode on
           </div>
-          <div className={isLight ? 'mt-1 text-sm text-slate-600' : 'mt-1 text-sm text-slate-300'}>
-            {tool === 'note' && 'Click once to place a note.'}
-            {tool === 'highlight' && 'Click once to mark a highlighted area.'}
-            {tool === 'arrow' && (segmentStart ? 'Click a second point to finish the arrow.' : 'Click two points to draw an arrow.')}
-            {tool === 'link' && (segmentStart ? 'Click a second point to finish the custom link.' : 'Click two points to draw a custom link.')}
-            {tool === 'region' && 'Click several points to trace a region, then switch tools to stop drawing.'}
+          <div className={isLight ? 'mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2' : 'mt-2 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2'}>
+            <div className={isLight ? 'flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500' : 'flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+              <span className={isLight ? 'flex h-5 w-5 items-center justify-center rounded-full bg-cyan-100 text-cyan-700' : 'flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-200'}>
+                {tool === 'arrow' || tool === 'link' ? '1' : '!'}
+              </span>
+              {tool === 'arrow' || tool === 'link' ? 'Step 1 of 2' : 'Tool instructions'}
+            </div>
+            <div className={isLight ? 'mt-2 text-sm text-slate-600' : 'mt-2 text-sm text-slate-300'}>
+              {tool === 'note' && 'Click once to place a note.'}
+              {tool === 'highlight' && 'Click once to mark a highlighted area.'}
+              {tool === 'arrow' && (segmentStart ? 'Step 2 of 2: click a second point to finish the arrow.' : 'Click once to set the arrow start point, then click a second point to finish it.')}
+              {tool === 'link' && (segmentStart ? 'Step 2 of 2: click a second point to finish the custom link.' : 'Click once to set the link start point, then click a second point to finish it.')}
+              {tool === 'region' && 'Click several points to trace a region, then switch tools to stop drawing.'}
+            </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <button

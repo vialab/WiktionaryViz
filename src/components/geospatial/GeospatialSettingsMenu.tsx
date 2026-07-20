@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
-import { ChevronDown, Settings } from 'lucide-react'
+import { ArrowRight, ChevronDown, Highlighter, Link2, PencilLine, Radius, Settings } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import type { TranslationMarker } from './TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
@@ -137,11 +137,11 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   ]), [])
 
   const annotationControls = useMemo(() => ([
-    { key: 'note' as const, label: 'Note', hint: 'Click once to add text' },
-    { key: 'highlight' as const, label: 'Highlight', hint: 'Click once to mark an area' },
-    { key: 'arrow' as const, label: 'Arrow', hint: 'Click twice to draw a direction' },
-    { key: 'region' as const, label: 'Region', hint: 'Click multiple points to trace an area' },
-    { key: 'link' as const, label: 'Link', hint: 'Click twice to draw a custom link' },
+    { key: 'note' as const, label: 'Note', hint: 'Click once to add text', icon: PencilLine },
+    { key: 'highlight' as const, label: 'Highlight', hint: 'Click once to mark an area', icon: Highlighter },
+    { key: 'arrow' as const, label: 'Arrow', hint: 'Two clicks: start, then end', icon: ArrowRight },
+    { key: 'region' as const, label: 'Region', hint: 'Click multiple points to trace an area', icon: Radius },
+    { key: 'link' as const, label: 'Link', hint: 'Two clicks to connect two points', icon: Link2 },
   ]), [])
 
   const shortcutHelpItems = useMemo(() => ([
@@ -430,13 +430,29 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                 {annotationsVisible ? 'Annotations are visible as their own layer and can be exported.' : 'Annotations remain in map state but are hidden from the canvas and export.'}
               </p>
               <div className={isLight ? 'space-y-2 rounded-md border border-slate-200 bg-slate-50 p-2' : 'space-y-2 rounded-md border border-slate-800 bg-slate-900/60 p-2'}>
-                {annotationControls.map(item => (
+                {annotationControls.map(item => {
+                  const ToolIcon = item.icon
+                  return (
                   <button key={item.key} type="button" onClick={() => onAnnotationToolChange(item.key)} aria-pressed={annotationTool === item.key} className={annotationTool === item.key ? selectedNeutralButtonClasses(isLight) : (isLight ? 'flex w-full flex-col rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-700 transition hover:border-slate-300 hover:bg-slate-50' : 'flex w-full flex-col rounded-md border border-slate-800 bg-slate-950/20 px-3 py-2 text-left text-sm text-slate-200 transition hover:border-slate-700 hover:bg-slate-900')}>
-                    <span className="font-medium">{item.label}</span>
+                    <span className="flex items-center gap-2 font-medium">
+                      <ToolIcon size={14} aria-hidden="true" />
+                      {item.label}
+                    </span>
                     <span className={isLight ? 'text-xs text-slate-500' : 'text-xs text-slate-400'}>{item.hint}</span>
                   </button>
-                ))}
+                  )
+                })}
               </div>
+              {annotationTool === 'arrow' && (
+                <div className={isLight ? 'rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs text-cyan-800' : 'rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-100'}>
+                  Arrow drawing needs two clicks. First click starts the arrow, second click finishes it.
+                </div>
+              )}
+              {annotationTool === 'link' && (
+                <div className={isLight ? 'rounded-lg border border-fuchsia-200 bg-fuchsia-50 px-3 py-2 text-xs text-fuchsia-800' : 'rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/10 px-3 py-2 text-xs text-fuchsia-100'}>
+                  Custom links also use two clicks: start from one point, then click the target point.
+                </div>
+              )}
               <button type="button" onClick={onClearAnnotations} disabled={annotationCount === 0} className={neutralButtonClasses(isLight, annotationCount === 0)}>
                 Clear annotations
               </button>

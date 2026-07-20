@@ -178,12 +178,14 @@ const GuideLayerCard: FC<GuideLayerCardProps> = ({
           No data available
         </div>
       )}
-      <div className={isLight ? 'mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100' : 'mt-3 max-h-0 overflow-hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 opacity-0 transition-all duration-200 ease-out group-hover:max-h-6 group-hover:opacity-100'}>
-        Best for
+      <div className="mt-3 min-h-[4.5rem] space-y-1">
+        <div className={isLight ? 'text-xs font-semibold uppercase tracking-[0.24em] text-slate-400' : 'text-xs font-semibold uppercase tracking-[0.24em] text-slate-500'}>
+          Best for
+        </div>
+        <p className={isLight ? 'text-sm leading-6 text-slate-700' : 'text-sm leading-6 text-slate-200'}>
+          {info.bestFor}
+        </p>
       </div>
-      <p className={isLight ? 'max-h-0 overflow-hidden text-sm leading-6 text-slate-700 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100' : 'max-h-0 overflow-hidden text-sm leading-6 text-slate-200 opacity-0 transition-all duration-200 ease-out group-hover:mt-1 group-hover:max-h-20 group-hover:opacity-100'}>
-        {info.bestFor}
-      </p>
     </button>
   )
 }
@@ -212,8 +214,8 @@ const GeospatialGuideOverlay: FC<Props> = ({
     hoveredRecommendation != null ? recommendationReason : null
 
   const bodyContent = selected ? (
-    <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className={isLight ? 'border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r' : 'border-b border-slate-800/80 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r'}>
+    <div className="grid min-h-0 gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className={isLight ? 'min-h-0 border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r' : 'min-h-0 border-b border-slate-800/80 px-4 py-4 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r'}>
         <p className={isLight ? 'text-xs font-semibold uppercase tracking-[0.28em] text-blue-700' : 'text-xs font-semibold uppercase tracking-[0.28em] text-slate-400'}>
           Selected layer
         </p>
@@ -295,7 +297,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
         </div>
       </div>
 
-      <div className={isLight ? 'space-y-4 bg-slate-50 px-4 py-4 sm:px-6 sm:py-6' : 'space-y-4 bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6'}>
+      <div className={isLight ? 'min-h-0 space-y-4 overflow-y-auto bg-slate-50 px-4 py-4 sm:px-6 sm:py-6' : 'min-h-0 space-y-4 overflow-y-auto bg-slate-950/80 px-4 py-4 sm:px-6 sm:py-6'}>
         <div className={isLight ? 'overflow-hidden rounded-2xl border border-slate-200 bg-white p-3' : 'overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-3'}>
           <div className={isLight ? 'relative aspect-video w-full overflow-hidden rounded-xl border border-blue-200 bg-slate-950 shadow-lg shadow-blue-100/50' : 'relative aspect-video w-full overflow-hidden rounded-xl border border-slate-700/80 bg-slate-950 shadow-lg shadow-black/30'}>
             <video
@@ -345,7 +347,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
       </div>
     </div>
   ) : (
-    <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-6">
+    <div className="min-h-0 space-y-4 px-4 py-4 sm:px-6 sm:py-6">
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {layerOrder.map(layer => {
           const info = guideLayers[layer]
@@ -378,7 +380,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
         <motion.div
           role="dialog"
           aria-modal="true"
-          className={isLight ? 'absolute inset-0 z-[12000] flex items-start justify-center overflow-y-auto bg-slate-900/15 px-4 py-4 backdrop-blur-sm sm:items-center sm:px-8 sm:py-8 lg:px-12 lg:py-10' : 'absolute inset-0 z-[12000] flex items-start justify-center overflow-y-auto bg-slate-950/75 px-4 py-4 backdrop-blur-sm sm:items-center sm:px-8 sm:py-8 lg:px-12 lg:py-10'}
+          className={isLight ? 'absolute inset-0 z-[12000] flex items-start justify-center overflow-y-auto bg-slate-900/15 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-6 sm:py-6 lg:px-10 lg:py-8' : 'absolute inset-0 z-[12000] flex items-start justify-center overflow-y-auto bg-slate-950/75 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-6 sm:py-6 lg:px-10 lg:py-8'}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -387,7 +389,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
           <motion.div
             ref={dialogRef}
             tabIndex={-1}
-            className={isLight ? 'flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/97 shadow-2xl shadow-blue-100/60 max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]' : 'flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-neutral-950/95 shadow-2xl shadow-black/30 max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] lg:min-h-[38rem]'}
+            className={isLight ? 'flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/97 shadow-2xl shadow-blue-100/60 max-h-[calc(100vh-1rem)] sm:max-h-[calc(100vh-2rem)] lg:max-h-[calc(100vh-3rem)] lg:min-h-[38rem]' : 'flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-neutral-950/95 shadow-2xl shadow-black/30 max-h-[calc(100vh-1rem)] sm:max-h-[calc(100vh-2rem)] lg:max-h-[calc(100vh-3rem)] lg:min-h-[38rem]'}
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}

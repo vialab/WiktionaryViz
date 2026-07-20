@@ -30,12 +30,12 @@ PDF-DERIVED IMPLEMENTATION FIXES
     Use case: Prevents users from losing the tools they just enabled.
     Research context: The walkthrough exposed a bug where annotation controls disappeared.
 
-[ ] P0 — Keep layer descriptions from shifting surrounding cards
+[X] P0 — Keep layer descriptions from shifting surrounding cards
     Description: Reserve space for expandable text so hover or expansion does not push the layout around.
     Use case: Keeps the layer chooser stable and easier to scan.
     Research context: Participants disliked the vertical shifting caused by expanding descriptions.
 
-[ ] P0 — Fix clipped layer and recommendation panels
+[X] P0 — Fix clipped layer and recommendation panels
     Description: Ensure guide cards, tooltips, and recommendation text use the available screen space without clipping.
     Use case: Improves readability of layer explanations and suggested actions.
     Research context: The transcript noted clipped text and cramped panels.
