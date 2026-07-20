@@ -5,16 +5,6 @@ P0 = must-have for the core prototype
 P1 = high-value thesis/demo feature
 P2 = polish, export, or quality-of-life feature
 
-[X] P0 — Make annotation tools visually obvious and show a two-step arrow prompt
-    Description: Add clear icons and feedback after the first click of an arrow so users know a second point is required.
-    Use case: Reduces confusion when creating arrows or other drawn annotations.
-    Research context: The transcript showed uncertainty about how arrow creation worked.
-
-[X] P0 — Fix the annotation control disappearance bug
-    Description: Investigate why annotation UI elements or controls vanish during use and keep them persistently available.
-    Use case: Prevents users from losing the tools they just enabled.
-    Research context: The walkthrough exposed a bug where annotation controls disappeared.
-
 [ ] P0 — Make selectable nodes and markers look clickable
     Description: Increase marker size or styling so the initial node and other interactive points are visually distinct from non-interactive ones.
     Use case: Helps users know where interaction is possible.
