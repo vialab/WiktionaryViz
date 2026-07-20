@@ -2,6 +2,44 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.35](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.34...wiktionaryviz-v0.1.35) (2026-07-20)
+
+
+### Features
+
+* add buildWiktionaryUrl utility function to generate URLs for word lookups ([ba4079d](https://github.com/vialab/WiktionaryViz/commit/ba4079d8bbdd6d646439003696d3faa907151454))
+* **AnnotationModeOverlay.tsx:** add tool-specific instructions for arrow and link tools to enhance user guidance ([6036e39](https://github.com/vialab/WiktionaryViz/commit/6036e39dfb53d0179aa76d867c50151074884ef6))
+* **AnnotationModeOverlay:** add region close threshold and hover state for improved user experience in region annotation ([c7a4acc](https://github.com/vialab/WiktionaryViz/commit/c7a4acce9ae2acc0c84dafc5d4b364b1a2be45a7))
+* **AnnotationModeOverlay:** add start marker and hover functionality for arrow and link tools to enhance user experience ([6b2f242](https://github.com/vialab/WiktionaryViz/commit/6b2f242b8376d152d374a065ebb38bee763818a5))
+* **AnnotationModeOverlay:** implement mousemove and mouseout events to track segment hover state for better visual feedback during annotation ([6b2f242](https://github.com/vialab/WiktionaryViz/commit/6b2f242b8376d152d374a065ebb38bee763818a5))
+* **DescendantLineagePaths.tsx:** add directional arrows to descendant-path connections for better visual clarity ([af9e59d](https://github.com/vialab/WiktionaryViz/commit/af9e59d5ef3b55ac216849e581352b11974b7f71))
+* **DescendantLineagePaths:** implement onNodeSelect prop to handle node selection ([c608f90](https://github.com/vialab/WiktionaryViz/commit/c608f90cb202ddf4f32a1c5b1cba43279234f82c))
+* **descendants.py:** enhance word variant handling by stripping leading asterisks to improve matching accuracy ([6173037](https://github.com/vialab/WiktionaryViz/commit/617303726a34090cba4e4e64136d3d4fa3fe34cb))
+* enhance TranslationMarkers and mapState to include additional marker details for better data handling ([ba4079d](https://github.com/vialab/WiktionaryViz/commit/ba4079d8bbdd6d646439003696d3faa907151454))
+* **geospatial:** add freehand annotation tool to allow users to sketch on the map ([fd6d6be](https://github.com/vialab/WiktionaryViz/commit/fd6d6be051b07fb000a2288bacfb5310daca6d07))
+* **GeospatialGuideOverlay.tsx:** enhance layout and visibility of guide information for better user interaction ([6036e39](https://github.com/vialab/WiktionaryViz/commit/6036e39dfb53d0179aa76d867c50151074884ef6))
+* **GeospatialPage:** add wiktionaryUrl to selected items for better context ([c608f90](https://github.com/vialab/WiktionaryViz/commit/c608f90cb202ddf4f32a1c5b1cba43279234f82c))
+* **GeospatialPage:** enhance annotation visibility handling and cursor styles for better user experience ([1795af3](https://github.com/vialab/WiktionaryViz/commit/1795af3ff6ebcfae2b5441476ba0f6b0833b7b1e))
+* **GeospatialSettingsMenu.tsx:** add icons to annotation controls for improved usability and visual appeal ([6036e39](https://github.com/vialab/WiktionaryViz/commit/6036e39dfb53d0179aa76d867c50151074884ef6))
+* **GeospatialSettingsMenu.tsx:** implement collapsible sidebar functionality to enhance user experience and save space ([af9e59d](https://github.com/vialab/WiktionaryViz/commit/af9e59d5ef3b55ac216849e581352b11974b7f71))
+* **GeospatialSettingsMenu:** add data attributes to prevent event propagation in the settings menu ([1795af3](https://github.com/vialab/WiktionaryViz/commit/1795af3ff6ebcfae2b5441476ba0f6b0833b7b1e))
+* implement MarkerEvidenceDrawer component to display marker data and improve user experience ([ba4079d](https://github.com/vialab/WiktionaryViz/commit/ba4079d8bbdd6d646439003696d3faa907151454))
+* **mapUtils:** extend Marker interface to include additional properties for better data representation ([1795af3](https://github.com/vialab/WiktionaryViz/commit/1795af3ff6ebcfae2b5441476ba0f6b0833b7b1e))
+* **MarkerEvidenceDrawer:** add data attributes to prevent event propagation in the marker evidence drawer ([1795af3](https://github.com/vialab/WiktionaryViz/commit/1795af3ff6ebcfae2b5441476ba0f6b0833b7b1e))
+* **TODO_LIST.md:** mark completed tasks in the TODO list to track progress ([6036e39](https://github.com/vialab/WiktionaryViz/commit/6036e39dfb53d0179aa76d867c50151074884ef6))
+* **TODO_LIST.md:** remove duplicated theme and layer controls from the TODO list to streamline tasks ([af9e59d](https://github.com/vialab/WiktionaryViz/commit/af9e59d5ef3b55ac216849e581352b11974b7f71))
+* **TODO_LIST.md:** update the TODO list with detailed implementation fixes and enhancements for the WiktionaryViz geospatial interaction to improve user experience and address feedback from research sessions ([1be917d](https://github.com/vialab/WiktionaryViz/commit/1be917d7b096dae44f7b72505065e932c4d025ea))
+* **TODO_LIST:** mark completed tasks in the TODO list to track progress ([1795af3](https://github.com/vialab/WiktionaryViz/commit/1795af3ff6ebcfae2b5441476ba0f6b0833b7b1e))
+
+
+### Bug Fixes
+
+* **AnnotationModeOverlay:** adjust cursor behavior based on region hover state for enhanced usability ([c7a4acc](https://github.com/vialab/WiktionaryViz/commit/c7a4acce9ae2acc0c84dafc5d4b364b1a2be45a7))
+* **AnnotationModeOverlay:** improve cursor management and prevent event propagation for better interaction ([1795af3](https://github.com/vialab/WiktionaryViz/commit/1795af3ff6ebcfae2b5441476ba0f6b0833b7b1e))
+* **mapState:** extend MapSelection type to include descendant-node with wiktionaryUrl for improved state management ([c608f90](https://github.com/vialab/WiktionaryViz/commit/c608f90cb202ddf4f32a1c5b1cba43279234f82c))
+* **MarkerEvidenceDrawer:** update evidence drawer title based on sourceKind ([c608f90](https://github.com/vialab/WiktionaryViz/commit/c608f90cb202ddf4f32a1c5b1cba43279234f82c))
+* update TODO_LIST to reflect completed tasks and improve clarity on pending features ([ba4079d](https://github.com/vialab/WiktionaryViz/commit/ba4079d8bbdd6d646439003696d3faa907151454))
+
 ## [0.1.34](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.33...wiktionaryviz-v0.1.34) (2026-07-20)
 
 
