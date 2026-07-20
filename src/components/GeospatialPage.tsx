@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
-import { MapContainer, TileLayer, LayersControl, LayerGroup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import useWordData from '@/hooks/useWordData'
 import useLanguoidData from '@/hooks/useLanguoidData'
 import { processTranslations, processEtymologyLineage, flattenLineage } from '@/utils/mapUtils'
@@ -157,13 +157,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const [markers, setMarkers] = useState<TranslationMarker[]>([])
   const [lineage, setLineage] = useState<EtymologyNode | null>(null)
   const dwellDurationRef = useRef<number>(1200) // ms pause after each transition for reading (extended for readability)
-  // Track visibility of LayersControl overlays that render non-Leaflet DOM (bubbles SVG)
-  const [translationGroup, setTranslationGroup] = useState<L.LayerGroup | null>(null)
-  const [protoZonesGroup, setProtoZonesGroup] = useState<L.LayerGroup | null>(null)
-  const [descendantPathsGroup, setDescendantPathsGroup] = useState<L.LayerGroup | null>(null)
-  const [languageFamiliesGroup, setLanguageFamiliesGroup] = useState<L.LayerGroup | null>(null)
-  const [etymologyLineageGroup, setEtymologyLineageGroup] = useState<L.LayerGroup | null>(null)
-  const [annotationLayerGroup, setAnnotationLayerGroup] = useState<L.LayerGroup | null>(null)
   const [descendantCoordinates, setDescendantCoordinates] = useState<[number, number][]>([])
   const [liveMessage, setLiveMessage] = useState('')
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
@@ -490,82 +483,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   }, [guideLayer, setActiveLayerState, setFilterState])
 
   useEffect(() => {
-    const map = mapInstance
-    const group = translationGroup
-    if (!map || !group) return
-    const onAdd = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setActiveLayerState({ translations: true })
-    }
-    const onRemove = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setActiveLayerState({ translations: false })
-    }
-    map.on('overlayadd', onAdd)
-    map.on('overlayremove', onRemove)
-    setActiveLayerState({ translations: map.hasLayer(group) })
-    return () => {
-      map.off('overlayadd', onAdd)
-      map.off('overlayremove', onRemove)
-    }
-  }, [mapInstance, translationGroup, setActiveLayerState])
-
-  useEffect(() => {
-    const map = mapInstance
-    const group = protoZonesGroup
-    if (!map || !group) return
-    const onAdd = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setActiveLayerState({ protoZones: true })
-    }
-    const onRemove = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setActiveLayerState({ protoZones: false })
-    }
-    map.on('overlayadd', onAdd)
-    map.on('overlayremove', onRemove)
-    setActiveLayerState({ protoZones: map.hasLayer(group) })
-    return () => {
-      map.off('overlayadd', onAdd)
-      map.off('overlayremove', onRemove)
-    }
-  }, [mapInstance, protoZonesGroup, setActiveLayerState])
-
-  useEffect(() => {
-    const map = mapInstance
-    const group = descendantPathsGroup
-    if (!map || !group) return
-    const onAdd = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setActiveLayerState({ descendants: true })
-    }
-    const onRemove = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setActiveLayerState({ descendants: false })
-    }
-    map.on('overlayadd', onAdd)
-    map.on('overlayremove', onRemove)
-    setActiveLayerState({ descendants: map.hasLayer(group) })
-    return () => {
-      map.off('overlayadd', onAdd)
-      map.off('overlayremove', onRemove)
-    }
-  }, [mapInstance, descendantPathsGroup, setActiveLayerState])
-
-  useEffect(() => {
-    const map = mapInstance
-    const group = annotationLayerGroup
-    if (!map || !group) return
-    const onAdd = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setActiveLayerState({ annotations: true })
-    }
-    const onRemove = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setActiveLayerState({ annotations: false })
-    }
-    map.on('overlayadd', onAdd)
-    map.on('overlayremove', onRemove)
-    setActiveLayerState({ annotations: map.hasLayer(group) })
-    return () => {
-      map.off('overlayadd', onAdd)
-      map.off('overlayremove', onRemove)
-    }
-  }, [annotationLayerGroup, mapInstance, setActiveLayerState])
-
-  useEffect(() => {
     if (Array.isArray(wordData?.translations) && languoidData.length) {
       processTranslations(wordData.translations, languoidData, setMarkers)
     }
@@ -878,49 +795,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       if (playbackTimerRef.current) clearTimeout(playbackTimerRef.current)
     }
   }, [])
-
-  // Bind to overlay add/remove for the Language Families overlay so we can mount/unmount bubbles SVG
-  useEffect(() => {
-    const map = mapInstance
-    const group = languageFamiliesGroup
-    if (!map || !group) return
-    const onAdd = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setActiveLayerState({ languageFamilies: true })
-    }
-    const onRemove = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setActiveLayerState({ languageFamilies: false })
-    }
-    map.on('overlayadd', onAdd)
-    map.on('overlayremove', onRemove)
-    // initialize based on whether the group is currently on the map
-    setActiveLayerState({ languageFamilies: map.hasLayer(group) })
-    return () => {
-      map.off('overlayadd', onAdd)
-      map.off('overlayremove', onRemove)
-    }
-  }, [mapInstance, languageFamiliesGroup, setActiveLayerState])
-
-  // Mirror the etymology overlay state so the timeline scrubber only shows while that layer is visible.
-  useEffect(() => {
-    const map = mapInstance
-    const group = etymologyLineageGroup
-    if (!map || !group) return
-    const onAdd = (e: L.LayersControlEvent) => {
-      if (e.layer === group) setActiveLayerState({ etymology: true })
-    }
-    const onRemove = (e: L.LayersControlEvent) => {
-      if (e.layer === group) {
-        setActiveLayerState({ etymology: false })
-        setFilterState({ isPlaying: false, currentIndex: undefined, showAllPopups: false })
-      }
-    }
-    map.on('overlayadd', onAdd)
-    map.on('overlayremove', onRemove)
-    return () => {
-      map.off('overlayadd', onAdd)
-      map.off('overlayremove', onRemove)
-    }
-  }, [mapInstance, etymologyLineageGroup, setActiveLayerState, setFilterState])
 
   useEffect(() => {
     if (!mapInstance) return
@@ -1299,7 +1173,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           annotations={annotations}
           word={word}
           language={language}
-          mapInstance={mapInstance}
           canFitToData={canFitToData}
           onFitToData={() => {
             fitToData()
@@ -1307,6 +1180,18 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           }}
           onResetView={resetView}
           onSaveState={saveShareableState}
+          onOpenGuide={() => {
+            setFilterState({ guideOpen: true })
+            announce('Guide opened')
+          }}
+          layerVisibility={{
+            translations: showTranslations,
+            protoZones: showProtoZones,
+            languageFamilies: showLanguageFamilies,
+            etymology: showEtymologyLineage,
+            descendants: showDescendantPaths,
+          }}
+          onLayerToggle={layer => toggleLayerVisibility(layer)}
           layerOpacities={layerOpacities}
           onLayerOpacityChange={(layer, opacity) => {
             setActiveLayerState({ opacities: { ...layerOpacities, [layer]: opacity } })
@@ -1344,130 +1229,96 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           }}
           theme={theme}
         />
-        <LayersControl position="topright">
-          {/* Base Layers */}
-          <LayersControl.BaseLayer checked={theme === 'dark'} name="Dark (CartoDB)">
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-              subdomains={['a', 'b', 'c', 'd']}
-              maxZoom={20}
+        {theme === 'dark' ? (
+          <TileLayer
+            key="dark"
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            subdomains={['a', 'b', 'c', 'd']}
+            maxZoom={20}
+          />
+        ) : (
+          <TileLayer
+            key="light"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+        )}
+        {/* Country highlighting now limited to lineage-related countries only (no global hover). */}
+        {showTranslations && (
+          <MarkerClusterGroup clusterPane="translations">
+            <TranslationMarkers
+              markers={markers}
+              onMarkerClick={handleMarkerSelect}
             />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer checked={theme === 'light'} name="Light (OSM)">
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          </MarkerClusterGroup>
+        )}
+        {showProtoZones && (
+          <ProtoLanguageZones
+            path="/proto_regions.geojson"
+            opacity={layerOpacities.protoZones}
+            zIndex={layerZIndex('protoZones')}
+          />
+        )}
+        {showLanguageFamilies && (
+          <LanguageFamiliesBubbles
+            path="/language_families.geojson"
+            opacity={layerOpacities.languageFamilies}
+            zIndex={layerZIndex('languageFamilies')}
+          />
+        )}
+        {showEtymologyLineage && lineage && (
+          <>
+            <LineageCountryHighlights
+              lineage={lineage}
+              currentIndex={currentIndex}
+              opacity={layerOpacities.etymology}
+              zIndex={layerZIndex('etymology')}
             />
-          </LayersControl.BaseLayer>
-          {/* GeoJSON export button added; future: standardized dynamic layer ingestion. */}
-          {/* TODO [LOW LEVEL]: Add a file/URL loader for GeoJSON and render via GeoJSON component with style options. */}
-          {/* Country highlighting now limited to lineage-related countries only (no global hover). */}
-          {/* General Etymology Markers Layer */}
-          <LayersControl.Overlay checked={showTranslations} name="Translations">
-            <MarkerClusterGroup
-              ref={(instance: L.LayerGroup | null) => setTranslationGroup(instance)}
-              clusterPane="translations"
-            >
-              {showTranslations && (
-                <TranslationMarkers
-                  markers={markers}
-                  onMarkerClick={handleMarkerSelect}
-                />
-              )}
-            </MarkerClusterGroup>
-          </LayersControl.Overlay>
-          {/* Proto-Language Zones overlay from public/proto_regions.geojson */}
-          <LayersControl.Overlay checked={showProtoZones} name="Proto-Language Zones">
-            <LayerGroup ref={(instance: L.LayerGroup | null) => setProtoZonesGroup(instance)}>
-              {showProtoZones && (
-                <ProtoLanguageZones
-                  path="/proto_regions.geojson"
-                  opacity={layerOpacities.protoZones}
-                  zIndex={layerZIndex('protoZones')}
-                />
-              )}
-            </LayerGroup>
-          </LayersControl.Overlay>
-          {/* Language Families polygons from Glottolog-derived hulls */}
-          <LayersControl.Overlay checked={showLanguageFamilies} name="Language Families">
-            <LayerGroup ref={(instance: L.LayerGroup | null) => setLanguageFamiliesGroup(instance)}>
-              {showLanguageFamilies && (
-                <LanguageFamiliesBubbles
-                  path="/language_families.geojson"
-                  opacity={layerOpacities.languageFamilies}
-                  zIndex={layerZIndex('languageFamilies')}
-                />
-              )}
-            </LayerGroup>
-          </LayersControl.Overlay>
-          {/* Etymology Lineage Path Layer (includes associated country highlights) */}
-          <LayersControl.Overlay checked={showEtymologyLineage} name="Etymology Lineage Path">
-            <LayerGroup ref={(instance: L.LayerGroup | null) => setEtymologyLineageGroup(instance)}>
-              {showEtymologyLineage && (
-                <>
-                  <LineageCountryHighlights
-                    lineage={lineage}
-                    currentIndex={currentIndex}
-                    opacity={layerOpacities.etymology}
-                    zIndex={layerZIndex('etymology')}
-                  />
-                  <EtymologyLineagePath
-                    lineage={lineage}
-                    currentIndex={currentIndex}
-                    isPlaying={isPlaying}
-                    segmentDurationMs={playSpeed}
-                    dwellMs={dwellDurationRef.current}
-                    showAllPopups={showAllPopups}
-                    opacity={layerOpacities.etymology}
-                    zIndex={layerZIndex('etymology')}
-                    onNodeClick={handleNodeSelect}
-                  />
-                </>
-              )}
-            </LayerGroup>
-          </LayersControl.Overlay>
-          {/* Descendant paths from ancestor (all branches) */}
-          <LayersControl.Overlay checked={showDescendantPaths} name="Descendant Paths">
-            <LayerGroup ref={(instance: L.LayerGroup | null) => setDescendantPathsGroup(instance)}>
-              {showDescendantPaths && (
-                <DescendantLineagePaths
-                  rootWord={word || (lineage?.word ?? '')}
-                  rootLang={language || (lineage?.lang_code ?? '')}
-                  opacity={layerOpacities.descendants}
-                  zIndex={layerZIndex('descendants')}
-                  onVisibleCoordinatesChange={setDescendantCoordinates}
-                />
-              )}
-            </LayerGroup>
-          </LayersControl.Overlay>
-          <LayersControl.Overlay checked={showAnnotations} name="Annotations">
-            <LayerGroup ref={(instance: L.LayerGroup | null) => setAnnotationLayerGroup(instance)}>
-              {showAnnotations && (
-                <AnnotationModeOverlay
-                  enabled={mapState.filters.annotationMode}
-                  visible={showAnnotations}
-                  tool={mapState.filters.annotationTool}
-                  annotations={annotations}
-                  onAnnotationsChange={nextAnnotations => {
-                    updateMapState(current => ({
-                      ...current,
-                      annotations: nextAnnotations,
-                    }))
-                  }}
-                  onToolChange={setAnnotationTool}
-                  onAnnounce={announce}
-                  theme={theme}
-                />
-              )}
-            </LayerGroup>
-          </LayersControl.Overlay>
-          {/* TODO (Timeline UI): After implementing, mount timeline scrubber outside LayersControl for fixed positioning. */}
-          {/* TODO [HIGH LEVEL]: Trade-route path types (land/sea) with arrows and timestamps to show diffusion. */}
-          {/* TODO [LOW LEVEL]: Extend lineage nodes with route metadata and render dashed patterns and directional arrows. */}
-          {/* TODO [HIGH LEVEL]: Filters (time slider, region, language family) to declutter map; uncertainty styling. */}
-          {/* TODO [LOW LEVEL]: Add a control panel to filter markers by decade/region and desaturate uncertain items. */}
-        </LayersControl>
+            <EtymologyLineagePath
+              lineage={lineage}
+              currentIndex={currentIndex}
+              isPlaying={isPlaying}
+              segmentDurationMs={playSpeed}
+              dwellMs={dwellDurationRef.current}
+              showAllPopups={showAllPopups}
+              opacity={layerOpacities.etymology}
+              zIndex={layerZIndex('etymology')}
+              onNodeClick={handleNodeSelect}
+            />
+          </>
+        )}
+        {showDescendantPaths && (
+          <DescendantLineagePaths
+            rootWord={word || (lineage?.word ?? '')}
+            rootLang={language || (lineage?.lang_code ?? '')}
+            opacity={layerOpacities.descendants}
+            zIndex={layerZIndex('descendants')}
+            onVisibleCoordinatesChange={setDescendantCoordinates}
+          />
+        )}
+        {showAnnotations && (
+          <AnnotationModeOverlay
+            enabled={mapState.filters.annotationMode}
+            visible={showAnnotations}
+            tool={mapState.filters.annotationTool}
+            annotations={annotations}
+            onAnnotationsChange={nextAnnotations => {
+              updateMapState(current => ({
+                ...current,
+                annotations: nextAnnotations,
+              }))
+            }}
+            onToolChange={setAnnotationTool}
+            onAnnounce={announce}
+            theme={theme}
+          />
+        )}
+        {/* TODO (Timeline UI): After implementing, mount timeline scrubber outside the layer tree for fixed positioning. */}
+        {/* TODO [HIGH LEVEL]: Trade-route path types (land/sea) with arrows and timestamps to show diffusion. */}
+        {/* TODO [LOW LEVEL]: Extend lineage nodes with route metadata and render dashed patterns and directional arrows. */}
+        {/* TODO [HIGH LEVEL]: Filters (time slider, region, language family) to declutter map; uncertainty styling. */}
+        {/* TODO [LOW LEVEL]: Add a control panel to filter markers by decade/region and desaturate uncertain items. */}
         {showEtymologyLineage && lineage && (
           <TimelineScrubber
             lineage={lineage}

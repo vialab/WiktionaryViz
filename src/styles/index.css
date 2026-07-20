@@ -57,6 +57,12 @@ body[data-theme='light'] .leaflet-container .country-hovered {
   top: 5.75rem;
 } */
 
+#geospatial .leaflet-top.leaflet-left {
+  left: auto;
+  right: 1rem;
+  top: 1rem;
+}
+
 #geospatial .leaflet-top.leaflet-left .leaflet-control-zoom {
   overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.28);

@@ -1,9 +1,150 @@
-WIKTIONARYVIZ GEOSPATIAL INTERACTION TODO LIST
+# WIKTIONARYVIZ GEOSPATIAL INTERACTION TODO LIST
 
 Priority key:
 P0 = must-have for the core prototype
 P1 = high-value thesis/demo feature
 P2 = polish, export, or quality-of-life feature
+
+
+================================================================================
+PDF-DERIVED IMPLEMENTATION FIXES
+================================================================================
+
+[X] P0 — Unify layer and annotation controls into a single sidebar
+    Description: Replace the split controls between settings, the top-right menu, and map controls with one persistent panel.
+    Use case: Makes the core interaction model easier to discover and reduces duplicated controls.
+    Research context: The transcript repeatedly called out the current control layout as confusing and fragmented.
+
+[ ] P0 — Move annotations out of Settings into a dedicated toolbar or palette
+    Description: Give notes, arrows, and related annotation tools their own obvious home.
+    Use case: Prevents annotations from feeling like a hidden configuration option.
+    Research context: Participants said annotations did not belong in Settings.
+
+[ ] P0 — Make annotation tools visually obvious and show a two-step arrow prompt
+    Description: Add clear icons and feedback after the first click of an arrow so users know a second point is required.
+    Use case: Reduces confusion when creating arrows or other drawn annotations.
+    Research context: The transcript showed uncertainty about how arrow creation worked.
+
+[ ] P0 — Fix the annotation control disappearance bug
+    Description: Investigate why annotation UI elements or controls vanish during use and keep them persistently available.
+    Use case: Prevents users from losing the tools they just enabled.
+    Research context: The walkthrough exposed a bug where annotation controls disappeared.
+
+[ ] P0 — Keep layer descriptions from shifting surrounding cards
+    Description: Reserve space for expandable text so hover or expansion does not push the layout around.
+    Use case: Keeps the layer chooser stable and easier to scan.
+    Research context: Participants disliked the vertical shifting caused by expanding descriptions.
+
+[ ] P0 — Fix clipped layer and recommendation panels
+    Description: Ensure guide cards, tooltips, and recommendation text use the available screen space without clipping.
+    Use case: Improves readability of layer explanations and suggested actions.
+    Research context: The transcript noted clipped text and cramped panels.
+
+[ ] P0 — Remove duplicated theme and layer controls
+    Description: Eliminate redundant day/night, layer, and opacity controls where the same action appears in more than one place.
+    Use case: Prevents users from wondering which control is authoritative.
+    Research context: The transcript flagged duplicated UI across settings and the map.
+
+[ ] P0 — Make selectable nodes and markers look clickable
+    Description: Increase marker size or styling so the initial node and other interactive points are visually distinct from non-interactive ones.
+    Use case: Helps users know where interaction is possible.
+    Research context: Participants could not tell which markers or nodes were clickable.
+
+[ ] P0 — Fix the descendant-path root and connection bugs
+    Description: Ensure the descendant path starts from the correct ancestor, loads all expected branches, and does not break on intermediate forms.
+    Use case: Restores the intended historical branching view.
+    Research context: The transcript exposed missing or disconnected descendant-path data.
+
+[ ] P0 — Add directional arrows to descendant-path connections
+    Description: Render arrows so the direction of linguistic development is visually explicit.
+    Use case: Clarifies whether a path is showing ancestry or later branching.
+    Research context: Participants were confused that descendant paths were undirected.
+
+[ ] P0 — Distinguish etymology lineage from descendant paths more clearly
+    Description: Make the two layers differ in both behavior and labeling so the relationship between them is obvious.
+    Use case: Prevents users from treating the two layers as interchangeable.
+    Research context: The transcript repeatedly showed confusion between the two layer types.
+
+[ ] P0 — Fix descendant and etymology data gaps for words like light, dark, river, symptom, and play
+    Description: Investigate the underlying data or loading logic when recommended examples fail or stop early.
+    Use case: Ensures the demo words produce the expected exploration paths.
+    Research context: Multiple sample words behaved inconsistently during the session.
+
+[ ] P0 — Fix the play button behavior in timeline animation
+    Description: Start playback from the beginning, not at the end, and restart when Play is pressed after completion.
+    Use case: Makes the timeline control behave like users expect.
+    Research context: The playback appeared to start completed and did not reset cleanly.
+
+[ ] P0 — Slow or make configurable the playback speed
+    Description: Lower the default animation speed and consider explicit speed controls.
+    Use case: Gives users enough time to follow the historical movement.
+    Research context: The participant said the animation moved too fast.
+
+[ ] P0 — Fix compare-mode control overlap
+    Description: Prevent the playback and control bar from overlapping other UI in compare layouts.
+    Use case: Keeps controls usable in the dual-view mode.
+    Research context: The transcript noted layout overlap in compare mode.
+
+[ ] P0 — Clarify proto-region and country highlighting semantics
+    Description: Make proto-regions visually distinct from modern country highlights and avoid implying a country is the proto-region itself.
+    Use case: Prevents misleading geographic interpretation.
+    Research context: The participant was confused by overlapping country and proto-region highlights.
+
+[ ] P0 — Replace distracting proto-region color treatment with uncertainty-aware styling
+    Description: Use pattern, border, opacity, or other subtle encodings instead of a bright conflicting color.
+    Use case: Makes historical uncertainty legible without overpowering the map.
+    Research context: The transcript explicitly objected to the red proto-region treatment.
+
+[ ] P0 — Improve recommendation logic and explanation text
+    Description: Rework the scoring so it does not over-bias descendant paths or translations and explain the recommendation in more relevant terms.
+    Use case: Makes the Inspire Me results understandable and trustworthy.
+    Research context: The participant was confused by why some layers were preferred and others were not.
+
+[ ] P0 — Show language and gloss information in suggested words
+    Description: Display the language clearly and provide an English meaning when available.
+    Use case: Helps users understand a recommendation without guessing the language or sense.
+    Research context: The participant struggled to interpret suggested non-English words.
+
+[ ] P0 — Auto-select valid language choices for recommendations
+    Description: If a suggestion has only one usable language, prefill it so the user can proceed immediately.
+    Use case: Removes dead-end states in the search flow.
+    Research context: Several suggested words were paired with confusing or unusable language selections.
+
+[ ] P0 — Let users click an explored node to pivot into a new search
+    Description: Make a selected marker or word become the new base word without returning to the landing page.
+    Use case: Supports continuous exploration from one word to the next.
+    Research context: The participant wanted to reuse a visible node as the new starting point.
+
+[ ] P1 — Add hover/help affordances for hidden or dense information
+    Description: Provide a clear affordance for hover-only details such as question-mark icons or explicit hint text.
+    Use case: Makes hidden explanatory content discoverable.
+    Research context: The transcript showed repeated confusion about hover-only information.
+
+[ ] P1 — Add approximate dates where the data can support them
+    Description: Surface years or date ranges when available and label uncertainty where dates are disputed.
+    Use case: Helps users understand historical change over time.
+    Research context: The participant kept asking for years to interpret the visualization.
+
+[ ] P1 — Allow edge selection to show historical explanation details
+    Description: Open a detail panel for a route or connection so the user can inspect what the transition represents.
+    Use case: Turns map edges into inspectable evidence.
+    Research context: The participant wanted to click connections and learn the transition history.
+
+[ ] P1 — Consider an embedded Wiktionary-style reference panel
+    Description: Show curated reference content alongside the map when a node or edge is selected.
+    Use case: Lets users inspect sources without leaving the visualization.
+    Research context: The participant wanted more concrete explanations tied to data.
+
+[ ] P1 — Add a machine-generated explanation only if it is grounded in source data
+    Description: If an LLM is used for help text, anchor it to cited records and surface uncertainty explicitly.
+    Use case: Reduces the risk of hallucinated historical explanations.
+    Research context: The team already expressed concern about ungrounded generated explanations.
+
+[ ] P2 — Consider a multi-word or aggregate network view
+    Description: Add a broader view that shows movement patterns across many words without requiring one word at a time.
+    Use case: Supports larger historical questions about language movement.
+    Research context: The participant was interested in broader patterns like transportation or communication effects.
+
 
 
 ================================================================================
