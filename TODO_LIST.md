@@ -5,20 +5,10 @@ P0 = must-have for the core prototype
 P1 = high-value thesis/demo feature
 P2 = polish, export, or quality-of-life feature
 
-
-================================================================================
-PDF-DERIVED IMPLEMENTATION FIXES
-================================================================================
-
 [X] P0 — Unify layer and annotation controls into a single sidebar
     Description: Replace the split controls between settings, the top-right menu, and map controls with one persistent panel.
     Use case: Makes the core interaction model easier to discover and reduces duplicated controls.
     Research context: The transcript repeatedly called out the current control layout as confusing and fragmented.
-
-[ ] P0 — Move annotations out of Settings into a dedicated toolbar or palette
-    Description: Give notes, arrows, and related annotation tools their own obvious home.
-    Use case: Prevents annotations from feeling like a hidden configuration option.
-    Research context: Participants said annotations did not belong in Settings.
 
 [ ] P0 — Make annotation tools visually obvious and show a two-step arrow prompt
     Description: Add clear icons and feedback after the first click of an arrow so users know a second point is required.
@@ -145,12 +135,6 @@ PDF-DERIVED IMPLEMENTATION FIXES
     Use case: Supports larger historical questions about language movement.
     Research context: The participant was interested in broader patterns like transportation or communication effects.
 
-
-
-================================================================================
-P0 — CORE GEOSPATIAL MANIPULATION FEATURES
-================================================================================
-
 [X] P0 — Implement a LayerPanel component
     Description: A side panel where users can toggle map layers on/off, such as markers, routes, labels, regions, annotations, and uncertainty overlays.
     Use case: Lets users control visual complexity instead of seeing every linguistic/geographic element at once.
@@ -245,11 +229,6 @@ P0 — CORE GEOSPATIAL MANIPULATION FEATURES
     Description: Create a central state object for camera position, zoom, selected item, active layers, filters, and current word.
     Use case: Provides the foundation for state-saving, share links, comparison, and reproducible views.
     Research context: Users wanted to save, revisit, and communicate specific visualization states.
-
-
-================================================================================
-P1 — HIGH-VALUE THESIS / DEMO FEATURES
-================================================================================
 
 [ ] P1 — Implement VisualizationState serialization
     Description: Convert the current map state into a JSON object containing search term, camera, zoom, layers, filters, timeline, selected item, and annotations.
@@ -380,11 +359,6 @@ P1 — HIGH-VALUE THESIS / DEMO FEATURES
     Description: A small overview map showing the current viewport and distribution of visible data.
     Use case: Helps users stay oriented when zoomed into a dense area.
     Research context: Supports overview-plus-detail interaction.
-
-
-================================================================================
-P2 — EXPORT, PRESENTATION, AND POLISH FEATURES
-================================================================================
 
 [ ] P2 — Export current map as PNG
     Description: Save the current map view as a static image.
