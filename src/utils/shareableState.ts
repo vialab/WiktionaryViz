@@ -80,6 +80,7 @@ const parseMapState = (rawValue: string | null, word1: string, language1: string
         etymologyRequested: false,
         annotationMode: parsed.filters?.annotationMode ?? base.filters.annotationMode,
         annotationTool: parsed.filters?.annotationTool ?? base.filters.annotationTool,
+        annotationColor: parsed.filters?.annotationColor ?? base.filters.annotationColor,
       },
       currentWord: {
         word: word1,

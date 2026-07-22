@@ -147,6 +147,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         guideOpen: sharedInitialMapState.filters?.guideOpen ?? shouldOpenGuideOnLoad,
         annotationMode: sharedInitialMapState.filters?.annotationMode ?? base.filters.annotationMode,
         annotationTool: sharedInitialMapState.filters?.annotationTool ?? base.filters.annotationTool,
+        annotationColor: sharedInitialMapState.filters?.annotationColor ?? base.filters.annotationColor,
       },
       currentWord: {
         word,
@@ -283,6 +284,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
 
   const setAnnotationTool = useCallback((tool: AnnotationKind) => {
     setFilterState({ annotationTool: tool })
+  }, [setFilterState])
+
+  const setAnnotationColor = useCallback((annotationColor: MapState['filters']['annotationColor']) => {
+    setFilterState({ annotationColor })
   }, [setFilterState])
 
   const toggleLayerVisibility = useCallback((layer: MapLayerKey) => {
@@ -748,6 +753,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           ) {
             // Revert to baseline while centering at currentPos.
             map.flyTo([currentPos[0], currentPos[1]], autoZoomBaselineRef.current, {
+              duration: 0.75,
             })
             lastAutoZoomInRef.current = null
             autoZoomBaselineRef.current = null
@@ -1224,6 +1230,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           annotationMode={mapState.filters.annotationMode}
           annotationsVisible={showAnnotations}
           annotationTool={mapState.filters.annotationTool}
+          annotationColor={mapState.filters.annotationColor}
           annotationCount={annotations.length}
           onAnnotationModeChange={enabled => {
             setAnnotationMode(enabled)
@@ -1236,6 +1243,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           onAnnotationToolChange={tool => {
             setAnnotationTool(tool)
             announce(`Annotation tool set to ${tool}`)
+          }}
+          onAnnotationColorChange={annotationColor => {
+            setAnnotationColor(annotationColor)
+            announce(`Annotation colour set to ${annotationColor}`)
           }}
           onClearAnnotations={() => {
             updateMapState(current => ({
@@ -1322,6 +1333,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             enabled={mapState.filters.annotationMode}
             visible={showAnnotations || mapState.filters.annotationMode}
             tool={mapState.filters.annotationTool}
+            annotationColor={mapState.filters.annotationColor}
             annotations={annotations}
             onAnnotationsChange={nextAnnotations => {
               updateMapState(current => ({

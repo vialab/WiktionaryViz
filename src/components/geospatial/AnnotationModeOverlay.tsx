@@ -3,6 +3,7 @@ import { CircleMarker, Marker, Polygon, Popup, Polyline, useMap, useMapEvents } 
 import L from 'leaflet'
 import { calculateBearing, createArrowIcon } from '@/utils/mapUtils'
 import type {
+  AnnotationColor,
   AnnotationKind,
   MapAnnotation,
   SegmentAnnotation,
@@ -14,11 +15,20 @@ interface AnnotationModeOverlayProps {
   enabled: boolean
   visible: boolean
   tool: AnnotationKind
+  annotationColor: AnnotationColor
   annotations: MapAnnotation[]
   onAnnotationsChange: (nextAnnotations: MapAnnotation[]) => void
   onToolChange: (tool: AnnotationKind) => void
   onAnnounce?: (message: string) => void
   theme?: AnnotationTheme
+}
+
+const annotationColorValues: Record<AnnotationColor, { stroke: string; fill: string }> = {
+  red: { stroke: '#ef4444', fill: '#fca5a5' },
+  green: { stroke: '#22c55e', fill: '#86efac' },
+  blue: { stroke: '#38bdf8', fill: '#7dd3fc' },
+  white: { stroke: '#f8fafc', fill: '#ffffff' },
+  black: { stroke: '#111827', fill: '#111827' },
 }
 
 const annotationRadiusMeters = 40000
@@ -57,10 +67,10 @@ const getAnnotationLabel = (kind: 'note' | 'highlight' | 'arrow' | 'region' | 'l
   }
 }
 
-const createNoteIcon = (theme: AnnotationTheme) =>
+const createNoteIcon = (theme: AnnotationTheme, annotationColor: AnnotationColor) =>
   L.divIcon({
     className: 'annotation-note-icon',
-    html: `<div style="width:28px;height:28px;border-radius:9999px;display:grid;place-items:center;font-size:16px;font-weight:700;box-shadow:0 8px 20px rgba(0,0,0,.28);background:${theme === 'light' ? '#0f172a' : '#f8fafc'};color:${theme === 'light' ? '#f8fafc' : '#0f172a'};border:2px solid ${theme === 'light' ? '#38bdf8' : '#7dd3fc'};">✎</div>`,
+    html: `<div style="width:28px;height:28px;border-radius:9999px;display:grid;place-items:center;font-size:16px;font-weight:700;box-shadow:0 8px 20px rgba(0,0,0,.28);background:${theme === 'light' ? '#0f172a' : '#f8fafc'};color:${annotationColorValues[annotationColor].stroke};border:2px solid ${annotationColorValues[annotationColor].stroke};">✎</div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   })
@@ -85,6 +95,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   enabled,
   visible,
   tool,
+  annotationColor,
   annotations,
   onAnnotationsChange,
   onToolChange,
@@ -92,6 +103,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   theme = 'dark',
 }) => {
   const isLight = theme === 'light'
+  const selectedColor = annotationColorValues[annotationColor]
   const [segmentStart, setSegmentStart] = useState<[number, number] | null>(null)
   const [segmentHover, setSegmentHover] = useState<[number, number] | null>(null)
   const [draftRegion, setDraftRegion] = useState<[number, number][]>([])
@@ -195,8 +207,9 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
       end,
       text: getAnnotationLabel(kind),
       createdAt: new Date().toISOString(),
+      annotationColor,
     })
-  }, [addAnnotation])
+  }, [addAnnotation, annotationColor])
 
   const handleMapClick = useCallback((event: L.LeafletMouseEvent) => {
     if (!enabled) return
@@ -219,6 +232,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         position: point,
         text,
         createdAt: new Date().toISOString(),
+        annotationColor,
       })
       onAnnounce?.('Annotation note added')
       return
@@ -232,6 +246,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         radiusMeters: annotationRadiusMeters,
         text: getAnnotationLabel('highlight'),
         createdAt: new Date().toISOString(),
+        annotationColor,
       })
       onAnnounce?.('Highlight annotation added')
       return
@@ -269,6 +284,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             points: draftRegion,
             text: getAnnotationLabel('region'),
             createdAt: new Date().toISOString(),
+            annotationColor,
           },
         ])
         setDraftRegion([])
@@ -286,7 +302,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
     if (tool === 'freehand') {
       return
     }
-  }, [addAnnotation, annotations, enabled, finishSegment, freehandDrawing, freehandStroke, onAnnounce, draftRegion, segmentStart, tool, onAnnotationsChange])
+  }, [addAnnotation, annotationColor, annotations, enabled, finishSegment, freehandDrawing, freehandStroke, onAnnounce, draftRegion, segmentStart, tool, onAnnotationsChange])
 
   useMapEvents({
     mousedown: event => {
@@ -344,6 +360,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
           points: path,
           text: getAnnotationLabel('freehand'),
           createdAt: new Date().toISOString(),
+          annotationColor,
         },
       ])
       setFreehandStroke([])
@@ -368,8 +385,6 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   const freehandPreview = useMemo(() => {
     if (!enabled || tool !== 'freehand' || freehandStroke.length === 0) return null
 
-    const color = isLight ? '#db2777' : '#f472b6'
-
     return (
       <>
         <Marker
@@ -381,7 +396,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         <Polyline
           positions={freehandStroke}
           pathOptions={{
-            color,
+            color: selectedColor.stroke,
             weight: 4,
             opacity: 0.9,
           }}
@@ -389,7 +404,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         />
       </>
     )
-  }, [enabled, freehandStroke, isLight, theme, tool])
+  }, [enabled, freehandStroke, selectedColor.stroke, theme, tool])
 
   const draftSegment = useMemo(() => {
     if (!enabled || (tool !== 'arrow' && tool !== 'link') || !segmentStart || !segmentHover) return null
@@ -407,7 +422,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         <Polyline
           positions={[segmentStart, segmentHover]}
           pathOptions={{
-            color: isArrow ? '#38bdf8' : '#c084fc',
+            color: selectedColor.stroke,
             weight: 4,
             dashArray: isArrow ? '10 10' : '8 8',
             opacity: 0.85,
@@ -421,7 +436,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             interactive={false}
             icon={createArrowIcon(bearing, {
               size: 24,
-              color: '#38bdf8',
+              color: selectedColor.stroke,
               outline: isLight ? '#ffffff' : '#082f49',
               outlineWidth: 2,
               opacity: 1,
@@ -430,7 +445,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         )}
       </>
     )
-  }, [enabled, isLight, segmentHover, segmentStart, tool, theme])
+  }, [enabled, isLight, selectedColor.stroke, segmentHover, segmentStart, tool, theme])
 
   const regionPreview = useMemo(() => {
     if (!enabled || tool !== 'region' || draftRegion.length === 0 || !regionHover) return null
@@ -463,6 +478,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
                   points: draftRegion,
                   text: getAnnotationLabel('region'),
                   createdAt: new Date().toISOString(),
+                  annotationColor,
                 },
               ])
               setDraftRegion([])
@@ -476,7 +492,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
           <Polyline
             positions={previewPoints}
             pathOptions={{
-              color: '#38bdf8',
+              color: selectedColor.stroke,
               weight: 4,
               dashArray: '10 10',
               opacity: 0.85,
@@ -487,9 +503,10 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
           <Polygon
             positions={previewPoints}
             pathOptions={{
-              color: '#38bdf8',
+              color: selectedColor.stroke,
               dashArray: '10 10',
-              fillOpacity: 0.08,
+              fillOpacity: 0.12,
+              fillColor: selectedColor.fill,
               opacity: 0.9,
               weight: 3,
             }}
@@ -498,7 +515,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         )}
       </>
     )
-  }, [draftRegion, enabled, regionHover, theme, tool])
+  }, [annotationColor, annotations, draftRegion, enabled, onAnnounce, onAnnotationsChange, regionHover, selectedColor.fill, selectedColor.stroke, theme, tool])
 
   return (
     <>
@@ -508,7 +525,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             <Marker
               key={annotation.id}
               position={annotation.position}
-              icon={createNoteIcon(theme)}
+              icon={createNoteIcon(theme, annotation.annotationColor ?? annotationColor)}
               zIndexOffset={2000}
               eventHandlers={{
                 click: event => {
@@ -527,12 +544,13 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         }
 
         if (annotation.kind === 'highlight') {
+          const colorValue = annotationColorValues[annotation.annotationColor ?? annotationColor]
           return (
             <CircleMarker
               key={annotation.id}
               center={annotation.center}
               radius={12}
-              pathOptions={{ color: '#f59e0b', fillColor: '#fbbf24', fillOpacity: 0.35, weight: 3 }}
+              pathOptions={{ color: colorValue.stroke, fillColor: colorValue.fill, fillOpacity: 0.35, weight: 3 }}
               eventHandlers={{
                 click: event => {
                   event.originalEvent.stopPropagation()
@@ -550,11 +568,12 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         }
 
         if (annotation.kind === 'region') {
+          const colorValue = annotationColorValues[annotation.annotationColor ?? annotationColor]
           return (
             <Polygon
               key={annotation.id}
               positions={annotation.points}
-              pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.12, weight: 2 }}
+              pathOptions={{ color: colorValue.stroke, fillColor: colorValue.fill, fillOpacity: 0.12, weight: 2 }}
               eventHandlers={{
                 click: event => {
                   event.originalEvent.stopPropagation()
@@ -572,11 +591,12 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         }
 
         if (annotation.kind === 'freehand') {
+          const colorValue = annotationColorValues[annotation.annotationColor ?? annotationColor]
           return (
             <Polyline
               key={annotation.id}
               positions={annotation.points}
-              pathOptions={{ color: isLight ? '#db2777' : '#f472b6', weight: 4, opacity: 0.9 }}
+              pathOptions={{ color: colorValue.stroke, weight: 4, opacity: 0.9 }}
               eventHandlers={{
                 click: event => {
                   event.originalEvent.stopPropagation()
@@ -595,6 +615,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
 
         const bearing = calculateBearing(annotation.start, annotation.end)
         const isArrow = annotation.kind === 'arrow'
+        const colorValue = annotationColorValues[annotation.annotationColor ?? annotationColor]
 
         return (
           <>
@@ -602,7 +623,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
               key={annotation.id}
               positions={[annotation.start, annotation.end]}
               pathOptions={{
-                color: isArrow ? '#38bdf8' : '#c084fc',
+                color: colorValue.stroke,
                 weight: 4,
                 dashArray: isArrow ? undefined : '8 8',
               }}
@@ -626,7 +647,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
                 interactive={false}
                 icon={createArrowIcon(bearing, {
                   size: 24,
-                  color: '#38bdf8',
+                  color: colorValue.stroke,
                   outline: isLight ? '#ffffff' : '#082f49',
                   outlineWidth: 2,
                   opacity: 1,
@@ -765,6 +786,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
                     points: draftRegion,
                     text,
                     createdAt: new Date().toISOString(),
+                    annotationColor,
                   },
                 ])
                 setDraftRegion([])

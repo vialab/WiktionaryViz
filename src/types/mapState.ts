@@ -3,12 +3,16 @@ export type GuideLayerKey = 'translations' | 'etymology' | 'descendants'
 export type MapLayerKey = 'translations' | 'protoZones' | 'languageFamilies' | 'etymology' | 'descendants'
 
 export type AnnotationKind = 'note' | 'highlight' | 'arrow' | 'region' | 'link' | 'freehand'
+export type AnnotationColor = 'red' | 'green' | 'blue' | 'white' | 'black'
+
+export const defaultAnnotationColor: AnnotationColor = 'red'
 
 export interface BaseAnnotation {
   id: string
   kind: AnnotationKind
   text: string
   createdAt: string
+  annotationColor?: AnnotationColor
 }
 
 export interface PointAnnotation extends BaseAnnotation {
@@ -77,6 +81,7 @@ export interface MapFilterState {
   playSpeedMs: number
   annotationMode: boolean
   annotationTool: AnnotationKind
+  annotationColor: AnnotationColor
 }
 
 export interface MapCurrentWordState {
@@ -137,6 +142,7 @@ export const createInitialMapState = (word: string, language: string): MapState 
     playSpeedMs: 800,
     annotationMode: false,
     annotationTool: 'note',
+    annotationColor: defaultAnnotationColor,
   },
   currentWord: {
     word,

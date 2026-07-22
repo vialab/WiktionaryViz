@@ -3,7 +3,7 @@ import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Highlighter, Link2,
 import html2canvas from 'html2canvas'
 import type { TranslationMarker } from './TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
-import type { AnnotationKind, MapLayerKey } from '@/types/mapState'
+import type { AnnotationColor, AnnotationKind, MapLayerKey } from '@/types/mapState'
 import { buildGeoJSON, downloadGeoJSON, type ExportOptions } from '@/utils/geojsonExport'
 import useFocusTrap from '@/hooks/useFocusTrap'
 
@@ -66,10 +66,12 @@ interface GeospatialSettingsMenuProps {
   annotationMode: boolean
   annotationsVisible: boolean
   annotationTool: AnnotationKind
+  annotationColor: AnnotationColor
   annotationCount: number
   onAnnotationModeChange: (enabled: boolean) => void
   onAnnotationsVisibleChange: (enabled: boolean) => void
   onAnnotationToolChange: (tool: AnnotationKind) => void
+  onAnnotationColorChange: (color: AnnotationColor) => void
   onClearAnnotations: () => void
   theme?: 'dark' | 'light'
 }
@@ -96,10 +98,12 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   annotationMode,
   annotationsVisible,
   annotationTool,
+  annotationColor,
   annotationCount,
   onAnnotationModeChange,
   onAnnotationsVisibleChange,
   onAnnotationToolChange,
+  onAnnotationColorChange,
   onClearAnnotations,
   theme = 'dark',
 }) => {
@@ -144,6 +148,14 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     { key: 'freehand' as const, label: 'Freehand', hint: 'Press and drag to sketch a stroke', icon: PencilLine },
     { key: 'region' as const, label: 'Region', hint: 'Click multiple points to trace an area', icon: Radius },
     { key: 'link' as const, label: 'Link', hint: 'Two clicks to connect two points', icon: Link2 },
+  ]), [])
+
+  const annotationColorOptions = useMemo(() => ([
+    { key: 'red' as const, label: 'Red', swatch: '#ef4444', selectedRing: 'ring-red-500' },
+    { key: 'green' as const, label: 'Green', swatch: '#22c55e', selectedRing: 'ring-emerald-500' },
+    { key: 'blue' as const, label: 'Blue', swatch: '#38bdf8', selectedRing: 'ring-sky-500' },
+    { key: 'white' as const, label: 'White', swatch: '#f8fafc', selectedRing: 'ring-slate-300' },
+    { key: 'black' as const, label: 'Black', swatch: '#111827', selectedRing: 'ring-slate-900' },
   ]), [])
 
   const shortcutHelpItems = useMemo(() => ([
@@ -472,6 +484,28 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
               <p className={isLight ? 'px-1 text-xs leading-5 text-slate-500' : 'px-1 text-xs leading-5 text-slate-400'}>
                 {annotationsVisible ? 'Annotations are visible as their own layer and can be exported.' : 'Annotations remain in map state but are hidden from the canvas and export.'}
               </p>
+              <div className={isLight ? 'rounded-md border border-slate-200 bg-slate-50 p-2' : 'rounded-md border border-slate-800 bg-slate-900/60 p-2'}>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {annotationColorOptions.map(option => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => onAnnotationColorChange(option.key)}
+                      aria-pressed={annotationColor === option.key}
+                      aria-label={`Set annotation colour to ${option.label}`}
+                      className={annotationColor === option.key
+                        ? `flex h-10 w-10 items-center justify-center rounded-full border transition ${isLight ? 'border-slate-400 bg-slate-100' : 'border-slate-500 bg-slate-900'} ring-2 ring-offset-2 ring-offset-transparent ${option.selectedRing}`
+                        : `flex h-10 w-10 items-center justify-center rounded-full border transition ${isLight ? 'border-slate-300 bg-transparent hover:bg-slate-50' : 'border-slate-700 bg-transparent hover:bg-slate-900'}`}
+                    >
+                      <span
+                        className={option.key === 'white' ? 'h-4 w-4 rounded-full border border-slate-300' : 'h-4 w-4 rounded-full border border-transparent'}
+                        style={{ backgroundColor: option.swatch }}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className={isLight ? 'space-y-2 rounded-md border border-slate-200 bg-slate-50 p-2' : 'space-y-2 rounded-md border border-slate-800 bg-slate-900/60 p-2'}>
                 {annotationControls.map(item => {
                   const ToolIcon = item.icon
