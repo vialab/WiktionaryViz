@@ -73,7 +73,6 @@ async def get_available_languages(word: str = Query(...), codes_only: bool = Que
 @router.get("/random-interesting-word")
 async def get_random_interest():
     categories = {
-        "longest_words": os.path.join(DATA_DIR, "longest_words.json"),
         "most_translations": os.path.join(DATA_DIR, "most_translations.json"),
         "most_descendants": os.path.join(DATA_DIR, "most_descendants.json"),
     }

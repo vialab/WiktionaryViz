@@ -104,7 +104,7 @@ Artifacts (in `backend/data/`):
 
 - `wiktionary_data.jsonl` – Raw dump (auto-downloaded if not skipped)
 - `wiktionary_index.json` – `{word_lang_code: [byte_offset, ...]}` mapping
-- `longest_words.json`, `most_translations.json`, `most_descendants.json`
+- `most_translations.json`, `most_descendants.json`
 
 Retrieval strategy: `mmap` + `seek` to recorded offset, read one JSON line, parse on demand.
 

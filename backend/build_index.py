@@ -35,7 +35,6 @@ except Exception:
 # File paths
 JSONL_FILE_PATH = "data/wiktionary_data.jsonl"
 INDEX_OUTPUT_PATH = "data/wiktionary_index.json"
-LONGEST_WORDS_OUTPUT_PATH = "data/longest_words.json"
 MOST_TRANSLATIONS_OUTPUT_PATH = "data/most_translations.json"
 MOST_DESCENDANTS_OUTPUT_PATH = "data/most_descendants.json"
 LONGEST_ETYMOLOGICAL_CHAINS_OUTPUT_PATH = "data/longest_etymological_chains.json"
@@ -104,7 +103,6 @@ def compute_descendant_counts(descendant_links: dict) -> dict:
 def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None:
     """
     Builds a byte-offset index for fast lookup and precomputes Hall of Fame data:
-    - Longest words (excluding sign languages and phrases)
     - Most translations
     - Most descendants (via reverse descendant links)
     """
@@ -113,7 +111,6 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
     record_count = 0
 
     TOP_N = 100
-    longest_words_heap = []
     longest_chains_heap = []
     most_translations_heap = []
 
@@ -154,13 +151,6 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
                         all_entry_keys.add(index_key)
 
                         pos = entry.get("pos", "").lower()
-
-                        # ✅ Longest words (exclude sign languages + phrases)
-                        if lang_code not in SIGN_LANG_CODES and pos != "phrase":
-                            word_len = len(word)
-                            heapq.heappush(longest_words_heap, (word_len, word, lang_code))
-                            if len(longest_words_heap) > TOP_N:
-                                heapq.heappop(longest_words_heap)
 
                         # ✅ Most translations
                         translations = entry.get("translations", [])
@@ -212,14 +202,6 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
     # Save index
     save_index_to_json(word_lang_index, index_output_path)
 
-    # Save longest words
-    longest_words_sorted = sorted(longest_words_heap, reverse=True)
-    longest_words_output = [
-        {"word": word, "lang_code": lang_code, "length": length}
-        for length, word, lang_code in longest_words_sorted
-    ]
-    save_json(longest_words_output, LONGEST_WORDS_OUTPUT_PATH)
-
     # Save most translations
     most_translations_sorted = sorted(most_translations_heap, reverse=True)
     most_translations_output = [
@@ -263,7 +245,6 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
     save_json(longest_chains_output, LONGEST_ETYMOLOGICAL_CHAINS_OUTPUT_PATH)
 
     print(f"Indexed {record_count} records.")
-    print(f"Saved Top {TOP_N} longest words to {LONGEST_WORDS_OUTPUT_PATH}")
     print(f"Saved Top {TOP_N} entries with most translations to {MOST_TRANSLATIONS_OUTPUT_PATH}")
     print(f"Saved Top {TOP_N} entries with most descendants to {MOST_DESCENDANTS_OUTPUT_PATH}")
 
