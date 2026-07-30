@@ -2,6 +2,21 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.36](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.35...wiktionaryviz-v0.1.36) (2026-07-30)
+
+
+### Features
+
+* **AnnotationModeOverlay:** implement annotation color handling for various annotation types to improve visual distinction ([12c219b](https://github.com/vialab/WiktionaryViz/commit/12c219bf9f7ab94feab3a04c0c274492b0e409a5))
+* **GeospatialPage:** add annotation color feature to enhance user experience with customizable annotation colors ([12c219b](https://github.com/vialab/WiktionaryViz/commit/12c219bf9f7ab94feab3a04c0c274492b0e409a5))
+* **GeospatialSettingsMenu:** add UI for selecting annotation colors to provide users with customization options ([12c219b](https://github.com/vialab/WiktionaryViz/commit/12c219bf9f7ab94feab3a04c0c274492b0e409a5))
+
+
+### Bug Fixes
+
+* **shareableState:** ensure annotation color is parsed correctly from shareable state to maintain user preferences ([12c219b](https://github.com/vialab/WiktionaryViz/commit/12c219bf9f7ab94feab3a04c0c274492b0e409a5))
+* **word_data.py:** remove import statement for constants that are no longer present to prevent import errors ([73fcc90](https://github.com/vialab/WiktionaryViz/commit/73fcc90a2d647fa8904de28d76e3a960e43ec33b))
+
 ## [0.1.35](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.34...wiktionaryviz-v0.1.35) (2026-07-20)
 
 
