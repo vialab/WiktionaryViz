@@ -200,7 +200,6 @@ async def build_ancestry_chain(word, lang_code, max_depth=10):
         # print(f"[DEBUG] Real IPA found for root: {ipa}")
         # Remove ai_estimated_ipa if real IPA exists
         node.pop("ai_estimated_ipa", None)
-    from constants import dst, ft
     # (Removed duplicate root node logic that overwrote real IPA)
     chain.append({
         "word": word,

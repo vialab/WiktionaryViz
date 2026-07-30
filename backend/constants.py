@@ -1,7 +1,5 @@
 import os
 import json
-from panphon.featuretable import FeatureTable
-from panphon.distance import Distance
 
 # === Base paths ===
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -10,16 +8,6 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 INDEX_FILE_PATH = os.path.join(DATA_DIR, "wiktionary_index.json")
 JSONL_FILE_PATH = os.path.join(DATA_DIR, "wiktionary_data.jsonl")
 LANG_MAP_FILE_PATH = os.path.join(DATA_DIR, "language_codes.json")
-
-# === PanPhon tools ===
-ft = FeatureTable()
-dst = Distance()
-
-# === Cost constants ===
-MAX_FEATURE_DIFFS = len(ft.names)
-INSERTION_COST = MAX_FEATURE_DIFFS + 1
-DELETION_COST = MAX_FEATURE_DIFFS + 1
-UNKNOWN_COST = MAX_FEATURE_DIFFS
 
 # === Global caches ===
 index = {}
