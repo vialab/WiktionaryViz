@@ -4,8 +4,8 @@ import time
 import unicodedata
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
-from constants import index, JSONL_FILE_PATH
-from services.wiktionary_io import find_root_ancestor, build_descendant_hierarchy
+from constants import index, JSONL_FILE_PATH, REVERSE_DESCENDANT_GRAPH_FILE_PATH
+from services.wiktionary_io import find_root_ancestor, build_descendant_hierarchy, _extract_child_ref_from_descendant
 
 logger = logging.getLogger("descendants_api")
 logging.basicConfig(level=logging.INFO)
@@ -16,6 +16,7 @@ router = APIRouter()
 CACHE_TTL_SECONDS = 180
 CACHE_MAX_ENTRIES = 512
 _response_cache = {}
+_reverse_descendant_graph = None
 
 
 def _cache_key(prefix: str, payload: dict):
@@ -97,6 +98,110 @@ def _normalize_index_word(text: str):
     if not text:
         return None
     return str(text).strip().lower()
+
+
+def _word_variants(text: str):
+    raw = _normalize_index_word(text)
+    if not raw:
+        return []
+
+    variants = [raw]
+    bare = raw.lstrip("*")
+    if bare and bare not in variants:
+        variants.append(bare)
+
+    deaccented = "".join(ch for ch in unicodedata.normalize("NFKD", bare) if unicodedata.category(ch) != "Mn")
+    if deaccented and deaccented not in variants:
+        variants.append(deaccented)
+
+    if bare.startswith("reconstruction:"):
+        reconstruction = bare[len("reconstruction:"):].strip()
+        if reconstruction and reconstruction not in variants:
+            variants.append(reconstruction)
+
+    return variants
+
+
+def _lang_variants(lang_code: str | None):
+    normalized = _normalize_index_word(lang_code)
+    if not normalized:
+        return []
+
+    variants = [normalized]
+    if "-" in normalized:
+        parts = normalized.split("-")
+        for end in range(len(parts) - 1, 0, -1):
+            prefix = "-".join(parts[:end])
+            if prefix not in variants:
+                variants.append(prefix)
+    return variants
+
+
+def _graph_key_variants(word: str, lang_code: str | None):
+    keys = []
+    for word_variant in _word_variants(word):
+        for lang_variant in _lang_variants(lang_code):
+            key = f"{word_variant}_{lang_variant}"
+            if key not in keys:
+                keys.append(key)
+    return keys
+
+
+def _load_reverse_descendant_graph():
+    global _reverse_descendant_graph
+    if _reverse_descendant_graph is not None:
+        return _reverse_descendant_graph
+
+    try:
+        with open(REVERSE_DESCENDANT_GRAPH_FILE_PATH, "r", encoding="utf-8") as f:
+            graph = json.load(f)
+            _reverse_descendant_graph = {str(key): set(value or []) for key, value in graph.items()}
+    except Exception as exc:
+        logger.warning("Failed to build reverse descendant graph: %s", exc)
+        _reverse_descendant_graph = {}
+
+    return _reverse_descendant_graph
+
+
+def _reverse_graph_child_keys(word: str, lang_code: str | None):
+    graph = _load_reverse_descendant_graph()
+    child_keys = set()
+    for parent_key in _graph_key_variants(word, lang_code):
+        child_keys.update(graph.get(parent_key, set()))
+    return sorted(child_keys)
+
+
+def _reverse_tree_node(word: str, lang_code: str | None, max_depth: int, node_budget: dict, depth: int = 0, seen: set | None = None):
+    if seen is None:
+        seen = set()
+
+    if depth >= max_depth:
+        return {"word": word, "lang_code": lang_code, "expansion": None, "children": []}
+
+    if node_budget.get("remaining", 0) <= 0:
+        node_budget["truncated"] = True
+        return {"word": word, "lang_code": lang_code, "expansion": None, "children": []}
+
+    node = {"word": word, "lang_code": lang_code, "expansion": None, "children": []}
+    for child_key in _reverse_graph_child_keys(word, lang_code):
+        if node_budget.get("remaining", 0) <= 0:
+            node_budget["truncated"] = True
+            break
+        if child_key in seen:
+            continue
+
+        if "_" in child_key:
+            child_word, child_lang = child_key.rsplit("_", 1)
+        else:
+            child_word, child_lang = child_key, None
+
+        node_budget["remaining"] = max(0, node_budget.get("remaining", 0) - 1)
+        next_seen = set(seen)
+        next_seen.add(child_key)
+        child_node = _reverse_tree_node(child_word, child_lang, max_depth, node_budget, depth + 1, next_seen)
+        node["children"].append(child_node)
+
+    return node
 
 
 def _index_word_variants(text: str):
@@ -466,6 +571,8 @@ async def descendant_tree_from_root(
                 max_depth=max_depth,
                 node_budget=budget,
             )
+            if not tree.get("children"):
+                tree = _reverse_tree_node(word, lang_code, max_depth=max_depth, node_budget=budget)
             logger.info("/descendant-tree-from-root built tree for root=%s children=%d", word, len(tree.get("children", [])))
             payload = {
                 "root": word,

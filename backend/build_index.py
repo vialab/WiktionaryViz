@@ -38,6 +38,7 @@ INDEX_OUTPUT_PATH = "data/wiktionary_index.json"
 MOST_TRANSLATIONS_OUTPUT_PATH = "data/most_translations.json"
 MOST_DESCENDANTS_OUTPUT_PATH = "data/most_descendants.json"
 LONGEST_ETYMOLOGICAL_CHAINS_OUTPUT_PATH = "data/longest_etymological_chains.json"
+REVERSE_DESCENDANT_GRAPH_OUTPUT_PATH = "data/reverse_descendant_graph.json"
 
 # Languages to exclude from longest word category (sign languages, gloss systems)
 SIGN_LANG_CODES = {
@@ -217,6 +218,8 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
     # write an empty file so startup can still complete.
     try:
         descendant_counts = compute_descendant_counts(descendant_links)
+        reverse_descendant_graph = {key: sorted(values) for key, values in descendant_links.items()}
+        save_json(reverse_descendant_graph, REVERSE_DESCENDANT_GRAPH_OUTPUT_PATH)
         descendant_count_heap = []
         for key in tqdm(all_entry_keys, desc="Counting descendants"):
             count = descendant_counts.get(key, 0)
@@ -234,6 +237,7 @@ def build_index_from_jsonl(jsonl_file_path: str, index_output_path: str) -> None
     except Exception as exc:  # pragma: no cover - defensive guard
         print(f"[WARN] Failed to compute most-descendants stat; writing empty file: {exc}")
         most_descendants_output = []
+        save_json({}, REVERSE_DESCENDANT_GRAPH_OUTPUT_PATH)
     save_json(most_descendants_output, MOST_DESCENDANTS_OUTPUT_PATH)
 
     # Save longest etymological chains measured by etymology_templates length

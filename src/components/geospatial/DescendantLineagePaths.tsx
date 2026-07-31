@@ -27,19 +27,26 @@ type RootCandidate = {
   supporting_paths?: number
 }
 
-type DirectDescendant = {
+type DescendantTreeNode = {
   word?: string
   lang_code?: string | null
-  lang?: string | null
-  roman?: string | null
   expansion?: string | null
+  romanization?: string | null
+  aggregated?: boolean
+  count?: number
+  children?: DescendantTreeNode[]
 }
 
-type WordDataResponse = {
-  word?: string
-  lang_code?: string
-  lang?: string | null
-  descendants?: DirectDescendant[]
+type DescendantRootResponse = {
+  root?: string
+  root_lang?: string
+  selected_root?: RootCandidate
+}
+
+type DescendantTreeResponse = {
+  root?: string
+  root_lang?: string | null
+  tree?: DescendantTreeNode
 }
 
 type RenderPoint = {
@@ -58,40 +65,84 @@ const normalizeLookupWord = (word?: string | null) => {
   return stripped || word.trim() || null
 }
 
-const toNode = (item: DirectDescendant | undefined | null): DescNode | null => {
+const toNode = (item: DescendantTreeNode | undefined | null): DescNode | null => {
   if (!item?.word || !item.lang_code) return null
   return {
     word: item.word,
     lang_code: item.lang_code,
     lookupWord: normalizeLookupWord(item.word),
     expansion: item.expansion || undefined,
-    romanization: item.roman || undefined,
+    romanization: item.romanization || undefined,
+    aggregated: Boolean(item.aggregated),
+    count: item.count,
   }
 }
 
-const mergeExpandedPaths = (basePath: DescPath, expandedPaths: DescPath[], clickedIndex: number) => {
-  const prefix = basePath.slice(0, clickedIndex + 1)
-  const nextPaths = expandedPaths
-    .map(path => [...prefix, ...path.slice(1)])
-    .filter(path => path.length > prefix.length)
+const flattenDescendantTree = (node: DescendantTreeNode | undefined | null): DescPath[] => {
+  const rootNode = toNode(node)
+  if (!rootNode) return []
 
-  return nextPaths.length ? nextPaths : [basePath]
+  const children = Array.isArray(node?.children) ? node.children : []
+  if (!children.length) {
+    return [[rootNode]]
+  }
+
+  const paths: DescPath[] = []
+  for (const child of children) {
+    const childPaths = flattenDescendantTree(child)
+    for (const childPath of childPaths) {
+      paths.push([rootNode, ...childPath])
+    }
+  }
+
+  return paths.length ? paths : [[rootNode]]
 }
 
-const hasVisibleDescendants = (paths: DescPath[], basePath: DescPath, clickedIndex: number) => {
-  const prefix = basePath.slice(0, clickedIndex + 1)
-  return paths.some(path => {
-    if (path.length <= prefix.length) return false
-    return prefix.every((node, index) => nodeKey(node.word, node.lang_code) === nodeKey(path[index]?.word, path[index]?.lang_code))
-  })
+const pathKey = (path: DescPath) => path.map(node => nodeKey(node.word, node.lang_code)).join('>')
+
+const prefixKey = (path: DescPath, endIndex: number) => path.slice(0, endIndex + 1).map(node => nodeKey(node.word, node.lang_code)).join('>')
+
+const pathMatchesPrefix = (path: DescPath, prefix: DescPath) => {
+  if (path.length < prefix.length) return false
+  return prefix.every((node, index) => nodeKey(node.word, node.lang_code) === nodeKey(path[index]?.word, path[index]?.lang_code))
 }
 
-const collapsePathsFromNode = (paths: DescPath[], basePath: DescPath, clickedIndex: number) => {
-  const prefix = basePath.slice(0, clickedIndex + 1)
-  return paths.filter(path => {
-    if (path.length <= prefix.length) return true
-    return !prefix.every((node, index) => nodeKey(node.word, node.lang_code) === nodeKey(path[index]?.word, path[index]?.lang_code))
-  })
+const pathHasDescendants = (paths: DescPath[], prefix: DescPath) => paths.some(path => path.length > prefix.length && pathMatchesPrefix(path, prefix))
+
+const deriveVisiblePaths = (allPaths: DescPath[], expandedPrefixes: Set<string>) => {
+  const visible = new Map<string, DescPath>()
+
+  for (const fullPath of allPaths) {
+    if (!fullPath.length) continue
+
+    let visibleLength = 1
+    for (let index = 0; index < fullPath.length - 1; index++) {
+      const currentPrefixKey = prefixKey(fullPath, index)
+      if (!expandedPrefixes.has(currentPrefixKey)) break
+      visibleLength = index + 2
+    }
+
+    const visiblePath = fullPath.slice(0, visibleLength)
+    visible.set(pathKey(visiblePath), visiblePath)
+  }
+
+  return Array.from(visible.values())
+}
+
+const mergeSubtreePaths = (existingPaths: DescPath[], prefix: DescPath, subtreePaths: DescPath[]) => {
+  const prefixWithoutRoot = prefix.slice(0, -1)
+  const merged = new Map<string, DescPath>()
+
+  for (const path of existingPaths) {
+    merged.set(pathKey(path), path)
+  }
+
+  for (const subtreePath of subtreePaths) {
+    const fullPath = [...prefixWithoutRoot, ...subtreePath]
+    merged.set(pathKey(fullPath), fullPath)
+  }
+
+  return Array.from(merged.values())
 }
 
 const hashString = (value: string) => {
@@ -193,19 +244,20 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
 }) => {
   const { languoidData } = useLanguoidData() as { languoidData: LanguoidData[]; loading: boolean }
   const [paths, setPaths] = useState<DescPath[]>([])
+  const [allPaths, setAllPaths] = useState<DescPath[]>([])
+  const [expandedPrefixes, setExpandedPrefixes] = useState<Set<string>>(new Set())
   const [, setRootCandidates] = useState<RootCandidate[]>([])
   const [, setResolvedRoot] = useState<string | null>(null)
   const [, setResolvedRootLang] = useState<string | null>(null)
   const [, setLastLoadMs] = useState<number | null>(null)
-  const [, setLoading] = useState(false)
+  const [isLoading, setLoading] = useState(false)
   const [, setLoadError] = useState<string | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
   const [, setIsPlaying] = useState(false)
   const [languageNames, setLanguageNames] = useState<Record<string, string>>({})
+  const [loadingBranch, setLoadingBranch] = useState<{ pathIndex: number; nodeIndex: number } | null>(null)
   const polyRefs = useRef<Record<number, L.Polyline | null>>({})
   const playbackRunRef = useRef(0)
-  const expandedNodeKeysRef = useRef<Set<string>>(new Set())
-  const activeBranchRef = useRef<{ pathIndex: number; nodeIndex: number } | null>(null)
 
   // Fetch the resolved root only; descendants are expanded one hop at a time on click.
   useEffect(() => {
@@ -214,7 +266,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
     const controller = new AbortController()
     setLoading(true)
     setLoadError(null)
-    expandedNodeKeysRef.current = new Set()
+    setExpandedPrefixes(new Set())
     ;(async () => {
       try {
         const url = apiUrl(
@@ -233,12 +285,13 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
           setLoading(false)
           return
         }
-        const json = (await res.json()) as { root?: string; root_lang?: string; selected_root?: RootCandidate }
+        const json = (await res.json()) as DescendantRootResponse
         if (!cancelled) {
           const rootNode: DescNode = {
             word: json.selected_root?.word || json.root || rootWord,
             lang_code: json.selected_root?.lang_code || json.root_lang || rootLang || null,
           }
+          setAllPaths([[rootNode]])
           setPaths([[rootNode]])
           setLastLoadMs(null)
           setRootCandidates([])
@@ -262,91 +315,84 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
     }
   }, [rootWord, rootLang])
 
-  const expandNode = async (node: DescNode, basePath: DescPath, clickedIndex: number, pathIndex: number) => {
-    const lookupWord = node.lookupWord || node.word
-    if (!lookupWord) return
-    const key = nodeKey(lookupWord, node.lang_code)
-    if (expandedNodeKeysRef.current.has(key)) return
-    if (!node.lang_code) return
+  useEffect(() => {
+    setPaths(deriveVisiblePaths(allPaths, expandedPrefixes))
+  }, [allPaths, expandedPrefixes])
 
-    activeBranchRef.current = { pathIndex, nodeIndex: clickedIndex }
+  const loadSubtreeForNode = async (basePath: DescPath, clickedIndex: number, pathIndex: number) => {
+    const node = basePath[clickedIndex]
+    const lookupWord = node?.lookupWord || node?.word
+    const langCode = node?.lang_code
+    if (!lookupWord || !langCode) return
 
-    const controller = new AbortController()
+    setLoadingBranch({ pathIndex, nodeIndex: clickedIndex })
     setLoading(true)
     setLoadError(null)
+
     try {
-      const url = apiUrl(`/word-data?${new URLSearchParams({ word: lookupWord, lang_code: node.lang_code }).toString()}`)
-      const res = await fetch(url, { signal: controller.signal })
+      const url = apiUrl(`/descendant-tree-from-root?${new URLSearchParams({
+        word: lookupWord,
+        lang_code: langCode,
+        max_depth: '8',
+        max_nodes: '2000',
+      }).toString()}`)
+      const res = await fetch(url)
       if (!res.ok) {
         setLoadError(`Failed to expand branch (${res.status})`)
         return
       }
 
-      const json = (await res.json()) as WordDataResponse
-      const descendants = Array.isArray(json.descendants) ? json.descendants : []
-      const childPaths = descendants
-        .map(child => toNode(child))
-        .filter((child): child is DescNode => Boolean(child))
-        .map(child => [...basePath.slice(0, clickedIndex + 1), child])
-      const newPaths = childPaths
-      const mergedPaths = mergeExpandedPaths(basePath, newPaths, clickedIndex)
-
-      if (!newPaths.length) {
-        expandedNodeKeysRef.current.add(key)
+      const json = (await res.json()) as DescendantTreeResponse
+      const subtree = flattenDescendantTree(json.tree)
+      if (!subtree.length) {
         return
       }
 
-      setPaths(prev => {
-        const next = [...prev]
-        const currentIndex = Math.max(0, Math.min(pathIndex, next.length - 1))
-        next.splice(currentIndex, 1, ...mergedPaths)
+      const prefix = basePath.slice(0, clickedIndex + 1)
+      setAllPaths(prev => mergeSubtreePaths(prev, prefix, subtree))
+      setExpandedPrefixes(prev => {
+        const next = new Set(prev)
+        next.add(prefixKey(basePath, clickedIndex))
         return next
       })
-      expandedNodeKeysRef.current.add(key)
     } catch (error) {
-      if ((error as Error)?.name !== 'AbortError') {
-        setLoadError(error instanceof Error ? error.message : 'Failed to expand branch')
-      }
+      setLoadError(error instanceof Error ? error.message : 'Failed to expand branch')
     } finally {
       setLoading(false)
+      setLoadingBranch(current => (
+        current?.pathIndex === pathIndex && current?.nodeIndex === clickedIndex ? null : current
+      ))
     }
   }
 
-  const collapseNode = (basePath: DescPath, clickedIndex: number) => {
+  const toggleNodeExpansion = async (basePath: DescPath, clickedIndex: number, pathIndex: number) => {
     const prefix = basePath.slice(0, clickedIndex + 1)
-    const keysToRemove = new Set(prefix.map(node => nodeKey(node.lookupWord || node.word, node.lang_code)))
+    const key = prefixKey(basePath, clickedIndex)
 
-    setPaths(prev => {
-      const next = collapsePathsFromNode(prev, basePath, clickedIndex)
-      const prefixKey = prefix.map(node => nodeKey(node.word, node.lang_code)).join('>')
-      const hasPrefix = next.some(path => path.map(node => nodeKey(node.word, node.lang_code)).join('>') === prefixKey)
-      if (!hasPrefix) {
-        const insertAt = Math.max(
-          0,
-          prev.findIndex(path => {
-            if (path.length <= prefix.length) return false
-            return prefix.every((node, index) => nodeKey(node.word, node.lang_code) === nodeKey(path[index]?.word, path[index]?.lang_code))
-          }),
-        )
-        next.splice(insertAt < 0 ? next.length : insertAt, 0, prefix)
+    if (!pathHasDescendants(allPaths, prefix)) {
+      await loadSubtreeForNode(basePath, clickedIndex, pathIndex)
+      return
+    }
+
+    setSelected(null)
+    setLoadError(null)
+    setExpandedPrefixes(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        for (const currentKey of Array.from(next)) {
+          if (currentKey === key || currentKey.startsWith(`${key}>`)) {
+            next.delete(currentKey)
+          }
+        }
+      } else {
+        next.add(key)
       }
       return next
     })
-    setSelected(null)
-    activeBranchRef.current = null
 
-    for (const path of paths) {
-      if (path.length <= prefix.length) continue
-      if (!prefix.every((node, index) => nodeKey(node.word, node.lang_code) === nodeKey(path[index]?.word, path[index]?.lang_code))) {
-        continue
-      }
-      for (const descendant of path.slice(clickedIndex + 1)) {
-        keysToRemove.add(nodeKey(descendant.lookupWord || descendant.word, descendant.lang_code))
-      }
-    }
-
-    for (const key of keysToRemove) {
-      expandedNodeKeysRef.current.delete(key)
+    if (typeof window !== 'undefined') {
+      setLoading(true)
+      window.requestAnimationFrame(() => setLoading(false))
     }
   }
 
@@ -464,6 +510,28 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
     return points
   }
 
+  const loadingIcon = L.divIcon({
+    className: '',
+    html: `
+      <div style="display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:9999px;background:rgba(15,23,42,0.88);border:1px solid rgba(251,191,36,0.65);box-shadow:0 10px 30px rgba(15,23,42,0.35);">
+        <div style="width:18px;height:18px;border-radius:9999px;border:3px solid rgba(251,191,36,0.35);border-top-color:rgb(251,191,36);animation:spin 0.9s linear infinite;"></div>
+      </div>
+    `,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+  })
+
+  const rootLoadingIcon = L.divIcon({
+    className: '',
+    html: `
+      <div style="display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:9999px;background:rgba(15,23,42,0.88);border:1px solid rgba(96,165,250,0.7);box-shadow:0 12px 34px rgba(15,23,42,0.42);">
+        <div style="width:22px;height:22px;border-radius:9999px;border:3px solid rgba(96,165,250,0.3);border-top-color:rgb(96,165,250);animation:spin 0.9s linear infinite;"></div>
+      </div>
+    `,
+    iconSize: [56, 56],
+    iconAnchor: [28, 28],
+  })
+
   useEffect(() => {
     if (!onVisibleCoordinatesChange) return
 
@@ -490,6 +558,21 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
       <Pane name="descendant-paths-markers" style={{ zIndex: zIndex + 60 }}>
         <Pane name="descendant-paths-labels" style={{ zIndex: zIndex + 140 }}>
       <LayerGroup>
+        {isLoading && paths.length === 1 && allPaths.length === 1 ? (
+          <Marker
+            pane="descendant-paths-markers"
+            position={pointsForPath(paths[0], 0)[0]?.position ?? [0, 0]}
+            icon={rootLoadingIcon}
+            interactive={false}
+          >
+            <Tooltip pane="descendant-paths-labels" direction="top" offset={[0, -12]} permanent opacity={1}>
+              <div className="leading-tight" style={{ fontSize: 12, fontWeight: 700 }}>
+                <strong>Finding root node</strong>
+                <span className="ml-1 text-xs opacity-80">Loading the first parent node...</span>
+              </div>
+            </Tooltip>
+          </Marker>
+        ) : null}
         {paths.map((p, idx) => {
           const points = pointsForPath(p, idx)
           const coords = points.map(point => point.position)
@@ -521,7 +604,6 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
                     eventHandlers={{
                       click: () => {
                         setSelected(prev => (prev === idx ? null : idx))
-                        activeBranchRef.current = { pathIndex: idx, nodeIndex: p.length - 1 }
                       },
                     }}
                   />
@@ -563,14 +645,8 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
                   eventHandlers={{
                     click: () => {
                       onNodeSelect?.(p[i], idx, i)
-                      const isExpandedHere = hasVisibleDescendants(paths, p, i)
-                      if (isExpandedHere) {
-                        collapseNode(p, i)
-                        return
-                      }
-
-                      setSelected(idx)
-                      void expandNode(p[i], p, i, idx)
+                      setSelected(prev => (prev === idx ? null : idx))
+                      void toggleNodeExpansion(p, i, idx)
                     },
                   }}
                 >
@@ -596,6 +672,21 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
             </React.Fragment>
           )
         })}
+        {isLoading && loadingBranch && paths[loadingBranch.pathIndex] ? (
+          <Marker
+            pane="descendant-paths-markers"
+            position={pointsForPath(paths[loadingBranch.pathIndex], loadingBranch.pathIndex)[loadingBranch.nodeIndex]?.position ?? [0, 0]}
+            icon={loadingIcon}
+            interactive={false}
+          >
+            <Tooltip pane="descendant-paths-labels" direction="top" offset={[0, -10]} permanent opacity={1}>
+              <div className="leading-tight" style={{ fontSize: 12, fontWeight: 700 }}>
+                <strong>Loading descendants</strong>
+                <span className="ml-1 text-xs opacity-80">Finding the next descendant nodes...</span>
+              </div>
+            </Tooltip>
+          </Marker>
+        ) : null}
       </LayerGroup>
         </Pane>
       </Pane>

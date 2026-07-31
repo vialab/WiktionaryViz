@@ -8,6 +8,7 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 INDEX_FILE_PATH = os.path.join(DATA_DIR, "wiktionary_index.json")
 JSONL_FILE_PATH = os.path.join(DATA_DIR, "wiktionary_data.jsonl")
 LANG_MAP_FILE_PATH = os.path.join(DATA_DIR, "language_codes.json")
+REVERSE_DESCENDANT_GRAPH_FILE_PATH = os.path.join(DATA_DIR, "reverse_descendant_graph.json")
 
 # === Global caches ===
 index = {}

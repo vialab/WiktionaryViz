@@ -1,4 +1,5 @@
 import os, json, random, mmap
+import unicodedata
 from fastapi import APIRouter, Query, Body
 from fastapi.responses import JSONResponse
 from constants import DATA_DIR, index, JSONL_FILE_PATH, lang_code_to_name
@@ -9,6 +10,35 @@ import httpx
 router = APIRouter()
 
 
+def _normalize_for_match(text: str):
+    if not text:
+        return None
+    return str(text).strip().lower()
+
+
+def _index_word_variants(text: str):
+    raw = _normalize_for_match(text)
+    if not raw:
+        return []
+
+    variants = [raw]
+
+    stripped = raw.lstrip("*")
+    if stripped and stripped not in variants:
+        variants.append(stripped)
+
+    deaccented = "".join(ch for ch in unicodedata.normalize("NFKD", stripped) if unicodedata.category(ch) != "Mn")
+    if deaccented and deaccented not in variants:
+        variants.append(deaccented)
+
+    if stripped.startswith("reconstruction:"):
+        bare = stripped[len("reconstruction:"):].strip()
+        if bare and bare not in variants:
+            variants.append(bare)
+
+    return variants
+
+
 def _candidate_word_keys(word: str, lang_code: str):
     """Return possible index keys for a word, preferring exact matches first.
 
@@ -17,17 +47,25 @@ def _candidate_word_keys(word: str, lang_code: str):
     exact lookup first, then fall back to progressively shorter hyphenated
     prefixes so descendant markers can still resolve to a real entry.
     """
-    normalized_word = word.strip().lower()
     normalized_lang = lang_code.strip().lower()
 
-    candidates = [f"{normalized_word}_{normalized_lang}"]
-    if "-" in normalized_lang:
-        parts = normalized_lang.split("-")
-        for end in range(len(parts) - 1, 0, -1):
-            prefix = "-".join(parts[:end])
-            candidate = f"{normalized_word}_{prefix}"
-            if candidate not in candidates:
-                candidates.append(candidate)
+    candidates = []
+    for normalized_word in _index_word_variants(word):
+        exact = f"{normalized_word}_{normalized_lang}"
+        if exact in index and exact not in candidates:
+            candidates.append(exact)
+
+        if "-" in normalized_lang:
+            parts = normalized_lang.split("-")
+            for end in range(len(parts) - 1, 0, -1):
+                prefix = "-".join(parts[:end])
+                candidate = f"{normalized_word}_{prefix}"
+                if candidate not in candidates:
+                    candidates.append(candidate)
+
+        for key in index:
+            if key.startswith(f"{normalized_word}_") and key not in candidates:
+                candidates.append(key)
 
     return candidates
 

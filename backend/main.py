@@ -18,7 +18,8 @@ def ensure_main_index(rebuild=False):
     index_path = os.path.join(DATA_DIR, "wiktionary_index.json")
     most_translations_path = os.path.join(DATA_DIR, "most_translations.json")
     most_descendants_path = os.path.join(DATA_DIR, "most_descendants.json")
-    required_files = [index_path, most_translations_path, most_descendants_path]
+    reverse_descendant_graph_path = os.path.join(DATA_DIR, "reverse_descendant_graph.json")
+    required_files = [index_path, most_translations_path, most_descendants_path, reverse_descendant_graph_path]
     backend_dir = os.path.dirname(os.path.abspath(__file__))
     if rebuild or not all(os.path.exists(f) for f in required_files):
         print("[INFO] Building main index and stats files...")
