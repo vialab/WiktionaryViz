@@ -105,6 +105,21 @@ const getLanguageMetadata = async (code: string): Promise<LanguageMetadata | nul
   }
 }
 
+const getLanguageLookupCandidates = async (languageCode: string): Promise<string[]> => {
+  const trimmed = languageCode.trim()
+  const stripped = trimmed.replace(/-[^-]+$/, '')
+  const candidates = new Set<string>([trimmed, stripped].filter(Boolean))
+
+  for (const candidate of Array.from(candidates)) {
+    if (candidate.length === 2) {
+      const convertedCode = await getIso639P3(candidate)
+      if (convertedCode) candidates.add(convertedCode)
+    }
+  }
+
+  return Array.from(candidates)
+}
+
 /**
  * Converts an ISO 639-1 language code to ISO 639-3.
  * @param {string} iso639_1 - The ISO 639-1 code.
@@ -161,11 +176,13 @@ export const getCoordinatesForLanguage = async (
   }
 
   let iso639P3 = languageCode.trim()
+  const lookupCandidates = await getLanguageLookupCandidates(languageCode)
 
   // 🛠 Strip "-pro" suffix if present
   if (iso639P3.endsWith('-pro')) {
     iso639P3 = iso639P3.replace('-pro', '') // Remove "-pro"
     console.warn(`Detected proto-language. Adjusting lookup: ${languageCode} -> ${iso639P3}`)
+    lookupCandidates.unshift(iso639P3)
   }
 
   // Convert ISO 639-1 to ISO 639-3 if necessary
@@ -183,54 +200,97 @@ export const getCoordinatesForLanguage = async (
     return null
   }
 
-  const lookupCodes = [iso639P3.toLowerCase(), languageCode.toLowerCase()]
-  const exactMatches = languoidData.filter(row =>
-    lookupCodes.includes(row.iso639P3code?.toLowerCase() ?? ''),
-  )
+  const candidateNamesByCode = new Map<string, string[]>()
+  const candidateCountryCodes = new Set<string>()
 
-  for (const match of exactMatches) {
-    const coordinate = parseCoordinate(match.latitude, match.longitude)
-    if (coordinate) {
-      console.log(`Matched language by ISO code: ${match.iso639P3code}`)
-      console.log(`Coordinates: ${match.latitude}, ${match.longitude}`)
-      return coordinate
+  for (const candidate of lookupCandidates) {
+    const languageMetadata = await getLanguageMetadata(candidate)
+    const languageNames = Array.isArray(languageMetadata?.name)
+      ? languageMetadata.name
+      : languageMetadata?.name
+        ? [languageMetadata.name]
+        : []
+
+    candidateNamesByCode.set(candidate.toLowerCase(), languageNames.map(name => String(name).trim().toLowerCase()).filter(Boolean))
+
+    try {
+      const fallbackCountry = (await getCountryFromLanguageCode(candidate)) as {
+        code_2?: string
+      } | null
+      if (fallbackCountry?.code_2) {
+        candidateCountryCodes.add(fallbackCountry.code_2.trim().toUpperCase())
+      }
+    } catch {
+      /* ignore */
     }
   }
 
-  const languageMetadata = await getLanguageMetadata(languageCode)
-  const languageNames = Array.isArray(languageMetadata?.name)
-    ? languageMetadata.name
-    : languageMetadata?.name
-      ? [languageMetadata.name]
-      : []
+  const lookupCodes = Array.from(new Set([
+    iso639P3.toLowerCase(),
+    ...lookupCandidates.map(candidate => candidate.toLowerCase()),
+  ]))
 
-  for (const languageName of languageNames) {
-    const normalizedName = String(languageName).trim().toLowerCase()
-    if (!normalizedName) continue
+  let bestMatch: { row: LanguoidData; coordinate: Coordinate; score: number } | null = null
 
-    const nameMatches = languoidData.filter(row => {
-      const rowName = row.name?.trim().toLowerCase() ?? ''
-      return rowName === normalizedName || rowName.includes(normalizedName)
-    })
+  for (const row of languoidData) {
+    const coordinate = parseCoordinate(row.latitude, row.longitude)
+    if (!coordinate) continue
 
-    for (const match of nameMatches) {
-      const coordinate = parseCoordinate(match.latitude, match.longitude)
-      if (coordinate) {
-        console.log(`Matched language by name: ${match.name}`)
-        console.log(`Coordinates: ${match.latitude}, ${match.longitude}`)
-        return coordinate
+    const rowCode = row.iso639P3code?.trim().toLowerCase() ?? ''
+    const rowName = row.name?.trim().toLowerCase() ?? ''
+    let score = 0
+
+    if (lookupCodes.includes(rowCode)) {
+      score += 100
+    }
+
+    for (const [candidateCode, candidateNames] of candidateNamesByCode.entries()) {
+      if (candidateCode === rowCode) {
+        score += 100
+      }
+
+      candidateNames.forEach((candidateName, index) => {
+        if (!candidateName) return
+        if (rowName === candidateName) {
+          score += 40 + (index * 10)
+        } else if (rowName.includes(candidateName)) {
+          score += 20 + (index * 10)
+        }
+      })
+    }
+
+    if (row.country_ids) {
+      const rowCountries = row.country_ids.trim().split(/\s+/).map(country => country.trim().toUpperCase())
+      if (rowCountries.some(country => candidateCountryCodes.has(country))) {
+        score += 15
       }
     }
+
+    if (row.latitude && row.longitude) {
+      score += 1
+    }
+
+    if (!bestMatch || score > bestMatch.score) {
+      bestMatch = { row, coordinate, score }
+    }
+  }
+
+  if (bestMatch) {
+    console.log(`Matched language by scored lookup: ${bestMatch.row.iso639P3code} (${bestMatch.row.name})`)
+    console.log(`Coordinates: ${bestMatch.row.latitude}, ${bestMatch.row.longitude}`)
+    return bestMatch.coordinate
   }
 
   try {
-    const fallbackCountry = (await getCountryFromLanguageCode(languageCode)) as {
-      code_2?: string
-    } | null
-    if (fallbackCountry?.code_2) {
-      const fallbackCoordinate = await getCountryCoordinates(fallbackCountry.code_2, languoidData)
-      if (fallbackCoordinate.lat !== 0 && fallbackCoordinate.lng !== 0) {
-        return fallbackCoordinate
+    for (const candidate of lookupCandidates) {
+      const fallbackCountry = (await getCountryFromLanguageCode(candidate)) as {
+        code_2?: string
+      } | null
+      if (fallbackCountry?.code_2) {
+        const fallbackCoordinate = await getCountryCoordinates(fallbackCountry.code_2, languoidData)
+        if (fallbackCoordinate.lat !== 0 && fallbackCoordinate.lng !== 0) {
+          return fallbackCoordinate
+        }
       }
     }
   } catch (err) {
