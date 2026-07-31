@@ -65,6 +65,7 @@ export default function LandingPage({
   const [compareWord, setCompareWord] = useState<string>(word2 ?? '')
   const [compareLanguage, setCompareLanguage] = useState<string>(language2 || language1 || initialLanguage)
   const isLight = theme === 'light'
+  const wordHasWhitespace = /\s/.test(word)
 
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -295,6 +296,15 @@ export default function LandingPage({
                     </div>
                   )}
                 </div>
+                {wordHasWhitespace && (
+                  <p
+                    role="status"
+                    aria-live="polite"
+                    className={isLight ? 'mt-2 text-left text-sm text-amber-700' : 'mt-2 text-left text-sm text-amber-300'}
+                  >
+                    Warning: whitespace detected in the word input.
+                  </p>
+                )}
               </div>
 
               {compareMode && (
