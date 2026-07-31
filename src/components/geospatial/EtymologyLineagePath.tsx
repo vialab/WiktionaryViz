@@ -196,11 +196,13 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
     const activeEdgeIndex = isPlaying && active !== undefined ? active + 1 : undefined
 
     while (node) {
-      const { word, lang_code, romanization, position, expansion } = node
+      const currentNode = node
+      const currentIndex = idx
+      const { word, lang_code, romanization, position, expansion } = currentNode
       if (position) {
         const center = normalizePosition(position)
-        const isActive = active === idx
-        const visible = active === undefined || idx <= active // only show nodes up to active
+        const isActive = active === currentIndex
+        const visible = active === undefined || currentIndex <= active // only show nodes up to active
         if (visible) {
           const tooltipPermanent = showAllPopups || isActive
           completedSegments.push(
@@ -212,11 +214,11 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
               fillColor={isActive ? '#fbbf24' : '#3388ff'}
               color={isActive ? '#f59e0b' : '#3388ff'}
               weight={isActive ? 2 : 1}
-                opacity={opacity}
-                fillOpacity={(isActive ? 0.9 : 0.7) * opacity}
+              opacity={opacity}
+              fillOpacity={(isActive ? 0.9 : 0.7) * opacity}
               className={isActive ? 'etymology-node-active node-pulse' : 'etymology-node'}
               eventHandlers={{
-                click: () => onNodeClick?.(node as EtymologyNode, idx),
+                click: () => onNodeClick?.(currentNode, currentIndex),
               }}
             >
               <Tooltip
@@ -238,22 +240,22 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
           )
         }
         // Draw edge to next if within active range
-        if (node.next && node.next.position) {
+        if (currentNode.next && currentNode.next.position) {
           const start = center
-          const end = normalizePosition(node.next.position)
-          const nextIndex = idx + 1
+          const end = normalizePosition(currentNode.next.position)
+          const nextIndex = currentIndex + 1
           const edgeActive = activeEdgeIndex === nextIndex
           const alreadyPast = active === undefined || nextIndex <= active
           // Precompute for whichever branch uses them
           const angle = calculateBearing(start, end)
           if (alreadyPast) {
             // Static drawn segment
-            const edgeStyle = edgeStyleBetween(lang_code, node.next.lang_code)
+            const edgeStyle = edgeStyleBetween(lang_code, currentNode.next.lang_code)
             const dash = edgeStyle.dashArray
             completedSegments.push(
               <Polyline
                 pane={LINE_PANE}
-                key={`polyline-static-${word}-${node.next.word}`}
+                key={`polyline-static-${word}-${currentNode.next.word}`}
                 positions={[start, end]}
                 pathOptions={{
                   className: `etymology-segment-static ${dash ? 'proto-dotted' : 'attested-solid'}`,
@@ -268,11 +270,11 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
             completedSegments.push(
               <Marker
                 pane={MARKER_PANE}
-                key={`arrow-static-${word}-${node.next.word}`}
+                key={`arrow-static-${word}-${currentNode.next.word}`}
                 position={getTrailingPosition(map, start, end, 1)}
                 icon={createArrowIcon(angle, {
                   size: 22,
-                  color: isProto(lang_code) || isProto(node.next.lang_code) ? '#e11d48' : '#3b82f6',
+                  color: isProto(lang_code) || isProto(currentNode.next.lang_code) ? '#e11d48' : '#3b82f6',
                   outline: '#082f49',
                   outlineWidth: 2,
                   opacity,
@@ -281,10 +283,10 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
               />,
             )
           } else if (edgeActive) {
-            const protoEdge = isProto(lang_code) || isProto(node.next.lang_code)
+            const protoEdge = isProto(lang_code) || isProto(currentNode.next.lang_code)
             activeSegments.push(
               <AnimatedSegment
-                key={`polyline-anim-${word}-${node.next.word}`}
+                key={`polyline-anim-${word}-${currentNode.next.word}`}
                 start={start}
                 end={end}
                 growMs={
@@ -306,7 +308,7 @@ const EtymologyLineagePath: FC<EtymologyLineagePathProps> = memo(
           }
         }
       }
-      node = node.next
+      node = currentNode.next
       idx++
     }
     if (!lineage) return null
