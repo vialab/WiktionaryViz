@@ -2,6 +2,16 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.37](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.36...wiktionaryviz-v0.1.37) (2026-07-31)
+
+
+### Features
+
+* **descendants:** implement reverse descendant graph functionality and enhance descendant tree structure for improved data retrieval and visualization ([d2cfaac](https://github.com/vialab/WiktionaryViz/commit/d2cfaac615df05c40285f55f04c38a27e1ce2711))
+* **geospatial:** add translation search functionality and marker selection to enhance user experience in GeospatialPage and GeospatialSettingsMenu ([d4c8993](https://github.com/vialab/WiktionaryViz/commit/d4c8993de26993d3308ab55ef05c38677dfefcbb))
+* **LandingPage:** add warning message for whitespace detection in word input to enhance user feedback ([31eae19](https://github.com/vialab/WiktionaryViz/commit/31eae1919a7ae83f7ed567e85e912a3cc0d5696a))
+* **languageUtils, mapUtils:** enhance language code handling and lookup logic to improve country detection and matching accuracy ([ec18676](https://github.com/vialab/WiktionaryViz/commit/ec18676505e59077d8fcf425b75ee9ba8cb1009f))
+
 ## [0.1.36](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.35...wiktionaryviz-v0.1.36) (2026-07-30)
 
 
