@@ -1227,6 +1227,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           }}
           onResetLayers={resetLayers}
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+          onMarkerSelect={handleMarkerSelect}
           annotationMode={mapState.filters.annotationMode}
           annotationsVisible={showAnnotations}
           annotationTool={mapState.filters.annotationTool}

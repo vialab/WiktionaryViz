@@ -9,6 +9,9 @@ export interface TranslationMarker {
   popupText: string
   word: string
   language: string
+  code: string
+  sense?: string
+  roman?: string
   wiktionaryUrl: string
 }
 

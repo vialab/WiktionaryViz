@@ -63,6 +63,7 @@ interface GeospatialSettingsMenuProps {
   onLayerMove: (layer: LayerOrderKey, direction: LayerOrderDirection) => void
   onResetLayers: () => void
   onOpenCommandPalette: () => void
+  onMarkerSelect: (marker: TranslationMarker, index: number) => void
   annotationMode: boolean
   annotationsVisible: boolean
   annotationTool: AnnotationKind
@@ -95,6 +96,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   onLayerMove,
   onResetLayers,
   onOpenCommandPalette,
+  onMarkerSelect,
   annotationMode,
   annotationsVisible,
   annotationTool,
@@ -112,6 +114,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   const [capturing, setCapturing] = useState(false)
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [translationSearchQuery, setTranslationSearchQuery] = useState('')
   const [options, setOptions] = useState<ExportOptions>({ markers: true, lineagePoints: true, lineagePath: true, annotations: true })
   const previewRef = useRef<HTMLDivElement | null>(null)
 
@@ -178,6 +181,58 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     { key: 'lineagePath' as const, label: 'Lineage path' },
     { key: 'annotations' as const, label: 'Annotations' },
   ]), [])
+
+  const filteredTranslationMarkers = useMemo(() => {
+    const normalizedQuery = translationSearchQuery.trim().toLowerCase()
+    if (!normalizedQuery) return [] as Array<{ marker: TranslationMarker; index: number; score: number }>
+
+    const tokens = normalizedQuery.split(/\s+/).filter(Boolean)
+
+    return markers
+      .map((marker, index) => {
+        const haystack = [marker.word, marker.language, marker.code, marker.roman, marker.sense, marker.popupText]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+
+        if (!tokens.every(token => haystack.includes(token))) {
+          return null
+        }
+
+        const word = marker.word.toLowerCase()
+        const language = marker.language.toLowerCase()
+        const code = marker.code.toLowerCase()
+        let score = 20
+
+        if (word === normalizedQuery || language === normalizedQuery || code === normalizedQuery) {
+          score -= 10
+        } else if (word.startsWith(normalizedQuery) || language.startsWith(normalizedQuery) || code.startsWith(normalizedQuery)) {
+          score -= 6
+        } else if (word.includes(normalizedQuery) || language.includes(normalizedQuery) || code.includes(normalizedQuery)) {
+          score -= 3
+        }
+
+        tokens.forEach(token => {
+          if (word.startsWith(token) || language.startsWith(token) || code.startsWith(token)) {
+            score -= 1
+          } else if (word.includes(token) || language.includes(token) || code.includes(token)) {
+            score -= 0.5
+          }
+        })
+
+        return { marker, index, score }
+      })
+      .filter((entry): entry is { marker: TranslationMarker; index: number; score: number } => entry !== null)
+      .sort((left, right) => left.score - right.score || left.marker.word.localeCompare(right.marker.word))
+  }, [markers, translationSearchQuery])
+
+  const handleTranslationSelect = useCallback((marker: TranslationMarker, index: number) => {
+    if (!layerVisibility.translations) {
+      onLayerToggle('translations')
+    }
+
+    onMarkerSelect(marker, index)
+  }, [layerVisibility.translations, onLayerToggle, onMarkerSelect])
 
   const onChange = (key: keyof ExportOptions) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setOptions(prev => ({ ...prev, [key]: e.target.checked }))
@@ -407,6 +462,57 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                     </button>
                   )
                 })}
+              </div>
+
+              <div className={isLight ? 'rounded-lg border border-slate-200 bg-white p-3' : 'rounded-lg border border-slate-800 bg-slate-950/40 p-3'}>
+                <label className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'} htmlFor="translation-search">
+                  Search translations
+                </label>
+                <input
+                  id="translation-search"
+                  type="search"
+                  value={translationSearchQuery}
+                  onChange={event => setTranslationSearchQuery(event.target.value)}
+                  placeholder="Word, language, or code"
+                  className={isLight ? 'mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none' : 'mt-2 w-full rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-slate-500 focus:outline-none'}
+                />
+                <p className={isLight ? 'mt-2 text-xs leading-5 text-slate-500' : 'mt-2 text-xs leading-5 text-slate-400'}>
+                  Try a word, language name, or language code such as <span className={isLight ? 'font-medium text-slate-700' : 'font-medium text-slate-200'}>چای</span>, <span className={isLight ? 'font-medium text-slate-700' : 'font-medium text-slate-200'}>Iranian Persian</span>, or <span className={isLight ? 'font-medium text-slate-700' : 'font-medium text-slate-200'}>fa-ira</span>.
+                </p>
+
+                {translationSearchQuery.trim() && (
+                  <div className="mt-3 space-y-2">
+                    <div className={isLight ? 'text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500' : 'text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400'}>
+                      {filteredTranslationMarkers.length} match{filteredTranslationMarkers.length === 1 ? '' : 'es'}
+                    </div>
+                    <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+                      {filteredTranslationMarkers.length ? filteredTranslationMarkers.slice(0, 20).map(({ marker, index }) => (
+                        <button
+                          key={`${marker.code}-${marker.word}-${index}`}
+                          type="button"
+                          onClick={() => handleTranslationSelect(marker, index)}
+                          className={isLight ? 'flex w-full flex-col rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left transition hover:border-blue-300 hover:bg-white' : 'flex w-full flex-col rounded-xl border border-slate-800 bg-slate-950/30 px-3 py-2 text-left transition hover:border-slate-500 hover:bg-slate-900'}
+                        >
+                          <div className={isLight ? 'text-sm font-semibold text-slate-900' : 'text-sm font-semibold text-slate-100'}>
+                            {marker.word}
+                          </div>
+                          <div className={isLight ? 'mt-0.5 text-xs text-slate-500' : 'mt-0.5 text-xs text-slate-400'}>
+                            {marker.language} · {marker.code}
+                          </div>
+                          {marker.sense && (
+                            <div className={isLight ? 'mt-1 text-xs leading-5 text-slate-600' : 'mt-1 text-xs leading-5 text-slate-300'}>
+                              {marker.sense}
+                            </div>
+                          )}
+                        </button>
+                      )) : (
+                        <div className={isLight ? 'rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500' : 'rounded-xl border border-dashed border-slate-800 bg-slate-950/30 px-3 py-3 text-sm text-slate-400'}>
+                          No translation markers match that query.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>

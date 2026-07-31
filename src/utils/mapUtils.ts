@@ -3,6 +3,7 @@ import { apiUrl } from '@/utils/apiBase'
 import { getLanguage } from '@ladjs/country-language'
 import type { EtymologyNode } from '@/types/etymology'
 import type { LanguoidData } from '@/types/languoid'
+import type { TranslationMarker } from '@/components/geospatial/TranslationMarkers'
 import countriesIso from 'i18n-iso-countries'
 // Locale registration skipped (default English names sufficient for alpha2->alpha3 conversion)
 
@@ -23,17 +24,6 @@ export interface Translation {
 interface Coordinate {
   lat: number
   lng: number
-}
-
-/**
- * Represents a marker with a position and popup text.
- */
-interface Marker {
-  position: [number, number]
-  popupText: string
-  word: string
-  language: string
-  wiktionaryUrl: string
 }
 
 interface LanguageMetadata {
@@ -290,14 +280,14 @@ export const getCountryCoordinates = async (
 export const processTranslations = async (
   translations: Translation[],
   languoidData: LanguoidData[],
-  setMarkers: React.Dispatch<React.SetStateAction<Marker[]>>,
+  setMarkers: React.Dispatch<React.SetStateAction<TranslationMarker[]>>,
 ) => {
   try {
     console.log('Starting to process translations...')
 
     const cleanedTranslations = translations.filter(t => t.lang && t.code && t.word)
     const seenMarkers = new Map<string, string[]>()
-    const newMarkers: Marker[] = []
+    const newMarkers: TranslationMarker[] = []
 
     for (const translation of cleanedTranslations) {
       try {
@@ -349,6 +339,8 @@ export const processTranslations = async (
         popupText: `${lang} (${code}): ${word} ${roman !== 'undefined' ? `(${roman})` : ''}<br>Meaning(s):${meanings.join('')}`,
         word,
         language: lang,
+        code,
+        roman: roman !== 'undefined' ? roman : undefined,
         wiktionaryUrl: buildWiktionaryUrl(word),
       })
     })
