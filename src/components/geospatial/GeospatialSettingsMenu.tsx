@@ -129,10 +129,6 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     if (!element) return
 
     DomEvent.disableScrollPropagation(element)
-
-    return () => {
-      DomEvent.enableScrollPropagation(element)
-    }
   }, [])
 
   useEffect(() => {

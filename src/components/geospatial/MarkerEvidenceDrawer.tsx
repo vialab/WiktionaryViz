@@ -31,10 +31,6 @@ const MarkerEvidenceDrawer: FC<MarkerEvidenceDrawerProps> = ({
     if (!element) return
 
     DomEvent.disableScrollPropagation(element)
-
-    return () => {
-      DomEvent.enableScrollPropagation(element)
-    }
   }, [])
 
   useEffect(() => {
