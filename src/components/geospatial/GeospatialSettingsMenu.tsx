@@ -1,6 +1,8 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Highlighter, Link2, PencilLine, Radius } from 'lucide-react'
 import html2canvas from 'html2canvas'
+import { DomEvent } from 'leaflet'
+import { useMap } from 'react-leaflet'
 import type { TranslationMarker } from './TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
 import type { AnnotationColor, AnnotationKind, MapLayerKey } from '@/types/mapState'
@@ -110,6 +112,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   theme = 'dark',
 }) => {
   const isLight = theme === 'light'
+  const map = useMap()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [capturing, setCapturing] = useState(false)
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
@@ -117,8 +120,44 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   const [translationSearchQuery, setTranslationSearchQuery] = useState('')
   const [options, setOptions] = useState<ExportOptions>({ markers: true, lineagePoints: true, lineagePath: true, annotations: true })
   const previewRef = useRef<HTMLDivElement | null>(null)
+  const sidebarRef = useRef<HTMLElement | null>(null)
 
   useFocusTrap(Boolean(previewDataUrl), previewRef)
+
+  useEffect(() => {
+    const element = sidebarRef.current
+    if (!element) return
+
+    DomEvent.disableScrollPropagation(element)
+
+    return () => {
+      DomEvent.enableScrollPropagation(element)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!map) return
+
+    const enableScrollZoom = () => {
+      map.scrollWheelZoom?.disable()
+    }
+
+    const disableScrollZoom = () => {
+      map.scrollWheelZoom?.enable()
+    }
+
+    const element = sidebarRef.current
+    if (!element) return
+
+    element.addEventListener('pointerenter', enableScrollZoom)
+    element.addEventListener('pointerleave', disableScrollZoom)
+
+    return () => {
+      element.removeEventListener('pointerenter', enableScrollZoom)
+      element.removeEventListener('pointerleave', disableScrollZoom)
+      map.scrollWheelZoom?.enable()
+    }
+  }, [map])
 
   const layerControls = useMemo(() => ([
     { key: 'translations' as const, label: 'Translations', hint: 'Marker clusters and popups' },
@@ -388,6 +427,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   return (
     <>
       <aside
+        ref={sidebarRef}
         aria-label="Map sidebar"
         data-map-ui-overlay="true"
         onMouseDown={event => event.stopPropagation()}

@@ -1,5 +1,7 @@
-import { FC } from 'react'
+import { FC, useEffect, useRef } from 'react'
 import { ExternalLink, X } from 'lucide-react'
+import { DomEvent } from 'leaflet'
+import { useMap } from 'react-leaflet'
 
 interface MarkerEvidenceDrawerProps {
   open: boolean
@@ -21,11 +23,49 @@ const MarkerEvidenceDrawer: FC<MarkerEvidenceDrawerProps> = ({
   theme = 'dark',
 }) => {
   const isLight = theme === 'light'
+  const map = useMap()
+  const drawerRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    const element = drawerRef.current
+    if (!element) return
+
+    DomEvent.disableScrollPropagation(element)
+
+    return () => {
+      DomEvent.enableScrollPropagation(element)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!map) return
+
+    const enableScrollZoom = () => {
+      map.scrollWheelZoom?.disable()
+    }
+
+    const disableScrollZoom = () => {
+      map.scrollWheelZoom?.enable()
+    }
+
+    const element = drawerRef.current
+    if (!element) return
+
+    element.addEventListener('pointerenter', enableScrollZoom)
+    element.addEventListener('pointerleave', disableScrollZoom)
+
+    return () => {
+      element.removeEventListener('pointerenter', enableScrollZoom)
+      element.removeEventListener('pointerleave', disableScrollZoom)
+      map.scrollWheelZoom?.enable()
+    }
+  }, [map])
 
   if (!open) return null
 
   return (
     <aside
+      ref={drawerRef}
       aria-label="Marker evidence drawer"
       data-map-ui-overlay="true"
       onMouseDown={event => event.stopPropagation()}
