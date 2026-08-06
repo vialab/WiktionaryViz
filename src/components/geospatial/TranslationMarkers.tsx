@@ -1,5 +1,5 @@
 import { FC, memo } from 'react'
-import { Marker, Popup } from 'react-leaflet'
+import { Marker, Tooltip } from 'react-leaflet'
 
 /**
  * Props for TranslationMarkers component.
@@ -21,7 +21,7 @@ export interface TranslationMarkersProps {
 }
 
 /**
- * Renders translation markers with popups. Memoized for performance.
+ * Renders translation markers with hoverable tooltips. Memoized for performance.
  */
 const TranslationMarkers: FC<TranslationMarkersProps> = memo(({ markers, onMarkerClick }) => (
   <>
@@ -30,16 +30,23 @@ const TranslationMarkers: FC<TranslationMarkersProps> = memo(({ markers, onMarke
         key={index}
         position={marker.position}
         interactive={true}
+        riseOnHover={true}
         eventHandlers={{
+          mouseover: e => {
+            e.target.openTooltip()
+          },
+          mouseout: e => {
+            e.target.closeTooltip()
+          },
           click: e => {
             onMarkerClick?.(marker, index)
-            e.target.openPopup()
+            e.target.openTooltip()
           },
         }}
       >
-        <Popup>
+        <Tooltip direction="top" offset={[0, -8]} sticky interactive>
           <div dangerouslySetInnerHTML={{ __html: marker.popupText }} />
-        </Popup>
+        </Tooltip>
       </Marker>
     ))}
   </>

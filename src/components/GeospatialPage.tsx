@@ -354,8 +354,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   useEffect(() => {
     if (!mapInstance) return
 
-    const translationsPane = mapInstance.getPane('translations') ?? mapInstance.createPane('translations')
-    translationsPane.style.zIndex = String(layerZIndex('translations'))
+    const translationsClusterPane = mapInstance.getPane('translations-clusters') ?? mapInstance.createPane('translations-clusters')
+    translationsClusterPane.style.zIndex = String(layerZIndex('translations') - 20)
 
     const paneZIndexes: Array<[string, number]> = [
       ['translation-labels', layerZIndex('translations') + 80],
@@ -1275,7 +1275,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         )}
         {/* Country highlighting now limited to lineage-related countries only (no global hover). */}
         {showTranslations && (
-          <MarkerClusterGroup clusterPane="translations">
+          <MarkerClusterGroup
+            clusterPane="translations-clusters"
+            spiderfyDistanceMultiplier={1.35}
+          >
             <TranslationMarkers
               markers={markers}
               onMarkerClick={handleMarkerSelect}
