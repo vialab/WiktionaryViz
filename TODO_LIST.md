@@ -5,30 +5,6 @@ P0 = must-have for the core prototype
 P1 = high-value thesis/demo feature
 P2 = polish, export, or quality-of-life feature
 
-[ ] P0 — Make selectable nodes and markers look clickable
-    Description: Increase marker size or styling so the initial node and other interactive points are visually distinct from non-interactive ones.
-    Use case: Helps users know where interaction is possible.
-    Research context: Participants could not tell which markers or nodes were clickable.
-
-[ ] P0 — Fix the descendant-path root and connection bugs
-    Description: Ensure the descendant path starts from the correct ancestor, loads all expected branches, and does not break on intermediate forms.
-    Use case: Restores the intended historical branching view.
-    Research context: The transcript exposed missing or disconnected descendant-path data.
-
-[ ] P0 — Distinguish etymology lineage from descendant paths more clearly
-    Description: Make the two layers differ in both behavior and labeling so the relationship between them is obvious.
-    Use case: Prevents users from treating the two layers as interchangeable.
-    Research context: The transcript repeatedly showed confusion between the two layer types.
-
-[ ] P0 — Fix descendant and etymology data gaps for words like light, dark, river, symptom, and play
-    Description: Investigate the underlying data or loading logic when recommended examples fail or stop early.
-    Use case: Ensures the demo words produce the expected exploration paths.
-    Research context: Multiple sample words behaved inconsistently during the session.
-
-[ ] P0 — Fix the play button behavior in timeline animation
-    Description: Start playback from the beginning, not at the end, and restart when Play is pressed after completion.
-    Use case: Makes the timeline control behave like users expect.
-    Research context: The playback appeared to start completed and did not reset cleanly.
 
 [ ] P0 — Fix compare-mode control overlap
     Description: Prevent the playback and control bar from overlapping other UI in compare layouts.
@@ -274,3 +250,11 @@ P2 = polish, export, or quality-of-life feature
     Description: Reduce visual clutter by bundling similar routes or simplifying paths at low zoom.
     Use case: Makes borrowing/descent routes easier to read.
     Research context: Participants noted that complex visualizations can lose their purpose if they become too crowded.
+
+[ ] P3 - Add loading indicator for descendants
+
+[ ] P3 - Change opacity of other brnaches in descendants mode
+
+[ ] P3 - Escape doesnt work in annotation mode
+
+[ ] P3 - Add events logger, e.g. button clicks, node clicks, etc. for research purposes

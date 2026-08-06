@@ -297,6 +297,17 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         ...current.activeLayers,
         [layer]: !current.activeLayers[layer],
       },
+      ...(layer === 'etymology'
+        ? {
+            filters: {
+              ...current.filters,
+              etymologyRequested: false,
+              currentIndex: undefined,
+              isPlaying: false,
+              showAllPopups: !current.activeLayers[layer],
+            },
+          }
+        : null),
     }))
   }, [updateMapState])
 
@@ -1362,6 +1373,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             onChange={index => setFilterState({ currentIndex: index })}
             isPlaying={isPlaying}
             onTogglePlay={() => {
+              if (!isPlaying && currentIndex === undefined) {
+                setFilterState({ currentIndex: 0, isPlaying: true, showAllPopups: false })
+                announce('Playback started')
+                return
+              }
+
               setFilterState({ isPlaying: !isPlaying })
               announce(isPlaying ? 'Playback paused' : 'Playback started')
             }}
