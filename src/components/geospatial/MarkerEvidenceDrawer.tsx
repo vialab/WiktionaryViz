@@ -12,6 +12,7 @@ interface MarkerEvidenceDrawerProps {
   onPivotSearch?: () => void
   onClose: () => void
   theme?: 'dark' | 'light'
+  dockSide?: 'left' | 'right'
 }
 
 const MarkerEvidenceDrawer: FC<MarkerEvidenceDrawerProps> = ({
@@ -23,6 +24,7 @@ const MarkerEvidenceDrawer: FC<MarkerEvidenceDrawerProps> = ({
   onPivotSearch,
   onClose,
   theme = 'dark',
+  dockSide = 'right',
 }) => {
   const isLight = theme === 'light'
   const map = useMap()
@@ -69,8 +71,8 @@ const MarkerEvidenceDrawer: FC<MarkerEvidenceDrawerProps> = ({
       onMouseDown={event => event.stopPropagation()}
       onClick={event => event.stopPropagation()}
       className={isLight
-        ? 'fixed right-4 top-4 z-[11500] flex h-[calc(100vh-2rem)] w-[min(30rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-2xl shadow-slate-200/50 backdrop-blur'
-        : 'fixed right-4 top-4 z-[11500] flex h-[calc(100vh-2rem)] w-[min(30rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-slate-950 text-slate-100 shadow-2xl shadow-black/40 backdrop-blur'}
+        ? `absolute top-4 ${dockSide === 'left' ? 'left-4' : 'right-4'} z-[11500] flex h-[calc(100%-2rem)] w-[min(30rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-2xl shadow-slate-200/50 backdrop-blur`
+        : `absolute top-4 ${dockSide === 'left' ? 'left-4' : 'right-4'} z-[11500] flex h-[calc(100%-2rem)] w-[min(30rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-slate-950 text-slate-100 shadow-2xl shadow-black/40 backdrop-blur`}
     >
       <div className={isLight ? 'border-b border-slate-200 bg-slate-50 px-4 py-3' : 'border-b border-slate-800 bg-slate-900/80 px-4 py-3'}>
         <div className="flex items-start justify-between gap-3">

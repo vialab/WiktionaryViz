@@ -106,6 +106,9 @@ interface GeospatialSettingsMenuProps {
   presentationLabels: boolean
   onPresentationLabelsChange: (enabled: boolean) => void
   theme?: 'dark' | 'light'
+  dockSide?: 'left' | 'right'
+  startCollapsed?: boolean
+  onOpenControlsRegister?: (openControls: (() => void) | null) => void
 }
 
 const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
@@ -151,6 +154,9 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   presentationLabels,
   onPresentationLabelsChange,
   theme = 'dark',
+  dockSide = 'left',
+  startCollapsed = false,
+  onOpenControlsRegister,
   savedViews,
   onSaveCurrentView,
   onLoadSavedView,
@@ -163,7 +169,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
 }) => {
   const isLight = theme === 'light'
   const map = useMap()
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(startCollapsed)
   const [capturing, setCapturing] = useState(false)
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -186,6 +192,13 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
 
     DomEvent.disableScrollPropagation(element)
   }, [])
+
+  useEffect(() => {
+    onOpenControlsRegister?.(() => setIsCollapsed(false))
+    return () => {
+      onOpenControlsRegister?.(null)
+    }
+  }, [onOpenControlsRegister])
 
   useEffect(() => {
     if (!map) return
@@ -521,8 +534,8 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
         onClick={event => event.stopPropagation()}
         data-collapsed={isCollapsed ? 'true' : 'false'}
         className={isLight
-          ? `fixed inset-y-0 left-0 z-[10000] flex flex-col border-r border-slate-200/90 bg-white/96 text-slate-900 shadow-2xl shadow-slate-200/40 backdrop-blur transition-[width] duration-200 ease-out ${isCollapsed ? 'w-14' : 'w-[min(22rem,calc(100vw-1rem))]'}`
-          : `fixed inset-y-0 left-0 z-[10000] flex flex-col border-r border-slate-800/90 bg-slate-950/96 text-slate-100 shadow-2xl shadow-black/30 backdrop-blur transition-[width] duration-200 ease-out ${isCollapsed ? 'w-14' : 'w-[min(22rem,calc(100vw-1rem))]'}`}
+          ? `absolute inset-y-0 ${dockSide === 'right' ? 'right-0 border-l border-slate-200/90' : 'left-0 border-r border-slate-200/90'} z-[10000] flex flex-col bg-white/96 text-slate-900 shadow-2xl shadow-slate-200/40 backdrop-blur transition-[width] duration-200 ease-out ${isCollapsed ? 'w-14' : 'w-[min(22rem,calc(100vw-1rem))]'}`
+          : `absolute inset-y-0 ${dockSide === 'right' ? 'right-0 border-l border-slate-800/90' : 'left-0 border-r border-slate-800/90'} z-[10000] flex flex-col bg-slate-950/96 text-slate-100 shadow-2xl shadow-black/30 backdrop-blur transition-[width] duration-200 ease-out ${isCollapsed ? 'w-14' : 'w-[min(22rem,calc(100vw-1rem))]'}`}
         style={{ pointerEvents: 'auto' }}
       >
         <div className={isLight ? 'border-b border-slate-200 bg-gradient-to-b from-white via-slate-50 to-slate-100 px-3 py-3' : 'border-b border-slate-800 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900/80 px-3 py-3'}>

@@ -346,8 +346,10 @@ interface GeospatialPageProps {
   language: string
   onPivotSearch?: (word: string, language: string) => void
   onGuideOpenRegister?: (openGuide: (() => void) | null) => void
+  onControlsOpenRegister?: (openControls: (() => void) | null) => void
   initialMapState?: MapState | null
   onMapStateChange?: (state: MapState) => void
+  syncedCamera?: MapState['camera'] | null
   savedViews?: SavedViewRecord[]
   onSaveCurrentView?: (name: string) => void
   onLoadSavedView?: (viewId: string) => void
@@ -362,6 +364,7 @@ interface GeospatialPageProps {
   inspireCategory?: string | null
   embedded?: boolean
   instanceId?: string
+  compareMode?: boolean
 }
 
 /**
@@ -373,8 +376,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   language,
   onPivotSearch,
   onGuideOpenRegister,
+  onControlsOpenRegister,
   initialMapState,
   onMapStateChange,
+  syncedCamera,
   savedViews = [],
   onSaveCurrentView,
   onLoadSavedView,
@@ -389,6 +394,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   inspireCategory,
   embedded = false,
   instanceId,
+  compareMode = false,
 }) => {
   const isLight = theme === 'light'
   const urlInitialMapState = typeof window === 'undefined'
@@ -470,6 +476,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const playbackTimerRef = useRef<number | null>(null)
   const announcementTimerRef = useRef<number | null>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
+  const pendingSyncedCameraRef = useRef<MapState['camera'] | null>(null)
   const sectionRef = useRef<HTMLElement | null>(null)
   const [mainMap, setMainMap] = useState<L.Map | null>(null)
   const handleMapReady = useCallback((instance: L.Map) => {
@@ -1211,6 +1218,17 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     if (!mapInstance) return
 
     const syncCamera = () => {
+      if (pendingSyncedCameraRef.current) {
+        const pending = pendingSyncedCameraRef.current
+        const center = mapInstance.getCenter()
+        const zoom = mapInstance.getZoom()
+        const sameCamera = zoom === pending.zoom && center.lat === pending.center[0] && center.lng === pending.center[1]
+        if (sameCamera) {
+          pendingSyncedCameraRef.current = null
+          return
+        }
+      }
+
       const center = mapInstance.getCenter()
       setCameraState([center.lat, center.lng], mapInstance.getZoom())
     }
@@ -1221,6 +1239,17 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       mapInstance.off('moveend zoomend', syncCamera)
     }
   }, [mapInstance, setCameraState])
+
+  useEffect(() => {
+    if (!mapInstance || !syncedCamera) return
+
+    const center = mapInstance.getCenter()
+    const sameCamera = mapInstance.getZoom() === syncedCamera.zoom && center.lat === syncedCamera.center[0] && center.lng === syncedCamera.center[1]
+    if (sameCamera) return
+
+    pendingSyncedCameraRef.current = syncedCamera
+    mapInstance.flyTo([syncedCamera.center[0], syncedCamera.center[1]], syncedCamera.zoom, { animate: true, duration: 0.35 })
+  }, [mapInstance, syncedCamera])
 
   useEffect(() => {
     if (currentIndex === undefined || !lineage) {
@@ -1802,6 +1831,9 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           presentationLabels={presentationLabels}
           onPresentationLabelsChange={setPresentationLabels}
           theme={theme}
+          dockSide="left"
+          startCollapsed={compareMode}
+          onOpenControlsRegister={onControlsOpenRegister}
         />
         {theme === 'dark' ? (
           <TileLayer
@@ -1999,6 +2031,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           onPivotSearch={handlePivotFromSelection}
           onClose={() => setSelectedItem({ kind: 'none' })}
           theme={theme}
+          dockSide="right"
         />
         <CommandPalette
           open={commandPaletteOpen}
