@@ -1,9 +1,9 @@
 // Shared visual constants for region + edge styling (attested vs proto)
 export const COLORS = {
-  regionAttestedFill: '#1f8af2',
-  regionAttestedStroke: '#1f8af2',
-  regionProtoFill: '#e11d48',
-  regionProtoStroke: '#e11d48',
+  regionAttestedFill: '#93c5fd',
+  regionAttestedStroke: '#2563eb',
+  regionProtoFill: '#cbd5e1',
+  regionProtoStroke: '#475569',
 }
 
 export const EDGES = {
@@ -20,15 +20,16 @@ export const regionStyleFor = (lang_code: string) =>
   isProto(lang_code)
     ? {
         color: COLORS.regionProtoStroke,
-        weight: 2,
+        weight: 1.5,
         fillColor: COLORS.regionProtoFill,
-        fillOpacity: 0.25,
+        fillOpacity: 0.14,
+        dashArray: '6 4',
       }
     : {
         color: COLORS.regionAttestedStroke,
         weight: 2,
         fillColor: COLORS.regionAttestedFill,
-        fillOpacity: 0.25,
+        fillOpacity: 0.2,
       }
 
 export const edgeStyleBetween = (a: string, b: string) =>

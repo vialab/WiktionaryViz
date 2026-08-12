@@ -259,7 +259,7 @@ body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control
 
 /* Overlay polygon style for lineage highlight layer */
 .lineage-country {
-  mix-blend-mode: screen;
+  mix-blend-mode: normal;
 }
 
 /* Future focused animation placeholder */
@@ -350,13 +350,17 @@ body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control
   stroke-dasharray: none;
 }
 
-/* Proto region polygon styling (fill + stroke handled inline, but allow extra glow) */
+/* Proto region polygon styling (subtle, uncertainty-aware treatment) */
 .proto-region {
-  filter: drop-shadow(0 0 4px rgba(225, 29, 72, 0.55));
+  filter: drop-shadow(0 0 2px rgba(71, 85, 105, 0.28));
 }
 
 .attested-region {
   filter: drop-shadow(0 0 3px rgba(31, 138, 242, 0.45));
+}
+
+.lineage-proto-region {
+  filter: drop-shadow(0 0 2px rgba(71, 85, 105, 0.22));
 }
 
 /* Growing segment animation: stroke-dasharray from 0 to full length */

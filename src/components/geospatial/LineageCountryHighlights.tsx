@@ -18,7 +18,8 @@ interface Props {
 
 // Persistent highlight style (no hover reset logic here)
 // Base class names; colors applied per feature (attested vs proto)
-const baseClassName = 'country-path lineage-country'
+const countryBaseClassName = 'country-path lineage-country'
+const protoBaseClassName = 'country-path lineage-proto-region'
 
 // --- Robust point-in-polygon helpers (GeoJSON uses [lng, lat]) ---
 // Ray casting on a single linear ring; coordinates: [lng, lat]
@@ -51,6 +52,31 @@ function multiPolygonContains(lng: number, lat: number, polygons: number[][][][]
 interface IndexedFeature {
   feature: Feature<Geometry, CountryProps>
   bbox?: [number, number, number, number]
+}
+
+function featureMatchesPoint(
+  feature: Feature<Geometry, unknown>,
+  pointLng: number,
+  pointLat: number,
+  bbox?: [number, number, number, number],
+): boolean {
+  if (bbox) {
+    const [minX, minY, maxX, maxY] = bbox
+    if (pointLng < minX || pointLng > maxX || pointLat < minY || pointLat > maxY) return false
+  }
+
+  const geom = feature.geometry as Geometry
+  if (!geom) return false
+
+  if (geom.type === 'Polygon') {
+    return polygonContains(pointLng, pointLat, geom.coordinates as unknown as number[][][])
+  }
+
+  if (geom.type === 'MultiPolygon') {
+    return multiPolygonContains(pointLng, pointLat, geom.coordinates as unknown as number[][][][])
+  }
+
+  return false
 }
 
 function computeBBox(geom: Geometry): [number, number, number, number] | undefined {
@@ -107,11 +133,14 @@ const LineageCountryHighlights: FC<Props> = ({
     ISO_A3?: string
   }
 
-  const { filtered, activeIds } = useMemo((): {
-    filtered: FeatureCollection<Geometry, CountryProps | ProtoProps> | null
+  const { countriesFiltered, protoFiltered, activeIds } = useMemo((): {
+    countriesFiltered: FeatureCollection<Geometry, CountryProps> | null
+    protoFiltered: FeatureCollection<Geometry, ProtoProps> | null
     activeIds: Set<string>
   } => {
-    if (!data || !lineagePoints.length) return { filtered: null, activeIds: new Set() }
+    if (!data || !lineagePoints.length) {
+      return { countriesFiltered: null, protoFiltered: null, activeIds: new Set() }
+    }
 
     // Load proto regions GeoJSON (static). We fetch via dynamic import URL string (Vite '?url').
     // We'll synchronously fetch; caching by browser makes cost negligible for few KB.
@@ -140,84 +169,107 @@ const LineageCountryHighlights: FC<Props> = ({
         bbox: computeBBox(f.geometry as Geometry),
       }))
 
-    const matched = new Set<Feature<Geometry, CountryProps | ProtoProps>>()
-    const focused = new Set<Feature<Geometry, CountryProps | ProtoProps>>()
+    const indexedProto: Array<{
+      feature: Feature<Geometry, ProtoProps>
+      bbox?: [number, number, number, number]
+    }> = protoFeatures
+      .filter(
+        f => f.geometry && (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon'),
+      )
+      .map(f => ({
+        feature: f,
+        bbox: computeBBox(f.geometry as Geometry),
+      }))
+
+    const countryMatched = new Set<Feature<Geometry, CountryProps>>()
+    const countryFocused = new Set<Feature<Geometry, CountryProps>>()
+    const protoMatched = new Set<Feature<Geometry, ProtoProps>>()
+    const protoFocused = new Set<Feature<Geometry, ProtoProps>>()
+    const activeNode =
+      typeof currentIndex === 'number' && currentIndex >= 0 && currentIndex < lineageNodes.length
+        ? lineageNodes[currentIndex]
+        : null
+
     for (const [lat, lng] of lineagePoints) {
       // lineage positions stored as [lat, lng]
       const pointLng = lng
       const pointLat = lat
       for (const { feature, bbox } of indexed) {
-        if (matched.has(feature)) continue // already included
-        if (bbox) {
-          const [minX, minY, maxX, maxY] = bbox // bbox in [lngMin, latMin, lngMax, latMax]
-          if (pointLng < minX || pointLng > maxX || pointLat < minY || pointLat > maxY) continue
-        }
-        const geom = feature.geometry as Geometry
-        let inside = false
-        if (geom.type === 'Polygon') {
-          inside = polygonContains(pointLng, pointLat, geom.coordinates as unknown as number[][][])
-        } else if (geom.type === 'MultiPolygon') {
-          inside = multiPolygonContains(
-            pointLng,
-            pointLat,
-            geom.coordinates as unknown as number[][][][],
-          )
-        }
-        if (inside) matched.add(feature)
+        if (countryMatched.has(feature)) continue // already included
+        if (featureMatchesPoint(feature, pointLng, pointLat, bbox)) countryMatched.add(feature)
       }
     }
     if (activePoint) {
       const [alat, alng] = activePoint as [number, number]
       for (const { feature, bbox } of indexed) {
-        if (bbox) {
-          const [minX, minY, maxX, maxY] = bbox
-          if (alng < minX || alng > maxX || alat < minY || alat > maxY) continue
-        }
-        const geom = feature.geometry as Geometry
-        let inside = false
-        if (geom.type === 'Polygon')
-          inside = polygonContains(alng, alat, geom.coordinates as unknown as number[][][])
-        else if (geom.type === 'MultiPolygon')
-          inside = multiPolygonContains(alng, alat, geom.coordinates as unknown as number[][][][])
-        if (inside) focused.add(feature)
+        if (featureMatchesPoint(feature, alng, alat, bbox)) countryFocused.add(feature)
       }
     }
+
+    if (activeNode && isProto(activeNode.lang_code)) {
+      const focusedProto = indexedProto.find(
+        ({ feature }) => feature.properties?.lang_code === activeNode.lang_code,
+      )
+      if (focusedProto) protoFocused.add(focusedProto.feature)
+    }
+
     // Augment with proto polygons for lineage nodes that are proto and have no matched country features.
     const lineageNodesNeedingProto = lineageNodes.filter(
       n => isProto(n.lang_code) && (!n.countries || n.countries.length === 0),
     )
     for (const ln of lineageNodesNeedingProto) {
       const f = protoFeatures.find(p => p.properties?.lang_code === ln.lang_code)
-      if (f) matched.add(f)
+      if (f) protoMatched.add(f)
     }
 
     return {
-      filtered: { ...data, features: Array.from(matched) },
+      countriesFiltered: { ...data, features: Array.from(countryMatched) },
+      protoFiltered:
+        protoMatched.size > 0 ? { type: 'FeatureCollection', features: Array.from(protoMatched) } : null,
       activeIds: new Set(
-        Array.from(focused).map(
-          f =>
-            (f.properties as CountryProps | ProtoProps | undefined)?.ISO_A3 ||
-            (f.id as string) ||
-            (f.properties as ProtoProps | undefined)?.lang_code ||
-            '',
-        ),
+        [
+          ...Array.from(countryFocused).map(
+            f => (f.properties as CountryProps | undefined)?.ISO_A3 || (f.id as string) || '',
+          ),
+          ...Array.from(protoFocused).map(
+            f => (f.properties as ProtoProps | undefined)?.lang_code || (f.id as string) || '',
+          ),
+        ].filter(Boolean),
       ),
     }
   }, [data, lineagePoints, activePoint, lineageNodes])
 
-  if (!filtered || !filtered.features.length) return null
+  if (
+    (!countriesFiltered || !countriesFiltered.features.length) &&
+    (!protoFiltered || !protoFiltered.features.length)
+  )
+    return null
 
   return (
     <Pane name="lineage-countries" style={{ zIndex, pointerEvents: 'none' }}>
+      {protoFiltered && protoFiltered.features.length > 0 && (
+        <GeoJSON
+          data={protoFiltered as FeatureCollection<Geometry, ProtoProps>}
+          style={feat => {
+            const props = feat?.properties as ProtoProps | undefined
+            const style = regionStyleFor(props?.lang_code || '')
+            return {
+              ...style,
+              className: `${protoBaseClassName} proto-region`,
+              interactive: false,
+            } as L.PathOptions
+          }}
+          pane="lineage-countries"
+          interactive={false}
+          bubblingMouseEvents={false}
+        />
+      )}
       <GeoJSON
-        data={filtered as FeatureCollection<Geometry, CountryProps | ProtoProps>}
+        data={countriesFiltered as FeatureCollection<Geometry, CountryProps>}
         style={feat => {
-          const props = feat?.properties as CountryProps | ProtoProps | undefined
-          const lc: string | undefined =
-            props && (props as ProtoProps).lang_code ? (props as ProtoProps).lang_code : undefined
-          const isProtoFeature = lc ? isProto(lc as string) : false
-          const style = regionStyleFor(lc || '')
-          const id = (props as CountryProps | undefined)?.ISO_A3 || (feat?.id as string) || lc || ''
+          const props = feat?.properties as CountryProps | undefined
+          const style = regionStyleFor('')
+          const id = props?.ISO_A3 || (feat?.id as string) || ''
           const focused = typeof id === 'string' ? activeIds?.has(id) : false
           const layerOpacity = Math.max(0, Math.min(1, opacity))
           const baseStyle = style as L.PathOptions
@@ -225,9 +277,7 @@ const LineageCountryHighlights: FC<Props> = ({
             ...style,
             opacity: Math.max(0, Math.min(1, (baseStyle.opacity ?? 1) * layerOpacity)),
             fillOpacity: Math.max(0, Math.min(1, (baseStyle.fillOpacity ?? 0) * layerOpacity)),
-            className: `${baseClassName}${focused ? ' country-focused' : ''} ${
-              isProtoFeature ? 'proto-region' : 'attested-region'
-            }`,
+            className: `${countryBaseClassName} country-highlighted attested-region${focused ? ' country-focused' : ''}`,
             interactive: false,
           } as L.PathOptions
         }}

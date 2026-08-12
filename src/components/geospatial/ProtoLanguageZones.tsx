@@ -19,11 +19,11 @@ const applyOpacity = (style: L.PathOptions, multiplier: number): L.PathOptions =
 })
 
 const defaultStyle: L.PathOptions = {
-  color: '#a78bfa', // violet-400
-  weight: 2,
+  color: '#475569',
+  weight: 1.5,
   opacity: 0.85,
-  fillColor: '#7c3aed', // violet-600
-  fillOpacity: 0.15,
+  fillColor: '#cbd5e1',
+  fillOpacity: 0.12,
   dashArray: '6 4',
   lineCap: 'round',
   lineJoin: 'round',
@@ -31,11 +31,11 @@ const defaultStyle: L.PathOptions = {
 }
 
 const hoverStyle: L.PathOptions = {
-  color: '#c4b5fd', // violet-300
-  weight: 3,
+  color: '#334155',
+  weight: 2,
   opacity: 1,
-  fillColor: '#8b5cf6', // violet-500
-  fillOpacity: 0.25,
+  fillColor: '#e2e8f0',
+  fillOpacity: 0.18,
 }
 
 const ProtoLanguageZones: FC<Props> = ({ path = '/proto_regions.geojson', opacity = 1, zIndex = 540 }) => {

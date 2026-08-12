@@ -11,16 +11,6 @@ P2 = polish, export, or quality-of-life feature
     Use case: Keeps controls usable in the dual-view mode.
     Research context: The transcript noted layout overlap in compare mode.
 
-[ ] P0 — Clarify proto-region and country highlighting semantics
-    Description: Make proto-regions visually distinct from modern country highlights and avoid implying a country is the proto-region itself.
-    Use case: Prevents misleading geographic interpretation.
-    Research context: The participant was confused by overlapping country and proto-region highlights.
-
-[ ] P0 — Replace distracting proto-region color treatment with uncertainty-aware styling
-    Description: Use pattern, border, opacity, or other subtle encodings instead of a bright conflicting color.
-    Use case: Makes historical uncertainty legible without overpowering the map.
-    Research context: The transcript explicitly objected to the red proto-region treatment.
-
 [ ] P0 — Improve recommendation logic and explanation text
     Description: Rework the scoring so it does not over-bias descendant paths or translations and explain the recommendation in more relevant terms.
     Use case: Makes the Inspire Me results understandable and trustworthy.
