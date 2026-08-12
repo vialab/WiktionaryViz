@@ -2,6 +2,19 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.39](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.38...wiktionaryviz-v0.1.39) (2026-08-12)
+
+
+### Features
+
+* **annotations:** add annotation categories and integrate them into the geospatial components for improved organization and user experience ([c962b4d](https://github.com/vialab/WiktionaryViz/commit/c962b4d2c1d5e7911ac1c3eb3b3c540375a65c4f))
+* enhance random interest word functionality by adding language name and gloss extraction, and update UI to display this information ([48aefc9](https://github.com/vialab/WiktionaryViz/commit/48aefc981ff83c95a425ace6e3ff1a3bf1bd3b6e))
+* **geospatial:** enhance proto-region and country highlight styles for better clarity and usability in the map interface ([dfa1651](https://github.com/vialab/WiktionaryViz/commit/dfa165114706627a6461b9e5deb93914f629bbf1))
+* **geospatial:** implement export functionality for maps in PNG, SVG, and JSON formats, and add presentation mode features for improved user experience ([f2b12e2](https://github.com/vialab/WiktionaryViz/commit/f2b12e23b66437d879fc71a45922cfdd23a20509))
+* implement pivot search functionality to enhance user exploration experience and streamline navigation between words ([011281f](https://github.com/vialab/WiktionaryViz/commit/011281fc6e7193687dbbe83db8c3b0f93b776276))
+* **language-selection:** implement auto-language selection feature and add related tests to enhance user experience ([dee6801](https://github.com/vialab/WiktionaryViz/commit/dee68017a390e2cd5559034a9e9d8b245ccbf1fc))
+* **saved views:** implement saved views functionality with import/export, rename, and sequence playback features for enhanced user experience ([02e10e9](https://github.com/vialab/WiktionaryViz/commit/02e10e995b02663bd73921d6d3e83247412862d8))
+
 ## [0.1.38](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.37...wiktionaryviz-v0.1.38) (2026-08-12)
 
 
