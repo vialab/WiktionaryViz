@@ -5,12 +5,6 @@ P0 = must-have for the core prototype
 P1 = high-value thesis/demo feature
 P2 = polish, export, or quality-of-life feature
 
-
-[ ] P0 — Fix compare-mode control overlap
-    Description: Prevent the playback and control bar from overlapping other UI in compare layouts.
-    Use case: Keeps controls usable in the dual-view mode.
-    Research context: The transcript noted layout overlap in compare mode.
-
 [ ] P0 — Improve recommendation logic and explanation text
     Description: Rework the scoring so it does not over-bias descendant paths or translations and explain the recommendation in more relevant terms.
     Use case: Makes the Inspire Me results understandable and trustworthy.
@@ -20,36 +14,6 @@ P2 = polish, export, or quality-of-life feature
     Description: Provide a clear affordance for hover-only details such as question-mark icons or explicit hint text.
     Use case: Makes hidden explanatory content discoverable.
     Research context: The transcript showed repeated confusion about hover-only information.
-
-[ ] P1 — Add approximate dates where the data can support them
-    Description: Surface years or date ranges when available and label uncertainty where dates are disputed.
-    Use case: Helps users understand historical change over time.
-    Research context: The participant kept asking for years to interpret the visualization.
-
-[ ] P1 — Add a machine-generated explanation only if it is grounded in source data
-    Description: If an LLM is used for help text, anchor it to cited records and surface uncertainty explicitly.
-    Use case: Reduces the risk of hallucinated historical explanations.
-    Research context: The team already expressed concern about ungrounded generated explanations.
-
-[ ] P2 — Consider a multi-word or aggregate network view
-    Description: Add a broader view that shows movement patterns across many words without requiring one word at a time.
-    Use case: Supports larger historical questions about language movement.
-    Research context: The participant was interested in broader patterns like transportation or communication effects.
-
-[ ] P0 — Show route evidence in EvidenceDrawer
-    Description: For selected routes, show source language, target language, relation type, etymology text, and supporting source data.
-    Use case: Helps users evaluate whether a path represents borrowing, descent, derivation, or uncertain relation.
-    Research context: Participants wanted tools to explain connections, not just visualize them.
-
-[ ] P0 — Add data quality badges
-    Description: Display badges such as “date unknown,” “coordinates inferred,” “uncertain etymology,” or “missing source text.”
-    Use case: Prevents the map from implying false certainty.
-    Research context: Participants repeatedly noted that linguistic datasets are incomplete, irregular, and difficult to structure.
-
-[ ] P0 — Add basic relation filters
-    Description: Users can filter visible paths by relation type: borrowed from, derived from, descended from, cognate with, compound, affix, or uncertain.
-    Use case: Lets users focus on one type of linguistic relationship at a time.
-    Research context: Participants wanted more task-specific control over complex linguistic datasets.
 
 [ ] P1 — Implement VisualizationState serialization
     Description: Convert the current map state into a JSON object containing search term, camera, zoom, layers, filters, timeline, selected item, and annotations.
@@ -156,20 +120,10 @@ P2 = polish, export, or quality-of-life feature
     Use case: Supports both clean figures and interpreted teaching/presentation figures.
     Research context: Participants wanted visualizations for both analysis and communication.
 
-[ ] P2 — Export selected data as CSV
-    Description: Download the currently visible or selected linguistic/geospatial data as a table.
-    Use case: Lets users continue analysis in Excel, R, Python, or other tools.
-    Research context: Many participants already work with tabular data and scripting workflows.
-
 [ ] P2 — Export selected data as JSON
     Description: Download structured data for the current view.
     Use case: Useful for reproducibility, debugging, or integration with other tools.
     Research context: Supports expert workflows and transparent data reuse.
-
-[ ] P2 — Export evidence report
-    Description: Generate a Markdown or HTML summary of selected nodes, routes, evidence, and annotations.
-    Use case: Helps users move from visual exploration into writing or presentation.
-    Research context: Participants wanted visualizations to support storytelling and explanation.
 
 [ ] P2 — Add presentation mode
     Description: A fullscreen mode with simplified controls, larger labels, and cleaner visual styling.
