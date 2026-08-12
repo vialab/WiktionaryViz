@@ -2,6 +2,16 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.38](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.37...wiktionaryviz-v0.1.38) (2026-08-12)
+
+
+### Features
+
+* **GeospatialPage.tsx:** add logic to reset playback state when starting playback from the beginning to enhance user experience ([c2b0150](https://github.com/vialab/WiktionaryViz/commit/c2b0150f33bbe9aa3661da9610a3aa041bf03704))
+* **GeospatialPage:** update translations pane to use translations-clusters for better organization ([d194a44](https://github.com/vialab/WiktionaryViz/commit/d194a4409305f2f4623f3f27b768474966c4bf5d))
+* **GeospatialSettingsMenu, MarkerEvidenceDrawer:** add scroll zoom control for map when interacting with sidebar and drawer ([9bec23b](https://github.com/vialab/WiktionaryViz/commit/9bec23bbc359dfc71a05f59c838470a5ecaccfa3))
+* **TranslationMarkers:** replace Popup with Tooltip for improved user experience and interactivity ([d194a44](https://github.com/vialab/WiktionaryViz/commit/d194a4409305f2f4623f3f27b768474966c4bf5d))
+
 ## [0.1.37](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.36...wiktionaryviz-v0.1.37) (2026-07-31)
 
 
