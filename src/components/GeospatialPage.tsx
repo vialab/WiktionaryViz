@@ -68,6 +68,7 @@ interface WordData {
 interface GeospatialPageProps {
   word: string
   language: string
+  onPivotSearch?: (word: string, language: string) => void
   onGuideOpenRegister?: (openGuide: (() => void) | null) => void
   initialMapState?: MapState | null
   onMapStateChange?: (state: MapState) => void
@@ -85,6 +86,7 @@ interface GeospatialPageProps {
 const GeospatialPage: React.FC<GeospatialPageProps> = ({
   word,
   language,
+  onPivotSearch,
   onGuideOpenRegister,
   initialMapState,
   onMapStateChange,
@@ -885,6 +887,32 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     })
   }, [setSelectedItem])
 
+  const handlePivotFromSelection = useCallback(() => {
+    const selectedItem = mapState.selectedItem
+    if (selectedItem.kind === 'none') return
+
+    const nextWord = selectedItem.word.trim()
+    if (!nextWord) return
+
+    let nextLanguage = selectedItem.language.trim()
+    if (selectedItem.kind === 'translation-marker') {
+      const marker = markers[selectedItem.index]
+      if (marker?.code?.trim()) {
+        nextLanguage = marker.code.trim()
+      }
+    }
+
+    if (!nextLanguage) {
+      announce('Cannot pivot search because this node has no language code')
+      return
+    }
+
+    setFilterState({ currentIndex: undefined, isPlaying: false, showAllPopups: false })
+    setSelectedItem({ kind: 'none' })
+    onPivotSearch?.(nextWord, nextLanguage)
+    announce(`Pivoted search to ${nextWord} (${nextLanguage})`)
+  }, [announce, mapState.selectedItem, markers, onPivotSearch, setFilterState, setSelectedItem])
+
   const fitToData = useCallback(() => {
     if (!mapInstance) return
 
@@ -1440,6 +1468,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           word={mapState.selectedItem.kind === 'none' ? '' : mapState.selectedItem.word}
           language={mapState.selectedItem.kind === 'none' ? '' : mapState.selectedItem.language}
           wiktionaryUrl={mapState.selectedItem.kind === 'none' ? '' : mapState.selectedItem.wiktionaryUrl}
+          onPivotSearch={handlePivotFromSelection}
           onClose={() => setSelectedItem({ kind: 'none' })}
           theme={theme}
         />

@@ -16,11 +16,6 @@ P2 = polish, export, or quality-of-life feature
     Use case: Makes the Inspire Me results understandable and trustworthy.
     Research context: The participant was confused by why some layers were preferred and others were not.
 
-[ ] P0 — Let users click an explored node to pivot into a new search
-    Description: Make a selected marker or word become the new base word without returning to the landing page.
-    Use case: Supports continuous exploration from one word to the next.
-    Research context: The participant wanted to reuse a visible node as the new starting point.
-
 [ ] P1 — Add hover/help affordances for hidden or dense information
     Description: Provide a clear affordance for hover-only details such as question-mark icons or explicit hint text.
     Use case: Makes hidden explanatory content discoverable.

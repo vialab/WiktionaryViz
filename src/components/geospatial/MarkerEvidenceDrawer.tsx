@@ -9,6 +9,7 @@ interface MarkerEvidenceDrawerProps {
   word: string
   language: string
   wiktionaryUrl: string
+  onPivotSearch?: () => void
   onClose: () => void
   theme?: 'dark' | 'light'
 }
@@ -19,6 +20,7 @@ const MarkerEvidenceDrawer: FC<MarkerEvidenceDrawerProps> = ({
   word,
   language,
   wiktionaryUrl,
+  onPivotSearch,
   onClose,
   theme = 'dark',
 }) => {
@@ -99,6 +101,15 @@ const MarkerEvidenceDrawer: FC<MarkerEvidenceDrawerProps> = ({
           </button>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onPivotSearch}
+            className={isLight
+              ? 'inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-100'
+              : 'inline-flex items-center gap-2 rounded-full border border-emerald-700/70 bg-emerald-950/40 px-3 py-1.5 text-sm font-medium text-emerald-200 transition hover:border-emerald-500 hover:bg-emerald-900/40'}
+          >
+            Use as new search
+          </button>
           <a
             href={wiktionaryUrl}
             target="_blank"

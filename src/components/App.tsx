@@ -41,6 +41,25 @@ function App() {
     setVisibleSection('geospatial')
   }, [])
 
+  const handlePivotPrimaryWord = useCallback((nextWord: string, nextLanguage: string) => {
+    setWord1(nextWord)
+    setLanguage1(nextLanguage)
+    setWord2('')
+    setLanguage2('')
+    setVisibleSection('geospatial')
+  }, [])
+
+  const handlePivotCompareWord = useCallback((side: 'left' | 'right', nextWord: string, nextLanguage: string) => {
+    if (side === 'left') {
+      setWord1(nextWord)
+      setLanguage1(nextLanguage)
+    } else {
+      setWord2(nextWord)
+      setLanguage2(nextLanguage)
+    }
+    setVisibleSection('geospatial')
+  }, [])
+
   useEffect(() => {
     if (typeof document === 'undefined') return
     document.body.dataset.theme = theme
@@ -82,7 +101,13 @@ function App() {
   const compareViewActive = visibleSection === 'geospatial' && word2.trim().length > 0
   const compareViewLayoutClasses = 'grid min-h-0 flex-1 gap-4 lg:grid-cols-2'
 
-  const renderComparePane = (word: string, language: string, instanceId: string, interactive: boolean) => (
+  const renderComparePane = (
+    word: string,
+    language: string,
+    instanceId: string,
+    interactive: boolean,
+    side: 'left' | 'right',
+  ) => (
     <GeospatialPage
       word={word}
       language={language}
@@ -90,6 +115,7 @@ function App() {
       onGuideOpenRegister={interactive ? setGeospatialGuideOpenHandler : undefined}
       initialMapState={shareableMapState}
       onMapStateChange={interactive ? handleMapStateChange : undefined}
+      onPivotSearch={(nextWord, nextLanguage) => handlePivotCompareWord(side, nextWord, nextLanguage)}
       theme={theme}
       embedded
       instanceId={instanceId}
@@ -138,6 +164,7 @@ function App() {
             onGuideOpenRegister={setGeospatialGuideOpenHandler}
             initialMapState={shareableMapState}
             onMapStateChange={handleMapStateChange}
+            onPivotSearch={handlePivotPrimaryWord}
             theme={theme}
             instanceId="primary"
           />
@@ -183,10 +210,10 @@ function App() {
             </div>
             <div className={compareViewLayoutClasses}>
               <div className={theme === 'light' ? 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm' : 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-neutral-950 shadow-sm'}>
-                {renderComparePane(word1, language1, 'left', true)}
+                {renderComparePane(word1, language1, 'left', true, 'left')}
               </div>
               <div className={theme === 'light' ? 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm' : 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-neutral-950 shadow-sm'}>
-                {renderComparePane(word2, language2, 'right', false)}
+                {renderComparePane(word2, language2, 'right', false, 'right')}
               </div>
             </div>
           </div>
