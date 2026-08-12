@@ -72,7 +72,7 @@ const getAnnotationLabel = (kind: 'note' | 'highlight' | 'arrow' | 'region' | 'l
 
 const createNoteIcon = (theme: AnnotationTheme, annotationColor: AnnotationColor) =>
   L.divIcon({
-    className: 'annotation-note-icon',
+    className: 'annotation-note-icon annotation-export-element',
     html: `<div style="width:28px;height:28px;border-radius:9999px;display:grid;place-items:center;font-size:16px;font-weight:700;box-shadow:0 8px 20px rgba(0,0,0,.28);background:${theme === 'light' ? '#0f172a' : '#f8fafc'};color:${annotationColorValues[annotationColor].stroke};border:2px solid ${annotationColorValues[annotationColor].stroke};">✎</div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
@@ -80,7 +80,7 @@ const createNoteIcon = (theme: AnnotationTheme, annotationColor: AnnotationColor
 
 const createStartMarkerIcon = (theme: AnnotationTheme) =>
   L.divIcon({
-    className: 'annotation-start-marker-icon',
+    className: 'annotation-start-marker-icon annotation-export-element',
     html: `<div style="width:18px;height:18px;border-radius:9999px;box-shadow:0 6px 14px rgba(0,0,0,.22);background:${theme === 'light' ? '#ecfeff' : '#042f2e'};border:2px solid ${theme === 'light' ? '#06b6d4' : '#14b8a6'};"></div>`,
     iconSize: [18, 18],
     iconAnchor: [9, 9],
@@ -88,7 +88,7 @@ const createStartMarkerIcon = (theme: AnnotationTheme) =>
 
 const createFreehandStartIcon = (theme: AnnotationTheme) =>
   L.divIcon({
-    className: 'annotation-freehand-start-icon',
+    className: 'annotation-freehand-start-icon annotation-export-element',
     html: `<div style="width:16px;height:16px;border-radius:9999px;box-shadow:0 6px 14px rgba(0,0,0,.22);background:${theme === 'light' ? '#fdf2f8' : '#2a1220'};border:2px solid ${theme === 'light' ? '#ec4899' : '#f472b6'};"></div>`,
     iconSize: [16, 16],
     iconAnchor: [8, 8],
@@ -564,7 +564,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
               key={annotation.id}
               center={annotation.center}
               radius={12}
-              pathOptions={{ color: colorValue.stroke, fillColor: colorValue.fill, fillOpacity: 0.35, weight: 3 }}
+              pathOptions={{ color: colorValue.stroke, fillColor: colorValue.fill, fillOpacity: 0.35, weight: 3, className: 'annotation-export-element annotation-layer annotation-highlight' }}
               eventHandlers={{
                 click: event => {
                   event.originalEvent.stopPropagation()
@@ -587,7 +587,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             <Polygon
               key={annotation.id}
               positions={annotation.points}
-              pathOptions={{ color: colorValue.stroke, fillColor: colorValue.fill, fillOpacity: 0.12, weight: 2 }}
+              pathOptions={{ color: colorValue.stroke, fillColor: colorValue.fill, fillOpacity: 0.12, weight: 2, className: 'annotation-export-element annotation-layer annotation-region' }}
               eventHandlers={{
                 click: event => {
                   event.originalEvent.stopPropagation()
@@ -610,7 +610,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             <Polyline
               key={annotation.id}
               positions={annotation.points}
-              pathOptions={{ color: colorValue.stroke, weight: 4, opacity: 0.9 }}
+              pathOptions={{ color: colorValue.stroke, weight: 4, opacity: 0.9, className: 'annotation-export-element annotation-layer annotation-freehand' }}
               eventHandlers={{
                 click: event => {
                   event.originalEvent.stopPropagation()
@@ -640,6 +640,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
                 color: colorValue.stroke,
                 weight: 4,
                 dashArray: isArrow ? undefined : '8 8',
+                className: 'annotation-export-element annotation-layer annotation-segment',
               }}
               eventHandlers={{
                 click: event => {
@@ -675,7 +676,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
       {regionPreview}
       {freehandPreview}
       {enabled && (
-        <div className={isLight ? 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-amber-300 bg-amber-50/95 p-3 text-sm text-slate-700 shadow-xl shadow-amber-100/60 backdrop-blur' : 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-amber-400/40 bg-slate-950/96 p-3 text-sm text-slate-100 shadow-xl shadow-black/30 backdrop-blur ring-1 ring-amber-400/15'}>
+        <div data-map-ui-overlay="true" className={isLight ? 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-amber-300 bg-amber-50/95 p-3 text-sm text-slate-700 shadow-xl shadow-amber-100/60 backdrop-blur' : 'fixed left-4 top-20 z-[1601] max-w-xs rounded-2xl border border-amber-400/40 bg-slate-950/96 p-3 text-sm text-slate-100 shadow-xl shadow-black/30 backdrop-blur ring-1 ring-amber-400/15'}>
           <div className={isLight ? 'text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700' : 'text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-300'}>
             Annotation mode on
           </div>

@@ -249,6 +249,37 @@ body[data-theme='light'] #geospatial .leaflet-top.leaflet-right .leaflet-control
   accent-color: rgba(148, 163, 184, 0.6);
 }
 
+#geospatial[data-hide-map-ui='true'] .leaflet-control-container,
+#geospatial[data-hide-map-ui='true'] [data-map-ui-overlay='true'] {
+  display: none !important;
+}
+
+#geospatial[data-presentation-labels='true'] .leaflet-tooltip,
+#geospatial[data-presentation-labels='true'] .leaflet-popup-content,
+#geospatial[data-presentation-labels='true'] .leaflet-control-layers label {
+  font-size: 0.98rem;
+  line-height: 1.4;
+}
+
+#geospatial[data-presentation-labels='true'] .leaflet-tooltip,
+#geospatial[data-presentation-labels='true'] .leaflet-popup-content-wrapper,
+#geospatial[data-presentation-labels='true'] .leaflet-control-layers {
+  box-shadow:
+    0 14px 32px rgba(15, 23, 42, 0.24),
+    0 0 0 1px rgba(148, 163, 184, 0.18) inset;
+}
+
+#geospatial[data-presentation-labels='true'] .leaflet-overlay-pane svg text {
+  font-size: 18px !important;
+  paint-order: stroke fill;
+  stroke: rgba(0, 0, 0, 0.88);
+  stroke-width: 3px;
+}
+
+body[data-theme='light'] #geospatial[data-presentation-labels='true'] .leaflet-overlay-pane svg text {
+  stroke: rgba(255, 255, 255, 0.9);
+}
+
 /* Highlighted lineage countries */
 .country-highlighted {
   transition:

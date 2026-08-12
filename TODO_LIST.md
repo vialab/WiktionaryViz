@@ -12,15 +12,6 @@
 - **Add synchronized pan/zoom in compare mode**: Optional linking of viewports between comparison maps.
 - **Add difference view**: Visualize what appears/disappears or changes between two selected states.
 
-## Epic: Export & Presentation
-- **Export current map as PNG**
-- **Export current map as SVG**
-- **Export map with/without annotations**: Toggle annotations in exported assets.
-- **Export selected data as JSON**: Download structured data for the current view.
-- **Add presentation mode**: Fullscreen, simplified controls, larger labels.
-- **Add hide‑controls mode**: Temporarily hide UI chrome for screenshots/presentations.
-- **Add high‑contrast / presentation labels**: Readability for projection and screenshots.
-
 ## Small / Instrumentation Items (P3)
 - **P3 — Add loading indicator for descendants**
 - **P3 — Change opacity of other branches in descendants mode**

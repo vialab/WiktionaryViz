@@ -93,6 +93,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = props => {
   if (!nodes.length) return null
   return (
     <div
+      data-map-ui-overlay="true"
       className={isLight ? 'fixed bottom-2 left-1/2 z-[600] w-[72%] max-w-4xl -translate-x-1/2 select-none space-y-2 rounded border border-slate-200 bg-white/90 px-4 pb-5 pt-3 text-xs shadow-lg shadow-blue-100/60 backdrop-blur' : 'fixed left-1/2 bottom-2 z-[600] w-[72%] max-w-4xl -translate-x-1/2 space-y-2 rounded border border-slate-600/60 bg-slate-800/80 px-4 pb-5 pt-3 text-xs select-none backdrop-blur shadow-lg'}
       style={{ pointerEvents: 'auto' }}
       onPointerEnter={handlePointerEnter}

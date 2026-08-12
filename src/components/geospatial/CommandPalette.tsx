@@ -136,6 +136,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ open, actions, onClose,
           role="dialog"
           aria-modal="true"
           aria-label="Command palette"
+          data-map-ui-overlay="true"
           className={isLight
             ? 'fixed inset-0 z-[12050] flex items-start justify-center bg-slate-950/20 px-4 py-6 backdrop-blur-sm sm:px-6 sm:py-10'
             : 'fixed inset-0 z-[12050] flex items-start justify-center bg-black/60 px-4 py-6 backdrop-blur-sm sm:px-6 sm:py-10'}

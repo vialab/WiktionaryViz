@@ -1,15 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Highlighter, Link2, PencilLine, Radius } from 'lucide-react'
-import html2canvas from 'html2canvas'
 import { DomEvent } from 'leaflet'
 import { useMap } from 'react-leaflet'
 import type { TranslationMarker } from './TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
-import type { AnnotationColor, AnnotationKind, MapLayerKey } from '@/types/mapState'
+import type { AnnotationColor, AnnotationKind, MapLayerKey, MapState } from '@/types/mapState'
 import type { SavedViewRecord } from '@/utils/savedViews'
 import { ANNOTATION_CATEGORIES, getAnnotationCategoryLabel, type AnnotationCategoryKey } from '@/utils/annotationMetadata'
 import { buildGeoJSON, downloadGeoJSON, type ExportOptions } from '@/utils/geojsonExport'
 import useFocusTrap from '@/hooks/useFocusTrap'
+import {
+  buildCurrentMapExportBundle,
+  buildSvgFromCanvas,
+  captureMapCanvas,
+  downloadJson,
+  downloadSvg,
+} from '@/utils/mapExport'
 
 type LayerOpacityKey = 'translations' | 'protoZones' | 'languageFamilies' | 'etymology' | 'descendants'
 type LayerOpacityState = Record<LayerOpacityKey, number>
@@ -52,9 +58,11 @@ interface GeospatialSettingsMenuProps {
   markers: TranslationMarker[]
   lineage: EtymologyNode | null
   annotations: import('@/types/mapState').MapAnnotation[]
+  mapState: MapState
   savedViews: SavedViewRecord[]
   word?: string
   language?: string
+  mapRootId: string
   canFitToData?: boolean
   onFitToData: () => void
   onResetView: () => void
@@ -89,6 +97,14 @@ interface GeospatialSettingsMenuProps {
   onAnnotationColorChange: (color: AnnotationColor) => void
   onAnnotationCategoryChange: (category: AnnotationCategoryKey) => void
   onClearAnnotations: () => void
+  exportIncludeAnnotations: boolean
+  onExportIncludeAnnotationsChange: (enabled: boolean) => void
+  presentationMode: boolean
+  onPresentationModeChange: (enabled: boolean) => void
+  hideControls: boolean
+  onHideControlsChange: (enabled: boolean) => void
+  presentationLabels: boolean
+  onPresentationLabelsChange: (enabled: boolean) => void
   theme?: 'dark' | 'light'
 }
 
@@ -96,8 +112,10 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   markers,
   lineage,
   annotations,
+  mapState,
   word,
   language,
+  mapRootId,
   canFitToData = false,
   onFitToData,
   onResetView,
@@ -124,6 +142,14 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   onAnnotationColorChange,
   onAnnotationCategoryChange,
   onClearAnnotations,
+  exportIncludeAnnotations,
+  onExportIncludeAnnotationsChange,
+  presentationMode,
+  onPresentationModeChange,
+  hideControls,
+  onHideControlsChange,
+  presentationLabels,
+  onPresentationLabelsChange,
   theme = 'dark',
   savedViews,
   onSaveCurrentView,
@@ -234,6 +260,9 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     { keys: ['Alt', '5'], label: 'Toggle language families' },
     { keys: ['Alt', '6'], label: 'Toggle annotations layer' },
     { keys: ['Alt', 'A'], label: 'Toggle annotation mode' },
+    { keys: ['Alt', 'P'], label: 'Toggle presentation mode' },
+    { keys: ['Alt', 'H'], label: 'Toggle hidden controls' },
+    { keys: ['Alt', 'L'], label: 'Toggle presentation labels' },
     { keys: ['Alt', 'F'], label: 'Fit the map to visible data' },
     { keys: ['Alt', 'R'], label: 'Reset the map view' },
     { keys: ['Alt', 'S'], label: 'Copy the current shareable state link' },
@@ -244,7 +273,6 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     { key: 'markers' as const, label: 'Translation markers' },
     { key: 'lineagePoints' as const, label: 'Lineage points' },
     { key: 'lineagePath' as const, label: 'Lineage path' },
-    { key: 'annotations' as const, label: 'Annotations' },
   ]), [])
 
   const filteredTranslationMarkers = useMemo(() => {
@@ -304,8 +332,8 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   }
 
   const handleExport = useCallback(() => {
-    downloadGeoJSON(buildGeoJSON(markers, lineage, annotations, options))
-  }, [annotations, markers, lineage, options])
+    downloadGeoJSON(buildGeoJSON(markers, lineage, annotations, { ...options, annotations: exportIncludeAnnotations }))
+  }, [annotations, exportIncludeAnnotations, markers, lineage, options])
 
   const downloadSavedView = useCallback((view: SavedViewRecord) => {
     const blob = new Blob([JSON.stringify(view, null, 2)], { type: 'application/json' })
@@ -393,12 +421,12 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   }, [onLoadSavedView, savedViews, sequenceDelayMs, sequenceIndex, sequencePlaying])
 
   const tryFindTarget = useCallback(() => {
-    const byId = document.getElementById('map-root')
+    const byId = document.getElementById(mapRootId)
     if (byId) return byId
     const byClass = document.querySelector('.leaflet-container') as HTMLElement | null
     if (byClass) return byClass
     return document.querySelector('[role="application"]') as HTMLElement | null
-  }, [])
+  }, [mapRootId])
 
   const handleCapture = useCallback(async () => {
     const target = tryFindTarget()
@@ -411,98 +439,8 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     setCapturing(true)
 
     try {
-      const capturePromise = html2canvas(target, {
-        useCORS: true,
-        backgroundColor: null,
-        onclone: (clonedDoc: Document) => {
-          try {
-            const win = clonedDoc.defaultView || window
-            const normalizeColor = (colorValue: string | null | undefined): string | null => {
-              if (!colorValue) return null
-              if (/oklab|oklch/i.test(colorValue)) return 'rgb(0, 0, 0)'
-              try {
-                const span = clonedDoc.createElement('span')
-                span.style.color = colorValue
-                span.style.display = 'none'
-                clonedDoc.body.appendChild(span)
-                const computed = (clonedDoc.defaultView || window).getComputedStyle(span).color
-                span.remove()
-                return computed || colorValue
-              } catch {
-                return colorValue
-              }
-            }
-
-            const colorTokenRegex = /(rgba?\([^)]+\)|hsla?\([^)]+\)|oklab\([^)]+\)|oklch\([^)]+\))/gi
-            const allEls: (HTMLElement | SVGElement | Element)[] = [clonedDoc.documentElement, clonedDoc.body, ...Array.from(clonedDoc.querySelectorAll<HTMLElement | SVGElement>('*'))]
-
-            allEls.forEach(el => {
-              try {
-                const cs = win.getComputedStyle(el as Element)
-                const color = normalizeColor(cs.color)
-                if (color) (el as HTMLElement).style.color = color
-                const bg = normalizeColor(cs.backgroundColor)
-                if (bg) (el as HTMLElement).style.backgroundColor = bg
-                const border = normalizeColor(cs.borderColor)
-                if (border) (el as HTMLElement).style.borderColor = border
-                const outline = normalizeColor(cs.outlineColor)
-                if (outline) (el as HTMLElement).style.outlineColor = outline
-
-                try {
-                  const box = cs.boxShadow
-                  if (box && box !== 'none') {
-                    colorTokenRegex.lastIndex = 0
-                    let newBox = box
-                    const matches = box.match(colorTokenRegex)
-                    if (matches) {
-                      matches.forEach(token => {
-                        const norm = normalizeColor(token)
-                        if (norm && norm !== token) newBox = newBox.replace(token, norm)
-                      })
-                      ;(el as HTMLElement).style.boxShadow = newBox
-                    }
-                  }
-                } catch {
-                  // ignore box-shadow issues
-                }
-
-                if (el instanceof SVGElement) {
-                  try {
-                    const rawFill = (el as any).getAttribute?.('fill') || (cs as any).fill || (el as any).style?.fill
-                    const rawStroke = (el as any).getAttribute?.('stroke') || (cs as any).stroke || (el as any).style?.stroke
-                    const nf = normalizeColor(rawFill)
-                    if (nf) (el as any).setAttribute('fill', nf)
-                    const ns = normalizeColor(rawStroke)
-                    if (ns) (el as any).setAttribute('stroke', ns)
-                  } catch {
-                    // ignore SVG issues
-                  }
-                }
-
-                const inlineStyle = el.getAttribute('style')
-                if (inlineStyle) {
-                  colorTokenRegex.lastIndex = 0
-                  if (colorTokenRegex.test(inlineStyle)) {
-                    colorTokenRegex.lastIndex = 0
-                    let newStyle = inlineStyle
-                    const styleMatches = inlineStyle.match(colorTokenRegex)
-                    if (styleMatches) {
-                      styleMatches.forEach(token => {
-                        const norm = normalizeColor(token)
-                        if (norm && norm !== token) newStyle = newStyle.replace(token, norm)
-                      })
-                      el.setAttribute('style', newStyle)
-                    }
-                  }
-                }
-              } catch {
-                // ignore element-level issues
-              }
-            })
-          } catch {
-            // ignore clone adjustments
-          }
-        },
+      const capturePromise = captureMapCanvas(target, {
+        includeAnnotations: exportIncludeAnnotations,
       })
 
       const timeoutPromise = new Promise<HTMLCanvasElement>((_, reject) => setTimeout(() => reject(new Error('capture-timeout')), 15000))
@@ -521,7 +459,45 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
     } finally {
       setCapturing(false)
     }
-  }, [tryFindTarget])
+  }, [exportIncludeAnnotations, tryFindTarget])
+
+  const handleExportSvg = useCallback(async () => {
+    const target = tryFindTarget()
+    if (!target) {
+      setError('Map element not found in DOM; cannot export SVG.')
+      return
+    }
+
+    setError(null)
+    setCapturing(true)
+
+    try {
+      const canvas = await captureMapCanvas(target, { includeAnnotations: exportIncludeAnnotations })
+      downloadSvg(
+        buildSvgFromCanvas(canvas, `${word?.trim() || 'map'} ${language?.trim() || 'unknown'} export`),
+        `${(word && word.trim()) || 'map'}-${(language && language.trim()) || 'unknown'}-map.svg`,
+      )
+    } catch (captureError) {
+      // eslint-disable-next-line no-console
+      console.error('SVG export failed', captureError)
+      setError('SVG export failed. See console for details.')
+    } finally {
+      setCapturing(false)
+    }
+  }, [exportIncludeAnnotations, language, tryFindTarget, word])
+
+  const handleExportJson = useCallback(() => {
+    downloadJson(
+      buildCurrentMapExportBundle({
+        markers,
+        lineage,
+        annotations,
+        mapState,
+        includeAnnotations: exportIncludeAnnotations,
+      }),
+      `${(word && word.trim()) || 'map'}-${(language && language.trim()) || 'unknown'}-map.json`,
+    )
+  }, [annotations, exportIncludeAnnotations, language, lineage, mapState, markers, word])
 
   const handleDownload = useCallback(() => {
     if (!previewDataUrl) return
@@ -918,7 +894,7 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
             </div>
           </SettingsSection>
 
-          <SettingsSection title="Export and Capture" description="Download GeoJSON or capture a preview without leaving the panel." isLight={isLight}>
+          <SettingsSection title="Export & Presentation" description="Download map assets and switch into a presentation-friendly view." isLight={isLight}>
             <div className="space-y-3">
               <div>
                 <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>Export GeoJSON</div>
@@ -934,10 +910,36 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                 <button type="button" onClick={handleExport} className={neutralButtonClasses(isLight)}>Download GeoJSON</button>
               </div>
 
+              <div className={isLight ? 'rounded-lg border border-slate-200 bg-slate-50 p-3' : 'rounded-lg border border-slate-800 bg-slate-900/60 p-3'}>
+                <label className={isLight ? 'flex items-center gap-2 text-sm text-slate-700' : 'flex items-center gap-2 text-sm text-slate-200'}>
+                  <input
+                    type="checkbox"
+                    checked={exportIncludeAnnotations}
+                    onChange={event => onExportIncludeAnnotationsChange(event.target.checked)}
+                    className={isLight ? 'h-4 w-4 rounded border-slate-300 bg-white text-blue-600' : 'h-4 w-4 rounded border-slate-600 bg-slate-900 text-indigo-400'}
+                  />
+                  <span>Include annotations in exports</span>
+                </label>
+                <p className={isLight ? 'mt-2 text-xs leading-5 text-slate-500' : 'mt-2 text-xs leading-5 text-slate-400'}>
+                  When off, PNG, SVG, and JSON exports omit user annotations.
+                </p>
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-3">
+                <button type="button" onClick={handleCapture} disabled={capturing} className={neutralButtonClasses(isLight, capturing)}>{capturing ? 'Exporting…' : 'Export PNG'}</button>
+                <button type="button" onClick={handleExportSvg} disabled={capturing} className={neutralButtonClasses(isLight, capturing)}>{capturing ? 'Exporting…' : 'Export SVG'}</button>
+                <button type="button" onClick={handleExportJson} className={neutralButtonClasses(isLight)}>Export JSON</button>
+              </div>
+
               <div>
-                <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>Screenshot</div>
-                <p className={isLight ? 'mt-2 text-xs leading-5 text-slate-500' : 'mt-2 text-xs leading-5 text-slate-400'}>Capture the current map view and open a preview before downloading.</p>
-                <button type="button" onClick={handleCapture} disabled={capturing} className={neutralButtonClasses(isLight, capturing)}>{capturing ? 'Capturing…' : 'Capture Screenshot'}</button>
+                <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>Presentation</div>
+                <p className={isLight ? 'mt-2 text-xs leading-5 text-slate-500' : 'mt-2 text-xs leading-5 text-slate-400'}>Fullscreen view with simplified controls and larger labels for screenshots or talks.</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                  <button type="button" onClick={() => onPresentationModeChange(!presentationMode)} aria-pressed={presentationMode} className={neutralButtonClasses(isLight)}>{presentationMode ? 'Exit presentation mode' : 'Enter presentation mode'}</button>
+                  <button type="button" onClick={() => onHideControlsChange(!hideControls)} aria-pressed={hideControls} className={neutralButtonClasses(isLight)}>{hideControls ? 'Show controls' : 'Hide controls'}</button>
+                  <button type="button" onClick={() => onPresentationLabelsChange(!presentationLabels)} aria-pressed={presentationLabels} className={neutralButtonClasses(isLight)}>{presentationLabels ? 'Standard labels' : 'Presentation labels'}</button>
+                </div>
+                <p className={isLight ? 'mt-2 text-xs leading-5 text-slate-500' : 'mt-2 text-xs leading-5 text-slate-400'}>Presentation mode opens fullscreen; Escape returns to the normal workspace.</p>
                 {error && <p className={isLight ? 'mt-2 text-xs text-rose-600' : 'mt-2 text-xs text-rose-400'}>{error}</p>}
               </div>
             </div>

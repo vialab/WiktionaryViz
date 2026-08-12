@@ -26,6 +26,13 @@ import type { LanguoidData } from '@/types/languoid'
 import type { Translation } from '@/utils/mapUtils'
 import type { SavedViewRecord } from '@/utils/savedViews'
 import { decodeShareableStateFromSearch } from '@/utils/shareableState'
+import {
+  buildCurrentMapExportBundle,
+  buildSvgFromCanvas,
+  captureMapCanvas,
+  downloadJson,
+  downloadSvg,
+} from '@/utils/mapExport'
 
 import {
   createInitialMapState,
@@ -186,11 +193,16 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const [descendantCoordinates, setDescendantCoordinates] = useState<[number, number][]>([])
   const [liveMessage, setLiveMessage] = useState('')
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [presentationMode, setPresentationMode] = useState(false)
+  const [hideControls, setHideControls] = useState(false)
+  const [presentationLabels, setPresentationLabels] = useState(false)
+  const [exportIncludeAnnotations, setExportIncludeAnnotations] = useState(true)
   const annotations = mapState.currentWord.key === currentWordKey ? mapState.annotations : []
   const hasAdjustedZoomRef = useRef(false)
   const playbackTimerRef = useRef<number | null>(null)
   const announcementTimerRef = useRef<number | null>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
+  const sectionRef = useRef<HTMLElement | null>(null)
   const handleMapReady = useCallback((instance: L.Map) => {
     if (mapInstanceRef.current === instance) return
     mapInstanceRef.current = instance
@@ -222,6 +234,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const activeMapWordKey = mapState.currentWord.key
   const sectionId = instanceId ? `geospatial-${instanceId}` : 'geospatial'
   const mapRootId = instanceId ? `map-root-${instanceId}` : 'map-root'
+  const effectiveHideControls = hideControls || presentationMode
+  const effectivePresentationLabels = presentationLabels || presentationMode
   const lineageCoordinates = useCallback(() => {
     if (!lineage) return [] as [number, number][]
     return flattenLineage(lineage)
@@ -256,6 +270,32 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     if (announcementTimerRef.current != null) {
       window.clearTimeout(announcementTimerRef.current)
     }
+  }, [])
+
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!section || typeof document === 'undefined') return
+
+    const isFullscreen = document.fullscreenElement === section
+    if (presentationMode && !isFullscreen) {
+      void section.requestFullscreen?.().catch(() => {})
+    }
+    if (!presentationMode && isFullscreen) {
+      void document.exitFullscreen?.().catch(() => {})
+    }
+  }, [presentationMode])
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const section = sectionRef.current
+      if (!section) return
+      if (document.fullscreenElement !== section) {
+        setPresentationMode(false)
+      }
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
 
   const setFilterState = useCallback((updates: Partial<MapState['filters']>) => {
@@ -356,6 +396,66 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       window.prompt('Copy this shareable map link', shareableUrl)
     }
   }, [announce])
+
+  const exportMapPng = useCallback(async () => {
+    if (typeof document === 'undefined') return
+    const target = document.getElementById(mapRootId) ?? (document.querySelector('.leaflet-container') as HTMLElement | null)
+    if (!target) {
+      announce('Map element not found for PNG export')
+      return
+    }
+
+    try {
+      const canvas = await captureMapCanvas(target, { includeAnnotations: exportIncludeAnnotations })
+      const fileNameWord = (word && word.trim()) || 'map'
+      const fileNameLang = (language && language.trim()) || 'unknown'
+      const anchor = document.createElement('a')
+      anchor.href = canvas.toDataURL('image/png')
+      anchor.download = `${fileNameWord}-${fileNameLang}-map.png`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      announce('PNG export downloaded')
+    } catch {
+      announce('PNG export failed')
+    }
+  }, [announce, exportIncludeAnnotations, language, mapRootId, word])
+
+  const exportMapSvg = useCallback(async () => {
+    if (typeof document === 'undefined') return
+    const target = document.getElementById(mapRootId) ?? (document.querySelector('.leaflet-container') as HTMLElement | null)
+    if (!target) {
+      announce('Map element not found for SVG export')
+      return
+    }
+
+    try {
+      const canvas = await captureMapCanvas(target, { includeAnnotations: exportIncludeAnnotations })
+      const fileNameWord = (word && word.trim()) || 'map'
+      const fileNameLang = (language && language.trim()) || 'unknown'
+      const svgText = buildSvgFromCanvas(canvas, `${fileNameWord} ${fileNameLang} export`)
+      downloadSvg(svgText, `${fileNameWord}-${fileNameLang}-map.svg`)
+      announce('SVG export downloaded')
+    } catch {
+      announce('SVG export failed')
+    }
+  }, [announce, exportIncludeAnnotations, language, mapRootId, word])
+
+  const exportMapJson = useCallback(() => {
+    const fileNameWord = (word && word.trim()) || 'map'
+    const fileNameLang = (language && language.trim()) || 'unknown'
+    downloadJson(
+      buildCurrentMapExportBundle({
+        markers,
+        lineage,
+        annotations,
+        mapState,
+        includeAnnotations: exportIncludeAnnotations,
+      }),
+      `${fileNameWord}-${fileNameLang}-map.json`,
+    )
+    announce('JSON export downloaded')
+  }, [announce, annotations, exportIncludeAnnotations, language, lineage, mapState, markers, word])
 
   const setSelectedItem = useCallback((selectedItem: MapSelection) => {
     updateMapState(current => {
@@ -1028,6 +1128,36 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       },
     },
     {
+      id: 'export-map-png',
+      label: 'Export map as PNG',
+      description: 'Download the current map as a raster image.',
+      group: 'Export',
+      keywords: ['screenshot', 'image export', 'png'],
+      onSelect: () => {
+        void exportMapPng()
+      },
+    },
+    {
+      id: 'export-map-svg',
+      label: 'Export map as SVG',
+      description: 'Download the current map as an SVG snapshot.',
+      group: 'Export',
+      keywords: ['vector export', 'svg'],
+      onSelect: () => {
+        void exportMapSvg()
+      },
+    },
+    {
+      id: 'export-map-json',
+      label: 'Export map as JSON',
+      description: 'Download the current map data bundle.',
+      group: 'Export',
+      keywords: ['data export', 'json', 'geojson'],
+      onSelect: () => {
+        exportMapJson()
+      },
+    },
+    {
       id: 'reset-layers',
       label: 'Reset layers',
       description: 'Restore layer visibility, opacity, and order to defaults.',
@@ -1035,6 +1165,36 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       keywords: ['clear layers', 'restore defaults'],
       onSelect: () => {
         resetLayers()
+      },
+    },
+    {
+      id: 'toggle-presentation-mode',
+      label: presentationMode ? 'Exit presentation mode' : 'Enter presentation mode',
+      description: 'Toggle fullscreen presentation mode.',
+      group: 'View',
+      keywords: ['fullscreen', 'present', 'talk mode'],
+      onSelect: () => {
+        setPresentationMode(current => !current)
+      },
+    },
+    {
+      id: 'toggle-hide-controls',
+      label: effectiveHideControls ? 'Show controls' : 'Hide controls',
+      description: 'Temporarily hide UI chrome on the map.',
+      group: 'View',
+      keywords: ['chrome', 'screenshot mode', 'minimal ui'],
+      onSelect: () => {
+        setHideControls(current => !current)
+      },
+    },
+    {
+      id: 'toggle-presentation-labels',
+      label: effectivePresentationLabels ? 'Standard labels' : 'Presentation labels',
+      description: 'Increase label contrast and size for projection.',
+      group: 'View',
+      keywords: ['high contrast', 'readability', 'labels'],
+      onSelect: () => {
+        setPresentationLabels(current => !current)
       },
     },
     {
@@ -1178,6 +1338,12 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     announce,
     canFitToData,
     fitToData,
+    exportMapJson,
+    exportMapPng,
+    exportMapSvg,
+    effectiveHideControls,
+    effectivePresentationLabels,
+    presentationMode,
     mapState.filters.annotationMode,
     resetLayers,
     resetView,
@@ -1211,6 +1377,13 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         return
       }
 
+      if (event.key === 'Escape' && (presentationMode || effectiveHideControls)) {
+        event.preventDefault()
+        setPresentationMode(false)
+        setHideControls(false)
+        return
+      }
+
       if (commandPaletteOpen) return
 
       if (!event.altKey || event.ctrlKey || event.metaKey) return
@@ -1226,6 +1399,9 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         a: () => setAnnotationMode(!mapState.filters.annotationMode),
         f: () => fitToData(),
         r: () => resetView(),
+        p: () => setPresentationMode(current => !current),
+        h: () => setHideControls(current => !current),
+        l: () => setPresentationLabels(current => !current),
         s: () => {
           void saveShareableState()
         },
@@ -1240,11 +1416,15 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
 
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [commandPaletteOpen, fitToData, mapState.filters.annotationMode, resetView, saveShareableState, setAnnotationMode, setAnnotationsVisible, showAnnotations, toggleLayerVisibility])
+  }, [commandPaletteOpen, effectiveHideControls, fitToData, mapState.filters.annotationMode, presentationMode, resetView, saveShareableState, setAnnotationMode, setAnnotationsVisible, showAnnotations, toggleLayerVisibility])
 
   return (
     <section
       id={sectionId}
+      ref={sectionRef}
+      data-hide-map-ui={effectiveHideControls ? 'true' : 'false'}
+      data-presentation-mode={presentationMode ? 'true' : 'false'}
+      data-presentation-labels={effectivePresentationLabels ? 'true' : 'false'}
       className={embedded ? (isLight ? 'flex h-full min-h-0 w-full flex-col overflow-hidden bg-white text-slate-900' : 'flex h-full min-h-0 w-full flex-col overflow-hidden bg-gray-900 text-white') : (isLight ? 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-white text-slate-900' : 'h-[calc(100vh-4rem)] w-full overflow-hidden bg-gray-900 text-white')}
     >
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
@@ -1265,6 +1445,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           markers={markers}
           lineage={lineage}
           annotations={annotations}
+          mapState={mapState}
+          mapRootId={mapRootId}
           word={word}
           language={language}
           canFitToData={canFitToData}
@@ -1341,6 +1523,14 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             }))
             announce('Annotations cleared')
           }}
+          exportIncludeAnnotations={exportIncludeAnnotations}
+          onExportIncludeAnnotationsChange={setExportIncludeAnnotations}
+          presentationMode={presentationMode}
+          onPresentationModeChange={setPresentationMode}
+          hideControls={hideControls}
+          onHideControlsChange={setHideControls}
+          presentationLabels={presentationLabels}
+          onPresentationLabelsChange={setPresentationLabels}
           theme={theme}
         />
         {theme === 'dark' ? (

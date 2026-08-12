@@ -350,6 +350,7 @@ const GeospatialGuideOverlay: FC<Props> = ({
         <motion.div
           role="dialog"
           aria-modal="true"
+          data-map-ui-overlay="true"
           className={isLight ? 'absolute inset-0 z-[12000] flex items-start justify-center overflow-y-auto bg-slate-900/15 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-6 sm:py-6 lg:px-10 lg:py-8' : 'absolute inset-0 z-[12000] flex items-start justify-center overflow-y-auto bg-slate-950/75 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-6 sm:py-6 lg:px-10 lg:py-8'}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
