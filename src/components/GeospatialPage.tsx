@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
-import { MapContainer, TileLayer, useMap } from 'react-leaflet'
+import { Circle, MapContainer, Marker, Polygon, Polyline, Rectangle, TileLayer, useMap } from 'react-leaflet'
 import useWordData from '@/hooks/useWordData'
 import useLanguoidData from '@/hooks/useLanguoidData'
 import { processTranslations, processEtymologyLineage, flattenLineage } from '@/utils/mapUtils'
@@ -38,7 +38,9 @@ import {
   createInitialMapState,
   defaultMapLayerOpacities,
   defaultMapLayerOrder,
+  type AnnotationColor,
   type AnnotationKind,
+  type MapAnnotation,
   type GuideLayerKey,
   type MapLayerKey,
   type MapSelection,
@@ -57,6 +59,272 @@ const MapInstanceRegistrar = ({ onReady }: { onReady: (map: L.Map) => void }) =>
   }, [map, onReady])
 
   return null
+}
+
+const MinimapSizeInvalidator = () => {
+  const map = useMap()
+
+  useEffect(() => {
+    const raf = window.requestAnimationFrame(() => {
+      map.invalidateSize({ pan: false, animate: false })
+    })
+    return () => {
+      window.cancelAnimationFrame(raf)
+    }
+  }, [map])
+
+  return null
+}
+
+const minimapAnnotationColorValues: Record<AnnotationColor, { stroke: string; fill: string }> = {
+  red: { stroke: '#ef4444', fill: '#fca5a5' },
+  green: { stroke: '#22c55e', fill: '#86efac' },
+  blue: { stroke: '#38bdf8', fill: '#7dd3fc' },
+  white: { stroke: '#f8fafc', fill: '#ffffff' },
+  black: { stroke: '#111827', fill: '#111827' },
+}
+
+const MinimapAnnotations = ({
+  annotations,
+}: {
+  annotations: MapAnnotation[]
+}) => (
+  <>
+    {annotations.map(annotation => {
+      const color = minimapAnnotationColorValues[annotation.annotationColor ?? 'red']
+      if (annotation.kind === 'note') {
+        return (
+          <Marker
+            key={annotation.id}
+            position={annotation.position}
+            icon={L.divIcon({
+              className: 'annotation-note-icon annotation-export-element',
+              html: `<div style="width:10px;height:10px;border-radius:9999px;background:${color.stroke};border:1px solid #fff;box-shadow:0 0 0 1px rgba(2,6,23,.35);"></div>`,
+              iconSize: [10, 10],
+              iconAnchor: [5, 5],
+            })}
+            interactive={false}
+          />
+        )
+      }
+
+      if (annotation.kind === 'highlight') {
+        return (
+          <Circle
+            key={annotation.id}
+            center={annotation.center}
+            radius={annotation.radiusMeters}
+            pathOptions={{
+              color: color.stroke,
+              fillColor: color.fill,
+              fillOpacity: 0.22,
+              weight: 1,
+            }}
+            interactive={false}
+          />
+        )
+      }
+
+      if (annotation.kind === 'arrow' || annotation.kind === 'link') {
+        return (
+          <Polyline
+            key={annotation.id}
+            positions={[annotation.start, annotation.end]}
+            pathOptions={{
+              color: color.stroke,
+              opacity: 0.85,
+              weight: 2,
+              dashArray: annotation.kind === 'link' ? '6 6' : undefined,
+            }}
+            interactive={false}
+          />
+        )
+      }
+
+      if (annotation.kind === 'region') {
+        return (
+          <Polygon
+            key={annotation.id}
+            positions={annotation.points}
+            pathOptions={{
+              color: color.stroke,
+              fillColor: color.fill,
+              fillOpacity: 0.18,
+              weight: 1.5,
+            }}
+            interactive={false}
+          />
+        )
+      }
+
+      if (annotation.kind === 'freehand') {
+        return (
+          <Polyline
+            key={annotation.id}
+            positions={annotation.points}
+            pathOptions={{
+              color: color.stroke,
+              opacity: 0.9,
+              weight: 2,
+            }}
+            interactive={false}
+          />
+        )
+      }
+
+      return null
+    })}
+  </>
+)
+
+const MinimapOverview = ({
+  sourceMap,
+  markers,
+  lineage,
+  theme,
+  word,
+  language,
+  currentIndex,
+  isPlaying,
+  showAllPopups,
+  annotations,
+  layerOpacities,
+  layerVisibility,
+}: {
+  sourceMap: L.Map | null
+  markers: TranslationMarker[]
+  lineage: EtymologyNode | null
+  theme: 'dark' | 'light'
+  word: string
+  language: string
+  currentIndex: number | undefined
+  isPlaying: boolean
+  showAllPopups: boolean
+  annotations: MapAnnotation[]
+  layerOpacities: Record<MapLayerKey, number>
+  layerVisibility: {
+    translations: boolean
+    protoZones: boolean
+    languageFamilies: boolean
+    etymology: boolean
+    descendants: boolean
+    annotations: boolean
+  }
+}) => {
+  const [bounds, setBounds] = useState<L.LatLngBounds>(() => (
+    sourceMap ? sourceMap.getBounds() : L.latLngBounds([[-90, -180], [90, 180]])
+  ))
+
+  useEffect(() => {
+    if (!sourceMap) return
+
+    const syncBounds = () => {
+      setBounds(sourceMap.getBounds())
+    }
+
+    syncBounds()
+    sourceMap.on('move zoom', syncBounds)
+    return () => {
+      sourceMap.off('move zoom', syncBounds)
+    }
+  }, [sourceMap])
+
+  const isLight = theme === 'light'
+
+  return (
+    <div
+      className="pointer-events-none absolute bottom-4 right-4 z-[600] overflow-hidden rounded-2xl border border-slate-300/70 bg-slate-950/75 shadow-2xl backdrop-blur-sm"
+      style={{ width: 240, height: 120 }}
+      aria-label="Map overview"
+    >
+      <MapContainer
+        center={[0, 0]}
+        zoom={0}
+        minZoom={0}
+        maxZoom={0}
+        zoomControl={false}
+        attributionControl={false}
+        dragging={false}
+        doubleClickZoom={false}
+        scrollWheelZoom={false}
+        boxZoom={false}
+        keyboard={false}
+        className="h-full w-full"
+        style={{ background: isLight ? '#f8fafc' : '#020817' }}
+      >
+        <MinimapSizeInvalidator />
+        {theme === 'dark' ? (
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            subdomains={['a', 'b', 'c', 'd']}
+            attribution=""
+          />
+        ) : (
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution=""
+          />
+        )}
+        {layerVisibility.translations && (
+          <TranslationMarkers markers={markers} />
+        )}
+        {layerVisibility.protoZones && (
+          <ProtoLanguageZones
+            path="/proto_regions.geojson"
+            opacity={layerOpacities.protoZones}
+            zIndex={540}
+          />
+        )}
+        {layerVisibility.languageFamilies && (
+          <LanguageFamiliesBubbles
+            path="/language_families.geojson"
+            opacity={layerOpacities.languageFamilies}
+            zIndex={536}
+          />
+        )}
+        {layerVisibility.etymology && lineage && (
+          <>
+            <LineageCountryHighlights
+              lineage={lineage}
+              currentIndex={currentIndex}
+              opacity={layerOpacities.etymology}
+              zIndex={550}
+            />
+            <EtymologyLineagePath
+              lineage={lineage}
+              currentIndex={currentIndex}
+              isPlaying={isPlaying}
+              segmentDurationMs={800}
+              dwellMs={1200}
+              showAllPopups={showAllPopups}
+              opacity={layerOpacities.etymology}
+              zIndex={560}
+            />
+          </>
+        )}
+        {layerVisibility.descendants && (
+          <DescendantLineagePaths
+            rootWord={word}
+            rootLang={language}
+            opacity={layerOpacities.descendants}
+            zIndex={562}
+          />
+        )}
+        {layerVisibility.annotations && (
+          <MinimapAnnotations annotations={annotations} />
+        )}
+        <Rectangle
+          bounds={bounds}
+          pathOptions={{
+            color: isLight ? '#0f172a' : '#f8fafc',
+            fillOpacity: 0,
+            weight: 1.5,
+          }}
+          interactive={false}
+        />
+      </MapContainer>
+    </div>
+  )
 }
 
 L.Marker.prototype.options.icon = L.icon({
@@ -203,9 +471,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const announcementTimerRef = useRef<number | null>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const sectionRef = useRef<HTMLElement | null>(null)
+  const [mainMap, setMainMap] = useState<L.Map | null>(null)
   const handleMapReady = useCallback((instance: L.Map) => {
     if (mapInstanceRef.current === instance) return
     mapInstanceRef.current = instance
+    setMainMap(instance)
   }, [])
   // --- Dynamic zoom refs (distance-based small-jump assist) ---
   const autoZoomBaselineRef = useRef<number | null>(null) // original zoom before first auto-zoom-in
@@ -1664,6 +1934,27 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             theme={theme}
           />
         )}
+        <MinimapOverview
+          sourceMap={mainMap}
+          markers={markers}
+          lineage={lineage}
+          theme={theme}
+          word={word}
+          language={language}
+          currentIndex={currentIndex}
+          isPlaying={isPlaying}
+          showAllPopups={showAllPopups}
+          annotations={annotations}
+          layerOpacities={layerOpacities}
+          layerVisibility={{
+            translations: showTranslations,
+            protoZones: showProtoZones,
+            languageFamilies: showLanguageFamilies,
+            etymology: showEtymologyLineage,
+            descendants: showDescendantPaths,
+            annotations: showAnnotations,
+          }}
+        />
         <GeospatialGuideOverlay
           open={guideOpen}
           selectedLayer={guideLayer}

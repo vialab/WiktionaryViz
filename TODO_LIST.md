@@ -3,9 +3,6 @@
 ## Epic: Core — Recommendations & Guidance
 - **Improve recommendation logic and explanation text**: Rework scoring to avoid over-biasing descendant paths or translations and provide clearer explanation text for recommendations (makes Inspire Me results understandable and trustworthy).
 
-## Epic: Map Features
-- **Add minimap / overview map**: Small overview map showing current viewport and distribution of visible data.
-
 ## Epic: Compare Mode
 - **Add compare mode**: Split-screen or toggle to compare two words, families, periods, or relation types.
 - **Add side‑by‑side map comparison**: Two map views with independent layer/filter settings.
