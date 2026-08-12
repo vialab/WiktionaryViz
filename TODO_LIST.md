@@ -31,11 +31,6 @@ P2 = polish, export, or quality-of-life feature
     Use case: Helps users understand a recommendation without guessing the language or sense.
     Research context: The participant struggled to interpret suggested non-English words.
 
-[ ] P0 — Auto-select valid language choices for recommendations
-    Description: If a suggestion has only one usable language, prefill it so the user can proceed immediately.
-    Use case: Removes dead-end states in the search flow.
-    Research context: Several suggested words were paired with confusing or unusable language selections.
-
 [ ] P0 — Let users click an explored node to pivot into a new search
     Description: Make a selected marker or word become the new base word without returning to the landing page.
     Use case: Supports continuous exploration from one word to the next.

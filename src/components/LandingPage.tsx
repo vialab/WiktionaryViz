@@ -3,6 +3,9 @@ import { motion } from 'framer-motion'
 import WordLanguageInput from './landing/WordLanguageInput'
 import { useAvailableLanguages } from '@/hooks/useAvailableLanguages'
 import { useInterestingWord } from '@/hooks/useInterestingWord'
+import { resolveAutoLanguageSelection } from '@/utils/languageSelection'
+
+// Shared helper is imported from the TypeScript source path. The bundler resolves it at build time.
 
 interface LandingPageProps {
   theme?: 'dark' | 'light'
@@ -89,6 +92,20 @@ export default function LandingPage({
   useEffect(() => {
     setCompareLanguage(language2 || language1 || initialLanguage)
   }, [initialLanguage, language1, language2])
+
+  useEffect(() => {
+    const next = resolveAutoLanguageSelection(language, availableLangs, initialLanguage)
+    if (next && next !== language) {
+      setLanguage(next)
+    }
+  }, [availableLangs, initialLanguage, language])
+
+  useEffect(() => {
+    const next = resolveAutoLanguageSelection(compareLanguage, compareAvailableLangs, initialLanguage)
+    if (next && next !== compareLanguage) {
+      setCompareLanguage(next)
+    }
+  }, [compareAvailableLangs, compareLanguage, initialLanguage])
 
   // helper to call parent handler with backwards-compat fallback
   const triggerExplore = (w: string, lang: string) => {
