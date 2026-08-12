@@ -1,8 +1,18 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Navbar from '@/components/Navbar'
 import LandingPage from '@/components/LandingPage'
 import GeospatialPage from '@/components/GeospatialPage'
 import type { MapState } from '@/types/mapState'
+import type { SavedViewRecord } from '@/utils/savedViews'
+import {
+  createSavedViewRecord,
+  duplicateSavedViewRecord,
+  importSavedViewRecord,
+  loadSavedViews,
+  persistSavedViews,
+  renameSavedViewRecord,
+  restoreMapStateFromSavedView,
+} from '@/utils/savedViews'
 import { decodeShareableStateFromSearch, encodeShareableStateToSearch } from '@/utils/shareableState'
 
 type ThemeMode = 'dark' | 'light'
@@ -20,7 +30,9 @@ function App() {
   const [inspireCategory, setInspireCategory] = useState<string | null>(initialShareableState.inspireCategory)
   const [shareableMapState, setShareableMapState] = useState<MapState | null>(initialShareableState.mapState)
   const [mapStateReady, setMapStateReady] = useState(Boolean(initialShareableState.mapState))
+  const [savedViews, setSavedViews] = useState<SavedViewRecord[]>(() => loadSavedViews())
   const [geospatialGuideOpenHandler, setGeospatialGuideOpenHandler] = useState<(() => void) | null>(null)
+  const activeWordKey = `${word1}::${language1}`
   const [theme, setTheme] = useState<ThemeMode>(() => {
     if (initialShareableState.theme) return initialShareableState.theme
     if (typeof window === 'undefined') return 'dark'
@@ -33,12 +45,142 @@ function App() {
     setMapStateReady(true)
   }, [])
 
+  const clearAnnotationState = useCallback((state: MapState | null, nextWord: string, nextLanguage: string): MapState | null => {
+    if (!state) return null
+
+    return {
+      ...state,
+      selectedItem: { kind: 'none' },
+      currentWord: {
+        word: nextWord,
+        language: nextLanguage,
+        key: `${nextWord}::${nextLanguage}`,
+      },
+      filters: {
+        ...state.filters,
+        currentIndex: undefined,
+        isPlaying: false,
+        showAllPopups: false,
+        guideOpen: false,
+        guideLayer: null,
+        etymologyRequested: false,
+        annotationMode: false,
+        annotationTool: 'note',
+      },
+      annotations: [],
+    }
+  }, [])
+
+  const activeWordKeyRef = useRef(activeWordKey)
+
+  const mapStateForCurrentWord = useMemo(() => {
+    if (!shareableMapState) return null
+    if (shareableMapState.currentWord.key === activeWordKey) return shareableMapState
+    return clearAnnotationState(shareableMapState, word1, language1)
+  }, [activeWordKey, clearAnnotationState, language1, shareableMapState, word1])
+
+  useEffect(() => {
+    if (activeWordKeyRef.current === activeWordKey) return
+    activeWordKeyRef.current = activeWordKey
+
+    setShareableMapState(current => clearAnnotationState(current, word1, language1))
+  }, [activeWordKey, clearAnnotationState, language1, word1])
+
+  useEffect(() => {
+    persistSavedViews(savedViews)
+  }, [savedViews])
+
+  const handleSaveCurrentView = useCallback((name: string) => {
+    if (!mapStateForCurrentWord) return
+
+    const nextRecord = createSavedViewRecord(name, mapStateForCurrentWord)
+    setSavedViews(current => [nextRecord, ...current])
+  }, [mapStateForCurrentWord])
+
+  const handleLoadSavedView = useCallback((viewId: string) => {
+    const target = savedViews.find(record => record.id === viewId)
+    if (!target) return
+
+    const restored = restoreMapStateFromSavedView(
+      target,
+      target.state.mapState.currentWord.word,
+      target.state.mapState.currentWord.language,
+    )
+
+    setWord1(restored.currentWord.word)
+    setLanguage1(restored.currentWord.language)
+    setWord2('')
+    setLanguage2('')
+    setVisibleSection('geospatial')
+    setShareableMapState(restored)
+    setMapStateReady(true)
+  }, [savedViews])
+
+  const handleRenameSavedView = useCallback((viewId: string, name: string) => {
+    setSavedViews(current => current.map(record => (record.id === viewId ? renameSavedViewRecord(record, name) : record)))
+  }, [])
+
+  const handleDuplicateSavedView = useCallback((viewId: string) => {
+    setSavedViews(current => {
+      const target = current.find(record => record.id === viewId)
+      if (!target) return current
+      return [duplicateSavedViewRecord(target), ...current]
+    })
+  }, [])
+
+  const handleDeleteSavedView = useCallback((viewId: string) => {
+    setSavedViews(current => current.filter(record => record.id !== viewId))
+  }, [])
+
+  const handleMoveSavedView = useCallback((viewId: string, direction: 'up' | 'down') => {
+    setSavedViews(current => {
+      const index = current.findIndex(record => record.id === viewId)
+      if (index < 0) return current
+
+      const targetIndex = direction === 'up' ? index - 1 : index + 1
+      if (targetIndex < 0 || targetIndex >= current.length) return current
+
+      const next = [...current]
+      const [item] = next.splice(index, 1)
+      next.splice(targetIndex, 0, item)
+      return next
+    })
+  }, [])
+
+  const handleImportSavedView = useCallback((rawJson: string) => {
+    const imported = importSavedViewRecord(rawJson)
+    if (!imported) return false
+
+    setSavedViews(current => {
+      const next = current.filter(record => record.id !== imported.id)
+      return [imported, ...next]
+    })
+
+    return true
+  }, [])
+
+  const handleExportCurrentView = useCallback(() => {
+    if (typeof window === 'undefined' || !mapStateForCurrentWord) return
+
+    const exportRecord = createSavedViewRecord(`${mapStateForCurrentWord.currentWord.word || 'Current'} view`, mapStateForCurrentWord)
+    const blob = new Blob([JSON.stringify(exportRecord, null, 2)], { type: 'application/json' })
+    const url = window.URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `${exportRecord.name.replace(/\s+/g, '-').toLowerCase()}.json`
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    window.URL.revokeObjectURL(url)
+  }, [mapStateForCurrentWord])
+
   const handleExploreCompare = useCallback((leftWord: string, leftLanguage: string, rightWord: string, rightLanguage: string) => {
     setWord1(leftWord)
     setLanguage1(leftLanguage)
     setWord2(rightWord)
     setLanguage2(rightLanguage)
     setVisibleSection('geospatial')
+    setShareableMapState(current => clearAnnotationState(current, leftWord, leftLanguage))
   }, [])
 
   const handlePivotPrimaryWord = useCallback((nextWord: string, nextLanguage: string) => {
@@ -47,6 +189,7 @@ function App() {
     setWord2('')
     setLanguage2('')
     setVisibleSection('geospatial')
+    setShareableMapState(current => clearAnnotationState(current, nextWord, nextLanguage))
   }, [])
 
   const handlePivotCompareWord = useCallback((side: 'left' | 'right', nextWord: string, nextLanguage: string) => {
@@ -58,6 +201,7 @@ function App() {
       setLanguage2(nextLanguage)
     }
     setVisibleSection('geospatial')
+    setShareableMapState(current => clearAnnotationState(current, nextWord, nextLanguage))
   }, [])
 
   useEffect(() => {
@@ -79,12 +223,12 @@ function App() {
       language2,
       inspireCategory,
       theme,
-      mapState: visibleSection === 'geospatial' ? shareableMapState : null,
+      mapState: visibleSection === 'geospatial' ? mapStateForCurrentWord : null,
     })
 
     const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
     window.history.replaceState(null, '', nextUrl)
-  }, [inspireCategory, language1, language2, mapStateReady, shareableMapState, theme, visibleSection, word1, word2])
+  }, [inspireCategory, language1, language2, mapStateForCurrentWord, mapStateReady, theme, visibleSection, word1, word2])
 
   // TODO [HIGH LEVEL]: Support shareable, state-preserving URLs that encode current view, filters, words, languages, and selections.
   // Rationale: Participants 4, 6 asked for reproducibility and easy sharing. Enable deep-linking to exact visualization states.
@@ -109,13 +253,23 @@ function App() {
     side: 'left' | 'right',
   ) => (
     <GeospatialPage
+      key={`${word}::${language}::${instanceId}`}
       word={word}
       language={language}
       inspireCategory={inspireCategory}
       onGuideOpenRegister={interactive ? setGeospatialGuideOpenHandler : undefined}
-      initialMapState={shareableMapState}
+      initialMapState={mapStateForCurrentWord}
       onMapStateChange={interactive ? handleMapStateChange : undefined}
       onPivotSearch={(nextWord, nextLanguage) => handlePivotCompareWord(side, nextWord, nextLanguage)}
+      savedViews={interactive ? savedViews : []}
+      onSaveCurrentView={interactive ? handleSaveCurrentView : undefined}
+      onLoadSavedView={interactive ? handleLoadSavedView : undefined}
+      onRenameSavedView={interactive ? handleRenameSavedView : undefined}
+      onDuplicateSavedView={interactive ? handleDuplicateSavedView : undefined}
+      onDeleteSavedView={interactive ? handleDeleteSavedView : undefined}
+      onMoveSavedView={interactive ? handleMoveSavedView : undefined}
+      onImportSavedView={interactive ? handleImportSavedView : undefined}
+      onExportCurrentView={interactive ? handleExportCurrentView : undefined}
       theme={theme}
       embedded
       instanceId={instanceId}
@@ -158,13 +312,23 @@ function App() {
         )}
         {visibleSection === 'geospatial' && !compareViewActive && (
           <GeospatialPage
+            key={`${word1}::${language1}::primary`}
             word={word1}
             language={language1}
             inspireCategory={inspireCategory}
             onGuideOpenRegister={setGeospatialGuideOpenHandler}
-            initialMapState={shareableMapState}
+            initialMapState={mapStateForCurrentWord}
             onMapStateChange={handleMapStateChange}
             onPivotSearch={handlePivotPrimaryWord}
+            savedViews={savedViews}
+            onSaveCurrentView={handleSaveCurrentView}
+            onLoadSavedView={handleLoadSavedView}
+            onRenameSavedView={handleRenameSavedView}
+            onDuplicateSavedView={handleDuplicateSavedView}
+            onDeleteSavedView={handleDeleteSavedView}
+            onMoveSavedView={handleMoveSavedView}
+            onImportSavedView={handleImportSavedView}
+            onExportCurrentView={handleExportCurrentView}
             theme={theme}
             instanceId="primary"
           />

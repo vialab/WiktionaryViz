@@ -19,15 +19,6 @@ Notes: Related and overlapping tasks have been grouped into focused epics to red
 - **P1 — Add minimap / overview map**: Small overview map showing current viewport and distribution of visible data.
 - **P1 — Add custom region grouping**: Let users group data by language family, geographic area, historical region, or user cluster.
 
-
-## Epic: Saved Views & Sharing
-- **P1 — Implement VisualizationState serialization**: Serialize map state (search term, camera, zoom, layers, filters, timeline, selected item, annotations).
-- **P1 — Add local state‑saving**: Persist named VisualizationState objects to localStorage.
-- **P1 — Add saved view manager**: UI for save/rename/duplicate/load/delete saved views.
-- **P1 — Add shareable state links**: Encode VisualizationState in URL or backend ID for sharing.
-- **P1 — Add state import/export as JSON**: Download/upload saved view JSON; supports reproducibility and study materials.
-- **P2 — Add saved view sequence**: Arrange saved states into a slideshow/sequence for narratives.
-
 ## Epic: Compare Mode
 - **P1 — Add compare mode**: Split-screen or toggle to compare two words, families, periods, or relation types.
 - **P1 — Add side‑by‑side map comparison**: Two map views with independent layer/filter settings.

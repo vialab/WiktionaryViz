@@ -1,4 +1,5 @@
-import { createInitialMapState, type MapState } from '@/types/mapState'
+import { type MapState } from '@/types/mapState'
+import { deserializeVisualizationState, serializeVisualizationState, restoreMapStateFromVisualizationState } from '@/utils/visualizationState'
 
 export interface ShareableAppState {
   visibleSection: 'landing-page' | 'geospatial'
@@ -50,49 +51,10 @@ const cleanString = (value: string | null | undefined) => {
 const parseMapState = (rawValue: string | null, word1: string, language1: string): MapState | null => {
   if (!rawValue) return null
 
-  try {
-    const parsed = JSON.parse(fromBase64Url(rawValue)) as Partial<MapState>
-    const base = createInitialMapState(word1, language1)
+  const decoded = deserializeVisualizationState(fromBase64Url(rawValue), word1, language1)
+  if (!decoded) return null
 
-    return {
-      ...base,
-      ...parsed,
-      camera: {
-        ...base.camera,
-        ...parsed.camera,
-      },
-      selectedItem: parsed.selectedItem ?? base.selectedItem,
-      activeLayers: {
-        ...base.activeLayers,
-        ...parsed.activeLayers,
-        opacities: {
-          ...base.activeLayers.opacities,
-          ...parsed.activeLayers?.opacities,
-        },
-        order: parsed.activeLayers?.order ?? base.activeLayers.order,
-        annotations: parsed.activeLayers?.annotations ?? base.activeLayers.annotations,
-      },
-      filters: {
-        ...base.filters,
-        ...parsed.filters,
-        guideOpen: false,
-        guideLayer: null,
-        etymologyRequested: false,
-        annotationMode: parsed.filters?.annotationMode ?? base.filters.annotationMode,
-        annotationTool: parsed.filters?.annotationTool ?? base.filters.annotationTool,
-        annotationColor: parsed.filters?.annotationColor ?? base.filters.annotationColor,
-        annotationCategory: parsed.filters?.annotationCategory ?? base.filters.annotationCategory,
-      },
-      currentWord: {
-        word: word1,
-        language: language1,
-        key: `${word1}::${language1}`,
-      },
-      annotations: Array.isArray(parsed.annotations) ? parsed.annotations : base.annotations,
-    }
-  } catch {
-    return null
-  }
+  return restoreMapStateFromVisualizationState(decoded, word1, language1)
 }
 
 export const decodeShareableStateFromSearch = (search: string): ShareableAppState => {
@@ -129,20 +91,7 @@ export const encodeShareableStateToSearch = (state: ShareableAppState) => {
   if (state.inspireCategory?.trim()) params.set(QUERY_KEYS.inspireCategory, state.inspireCategory.trim())
 
   if (state.mapState) {
-    const serializedMapState = JSON.stringify({
-      ...state.mapState,
-      filters: {
-        ...state.mapState.filters,
-        guideOpen: false,
-        guideLayer: null,
-        etymologyRequested: false,
-      },
-      currentWord: {
-        word: state.word1.trim(),
-        language: state.language1.trim(),
-        key: `${state.word1.trim()}::${state.language1.trim()}`,
-      },
-    })
+    const serializedMapState = JSON.stringify(serializeVisualizationState(state.mapState))
     params.set(QUERY_KEYS.mapState, toBase64Url(serializedMapState))
   }
 

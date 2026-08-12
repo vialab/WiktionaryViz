@@ -24,6 +24,7 @@ import CommandPalette, { type CommandPaletteAction } from './geospatial/CommandP
 import type { EtymologyNode } from '@/types/etymology'
 import type { LanguoidData } from '@/types/languoid'
 import type { Translation } from '@/utils/mapUtils'
+import type { SavedViewRecord } from '@/utils/savedViews'
 import { decodeShareableStateFromSearch } from '@/utils/shareableState'
 
 import {
@@ -72,6 +73,15 @@ interface GeospatialPageProps {
   onGuideOpenRegister?: (openGuide: (() => void) | null) => void
   initialMapState?: MapState | null
   onMapStateChange?: (state: MapState) => void
+  savedViews?: SavedViewRecord[]
+  onSaveCurrentView?: (name: string) => void
+  onLoadSavedView?: (viewId: string) => void
+  onRenameSavedView?: (viewId: string, name: string) => void
+  onDuplicateSavedView?: (viewId: string) => void
+  onDeleteSavedView?: (viewId: string) => void
+  onMoveSavedView?: (viewId: string, direction: 'up' | 'down') => void
+  onImportSavedView?: (rawJson: string) => boolean
+  onExportCurrentView?: () => void
   openGuideOnLoad?: boolean
   theme?: 'dark' | 'light'
   inspireCategory?: string | null
@@ -90,6 +100,15 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   onGuideOpenRegister,
   initialMapState,
   onMapStateChange,
+  savedViews = [],
+  onSaveCurrentView,
+  onLoadSavedView,
+  onRenameSavedView,
+  onDuplicateSavedView,
+  onDeleteSavedView,
+  onMoveSavedView,
+  onImportSavedView,
+  onExportCurrentView,
   openGuideOnLoad = true,
   theme = 'dark',
   inspireCategory,
@@ -101,7 +120,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     ? null
     : decodeShareableStateFromSearch(window.location.search).mapState
   const sharedInitialMapState = initialMapState ?? urlInitialMapState
-  const shouldOpenGuideOnLoad = openGuideOnLoad
+  const currentWordKey = `${word}::${language}`
+  const shouldOpenGuideOnLoad = openGuideOnLoad && !sharedInitialMapState
   const initialCameraCenterRef = useRef<[number, number]>(sharedInitialMapState?.camera?.center ?? [0, 0])
   const initialCameraZoomRef = useRef<number>(sharedInitialMapState?.camera?.zoom ?? 2)
   const hydratedFromSharedStateRef = useRef(Boolean(sharedInitialMapState) || !shouldOpenGuideOnLoad)
@@ -146,7 +166,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       filters: {
         ...base.filters,
         ...(sharedInitialMapState.filters ?? {}),
-        guideOpen: sharedInitialMapState.filters?.guideOpen ?? shouldOpenGuideOnLoad,
+        guideOpen: false,
         annotationMode: sharedInitialMapState.filters?.annotationMode ?? base.filters.annotationMode,
         annotationTool: sharedInitialMapState.filters?.annotationTool ?? base.filters.annotationTool,
         annotationColor: sharedInitialMapState.filters?.annotationColor ?? base.filters.annotationColor,
@@ -166,7 +186,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const [descendantCoordinates, setDescendantCoordinates] = useState<[number, number][]>([])
   const [liveMessage, setLiveMessage] = useState('')
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
-  const annotations = mapState.annotations
+  const annotations = mapState.currentWord.key === currentWordKey ? mapState.annotations : []
   const hasAdjustedZoomRef = useRef(false)
   const playbackTimerRef = useRef<number | null>(null)
   const announcementTimerRef = useRef<number | null>(null)
@@ -199,7 +219,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const showAnnotations = mapState.activeLayers.annotations
   const layerOpacities = mapState.activeLayers.opacities
   const layerOrder = mapState.activeLayers.order
-  const currentWordKey = mapState.currentWord.key
+  const activeMapWordKey = mapState.currentWord.key
   const sectionId = instanceId ? `geospatial-${instanceId}` : 'geospatial'
   const mapRootId = instanceId ? `map-root-${instanceId}` : 'map-root'
   const lineageCoordinates = useCallback(() => {
@@ -422,7 +442,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   const recommendationLoading =
     guideOpen &&
     guideLayer === null &&
-    (wordDataLoading || languoidDataLoading || wordDataResolvedKey !== currentWordKey)
+    (wordDataLoading || languoidDataLoading || wordDataResolvedKey !== activeMapWordKey)
   const recommendationReason = translationHeavy
     ? `There are ${translationCount} translation markers and ${lineageNodeCount} lineage node${lineageNodeCount === 1 ? '' : 's'}. The translations layer gives the broader first view.`
     : hasPlayableLineage
@@ -430,6 +450,35 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
       : translationCount > 0
         ? `There are ${translationCount} translation marker${translationCount === 1 ? '' : 's'} loaded, so the translations layer gives a quick geographic overview.`
         : 'No translation markers are loaded yet, so start with a broader geographic layer.'
+
+  const previousWordKeyRef = useRef(currentWordKey)
+
+  useEffect(() => {
+    if (previousWordKeyRef.current === currentWordKey) return
+    previousWordKeyRef.current = currentWordKey
+
+    updateMapState(current => ({
+      ...current,
+      currentWord: {
+        word,
+        language,
+        key: currentWordKey,
+      },
+      selectedItem: { kind: 'none' },
+      filters: {
+        ...current.filters,
+        currentIndex: undefined,
+        isPlaying: false,
+        showAllPopups: false,
+        guideOpen: false,
+        guideLayer: null,
+        etymologyRequested: false,
+        annotationMode: false,
+        annotationTool: 'note',
+      },
+      annotations: [],
+    }))
+  }, [currentWordKey, language, updateMapState, word])
   // TODO (Timeline Scrubber & Playback State):
   //  - [ ] Derive highlightedCountries (Set) from full lineage once computed; derive focusedCountries from currentIndex.
   //  - [ ] Provide callback to <EtymologyLineagePath /> for node click -> setCurrentIndex.
@@ -439,45 +488,6 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
   //  - [ ] Introduce distinct animation vs dwell durations (currently combined into playSpeed + dwell).
   //  - [ ] Provide a user toggle (e.g., "Show all tooltips at end").
   //  - [ ] If user scrubs manually, explicitly cancel pending dwell (interval cancellation partly covers this; verify behavior).
-
-  useEffect(() => {
-    if (hydratedFromSharedStateRef.current) {
-      hydratedFromSharedStateRef.current = false
-      return
-    }
-
-    updateMapState(current => ({
-      camera: current.camera,
-      currentWord: {
-        word,
-        language,
-        key: `${word}::${language}`,
-      },
-      selectedItem: { kind: 'none' },
-      activeLayers: {
-        ...current.activeLayers,
-        translations: false,
-        protoZones: false,
-        descendants: false,
-        languageFamilies: false,
-        etymology: false,
-        annotations: true,
-      },
-      filters: {
-        ...current.filters,
-        guideOpen: shouldOpenGuideOnLoad,
-        guideLayer: null,
-        etymologyRequested: false,
-        currentIndex: undefined,
-        isPlaying: false,
-        showAllPopups: false,
-        annotationMode: false,
-        annotationTool: 'note',
-        annotationCategory: current.filters.annotationCategory,
-      },
-      annotations: [],
-    }))
-  }, [shouldOpenGuideOnLoad, word, language])
 
   useEffect(() => {
     onGuideOpenRegister?.(() => () => {
@@ -526,12 +536,17 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           }
         }
         setLineage(root)
-        // Reset playback-related state for new lineage
+        if (hydratedFromSharedStateRef.current) {
+          hydratedFromSharedStateRef.current = false
+          return
+        }
+
+        // Reset playback-related state for a newly loaded word.
         setFilterState({
           currentIndex: undefined,
           isPlaying: false,
           showAllPopups: false,
-          guideOpen: openGuideOnLoad,
+          guideOpen: shouldOpenGuideOnLoad,
           guideLayer: null,
           etymologyRequested: false,
           annotationMode: false,
@@ -546,9 +561,19 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           languageFamilies: false,
           annotations: true,
         })
+        updateMapState(current => ({
+          ...current,
+          currentWord: {
+            word,
+            language,
+            key: `${word}::${language}`,
+          },
+          selectedItem: { kind: 'none' },
+          annotations: [],
+        }))
       })
     }
-  }, [openGuideOnLoad, wordData, languoidData])
+  }, [mapState.filters.annotationCategory, languoidData, shouldOpenGuideOnLoad, updateMapState, wordData])
 
   useEffect(() => {
     const map = mapInstance
@@ -1274,6 +1299,15 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           onResetLayers={resetLayers}
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
           onMarkerSelect={handleMarkerSelect}
+          savedViews={savedViews}
+          onSaveCurrentView={onSaveCurrentView}
+          onLoadSavedView={onLoadSavedView}
+          onRenameSavedView={onRenameSavedView}
+          onDuplicateSavedView={onDuplicateSavedView}
+          onDeleteSavedView={onDeleteSavedView}
+          onMoveSavedView={onMoveSavedView}
+          onImportSavedView={onImportSavedView}
+          onExportCurrentView={onExportCurrentView}
           annotationMode={mapState.filters.annotationMode}
           annotationsVisible={showAnnotations}
           annotationTool={mapState.filters.annotationTool}

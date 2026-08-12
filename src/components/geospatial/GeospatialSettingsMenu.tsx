@@ -6,6 +6,7 @@ import { useMap } from 'react-leaflet'
 import type { TranslationMarker } from './TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
 import type { AnnotationColor, AnnotationKind, MapLayerKey } from '@/types/mapState'
+import type { SavedViewRecord } from '@/utils/savedViews'
 import { ANNOTATION_CATEGORIES, getAnnotationCategoryLabel, type AnnotationCategoryKey } from '@/utils/annotationMetadata'
 import { buildGeoJSON, downloadGeoJSON, type ExportOptions } from '@/utils/geojsonExport'
 import useFocusTrap from '@/hooks/useFocusTrap'
@@ -51,12 +52,21 @@ interface GeospatialSettingsMenuProps {
   markers: TranslationMarker[]
   lineage: EtymologyNode | null
   annotations: import('@/types/mapState').MapAnnotation[]
+  savedViews: SavedViewRecord[]
   word?: string
   language?: string
   canFitToData?: boolean
   onFitToData: () => void
   onResetView: () => void
   onSaveState: () => void
+  onSaveCurrentView?: (name: string) => void
+  onLoadSavedView?: (viewId: string) => void
+  onRenameSavedView?: (viewId: string, name: string) => void
+  onDuplicateSavedView?: (viewId: string) => void
+  onDeleteSavedView?: (viewId: string) => void
+  onMoveSavedView?: (viewId: string, direction: 'up' | 'down') => void
+  onImportSavedView?: (rawJson: string) => boolean
+  onExportCurrentView?: () => void
   onOpenGuide: () => void
   layerVisibility: Record<MapLayerKey, boolean>
   onLayerToggle: (layer: MapLayerKey) => void
@@ -115,6 +125,15 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   onAnnotationCategoryChange,
   onClearAnnotations,
   theme = 'dark',
+  savedViews,
+  onSaveCurrentView,
+  onLoadSavedView,
+  onRenameSavedView,
+  onDuplicateSavedView,
+  onDeleteSavedView,
+  onMoveSavedView,
+  onImportSavedView,
+  onExportCurrentView,
 }) => {
   const isLight = theme === 'light'
   const map = useMap()
@@ -123,9 +142,15 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [translationSearchQuery, setTranslationSearchQuery] = useState('')
+  const [savedViewName, setSavedViewName] = useState(() => `${word?.trim() || 'Current'}${language?.trim() ? ` · ${language.trim()}` : ''}`)
+  const [importStatus, setImportStatus] = useState<string | null>(null)
+  const [sequencePlaying, setSequencePlaying] = useState(false)
+  const [sequenceIndex, setSequenceIndex] = useState(0)
+  const [sequenceDelayMs, setSequenceDelayMs] = useState(3000)
   const [options, setOptions] = useState<ExportOptions>({ markers: true, lineagePoints: true, lineagePath: true, annotations: true })
   const previewRef = useRef<HTMLDivElement | null>(null)
   const sidebarRef = useRef<HTMLElement | null>(null)
+  const importInputRef = useRef<HTMLInputElement | null>(null)
 
   useFocusTrap(Boolean(previewDataUrl), previewRef)
 
@@ -281,6 +306,91 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   const handleExport = useCallback(() => {
     downloadGeoJSON(buildGeoJSON(markers, lineage, annotations, options))
   }, [annotations, markers, lineage, options])
+
+  const downloadSavedView = useCallback((view: SavedViewRecord) => {
+    const blob = new Blob([JSON.stringify(view, null, 2)], { type: 'application/json' })
+    const url = window.URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `${view.name.replace(/\s+/g, '-').toLowerCase() || 'saved-view'}.json`
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    window.URL.revokeObjectURL(url)
+  }, [])
+
+  const handleSaveCurrentView = useCallback(() => {
+    if (!onSaveCurrentView) return
+    const nextName = savedViewName.trim()
+    if (!nextName) return
+    onSaveCurrentView(nextName)
+    setImportStatus(`Saved "${nextName}"`)
+  }, [onSaveCurrentView, savedViewName])
+
+  const handleExportCurrentView = useCallback(() => {
+    onExportCurrentView?.()
+  }, [onExportCurrentView])
+
+  const handleImportClick = useCallback(() => {
+    importInputRef.current?.click()
+  }, [])
+
+  const handleImportChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file || !onImportSavedView) return
+
+    try {
+      const rawJson = await file.text()
+      const imported = onImportSavedView(rawJson)
+      setImportStatus(imported ? `Imported ${file.name}` : 'Import failed: unsupported JSON')
+    } catch {
+      setImportStatus('Import failed: unable to read file')
+    }
+  }, [onImportSavedView])
+
+  const handleRenameSavedView = useCallback((view: SavedViewRecord) => {
+    if (!onRenameSavedView) return
+    const nextName = window.prompt('Rename saved view', view.name)?.trim()
+    if (!nextName) return
+    onRenameSavedView(view.id, nextName)
+    setImportStatus(`Renamed to "${nextName}"`)
+  }, [onRenameSavedView])
+
+  const handleStartSequence = useCallback(() => {
+    if (!savedViews.length || !onLoadSavedView) return
+    setSequenceIndex(0)
+    setSequencePlaying(true)
+  }, [onLoadSavedView, savedViews.length])
+
+  const handleStopSequence = useCallback(() => {
+    setSequencePlaying(false)
+  }, [])
+
+  useEffect(() => {
+    if (!sequencePlaying || !savedViews.length || !onLoadSavedView) return
+
+    const activeView = savedViews[sequenceIndex % savedViews.length]
+    if (!activeView) {
+      setSequencePlaying(false)
+      return
+    }
+
+    onLoadSavedView(activeView.id)
+
+    const timer = window.setTimeout(() => {
+      setSequenceIndex(current => {
+        const nextIndex = current + 1
+        if (nextIndex >= savedViews.length) {
+          setSequencePlaying(false)
+          return 0
+        }
+        return nextIndex
+      })
+    }, sequenceDelayMs)
+
+    return () => window.clearTimeout(timer)
+  }, [onLoadSavedView, savedViews, sequenceDelayMs, sequenceIndex, sequencePlaying])
 
   const tryFindTarget = useCallback(() => {
     const byId = document.getElementById('map-root')
@@ -706,6 +816,105 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
               <button type="button" onClick={onClearAnnotations} disabled={annotationCount === 0} className={neutralButtonClasses(isLight, annotationCount === 0)}>
                 Clear annotations
               </button>
+            </div>
+          </SettingsSection>
+
+          <SettingsSection title="Saved views & sharing" description="Store named map states, reorder them into a sequence, and export or import JSON snapshots." isLight={isLight}>
+            <div className="space-y-3">
+              <div className={isLight ? 'space-y-2 rounded-lg border border-slate-200 bg-white p-3' : 'space-y-2 rounded-lg border border-slate-800 bg-slate-950/40 p-3'}>
+                <label className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'} htmlFor="saved-view-name">
+                  Saved view name
+                </label>
+                <input
+                  id="saved-view-name"
+                  type="text"
+                  value={savedViewName}
+                  onChange={event => setSavedViewName(event.target.value)}
+                  placeholder="Give this view a name"
+                  className={isLight ? 'w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none' : 'w-full rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-slate-500 focus:outline-none'}
+                />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button type="button" onClick={handleSaveCurrentView} disabled={!onSaveCurrentView} className={neutralButtonClasses(isLight, !onSaveCurrentView)}>Save current view</button>
+                  <button type="button" onClick={handleExportCurrentView} disabled={!onExportCurrentView} className={neutralButtonClasses(isLight, !onExportCurrentView)}>Export current JSON</button>
+                  <button type="button" onClick={onSaveState} className={neutralButtonClasses(isLight)}>Copy shareable link</button>
+                  <button type="button" onClick={handleImportClick} disabled={!onImportSavedView} className={neutralButtonClasses(isLight, !onImportSavedView)}>Import JSON</button>
+                </div>
+                <input ref={importInputRef} type="file" accept="application/json" className="hidden" onChange={handleImportChange} />
+                {importStatus && <p className={isLight ? 'text-xs leading-5 text-slate-500' : 'text-xs leading-5 text-slate-400'}>{importStatus}</p>}
+              </div>
+
+              <div className={isLight ? 'space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3' : 'space-y-2 rounded-lg border border-slate-800 bg-slate-900/50 p-3'}>
+                <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+                  Sequence playback
+                </div>
+                <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                  <label className={isLight ? 'text-sm text-slate-700' : 'text-sm text-slate-200'} htmlFor="sequence-delay">
+                    Slide delay
+                  </label>
+                  <input
+                    id="sequence-delay"
+                    type="number"
+                    min={1000}
+                    step={250}
+                    value={sequenceDelayMs}
+                    onChange={event => setSequenceDelayMs(Number(event.target.value) || 3000)}
+                    className={isLight ? 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-300 focus:outline-none' : 'w-full rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 focus:border-slate-500 focus:outline-none'}
+                  />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button type="button" onClick={handleStartSequence} disabled={!savedViews.length || !onLoadSavedView || sequencePlaying} className={neutralButtonClasses(isLight, !savedViews.length || !onLoadSavedView || sequencePlaying)}>
+                    Play sequence
+                  </button>
+                  <button type="button" onClick={handleStopSequence} disabled={!sequencePlaying} className={neutralButtonClasses(isLight, !sequencePlaying)}>
+                    Stop sequence
+                  </button>
+                </div>
+                <p className={isLight ? 'text-xs leading-5 text-slate-500' : 'text-xs leading-5 text-slate-400'}>
+                  The playback order follows the saved-view list below. Reorder views to change the narrative sequence.
+                </p>
+              </div>
+
+              <div className={isLight ? 'space-y-2 rounded-lg border border-slate-200 bg-white p-3' : 'space-y-2 rounded-lg border border-slate-800 bg-slate-950/40 p-3'}>
+                <div className={isLight ? 'text-xs font-semibold uppercase tracking-wide text-slate-500' : 'text-xs font-semibold uppercase tracking-wide text-slate-400'}>
+                  Saved views
+                </div>
+                {savedViews.length ? (
+                  <div className="space-y-2">
+                    {savedViews.map((view, index) => {
+                      const isFirst = index === 0
+                      const isLast = index === savedViews.length - 1
+                      return (
+                        <div key={view.id} className={isLight ? 'rounded-lg border border-slate-200 bg-slate-50 p-3' : 'rounded-lg border border-slate-800 bg-slate-950/30 p-3'}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className={isLight ? 'text-sm font-semibold text-slate-900' : 'text-sm font-semibold text-slate-100'}>{view.name}</div>
+                              <div className={isLight ? 'mt-1 text-xs text-slate-500' : 'mt-1 text-xs text-slate-400'}>
+                                {view.state.mapState.currentWord.word} · {view.state.mapState.currentWord.language}
+                              </div>
+                            </div>
+                            <div className={isLight ? 'text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500' : 'text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400'}>
+                              #{index + 1}
+                            </div>
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button type="button" onClick={() => onLoadSavedView?.(view.id)} disabled={!onLoadSavedView} className={neutralButtonClasses(isLight, !onLoadSavedView)}>Load</button>
+                            <button type="button" onClick={() => handleRenameSavedView(view)} disabled={!onRenameSavedView} className={neutralButtonClasses(isLight, !onRenameSavedView)}>Rename</button>
+                            <button type="button" onClick={() => onDuplicateSavedView?.(view.id)} disabled={!onDuplicateSavedView} className={neutralButtonClasses(isLight, !onDuplicateSavedView)}>Duplicate</button>
+                            <button type="button" onClick={() => downloadSavedView(view)} className={neutralButtonClasses(isLight)}>Export JSON</button>
+                            <button type="button" onClick={() => onMoveSavedView?.(view.id, 'up')} disabled={!onMoveSavedView || isFirst} className={neutralButtonClasses(isLight, !onMoveSavedView || isFirst)}>Up</button>
+                            <button type="button" onClick={() => onMoveSavedView?.(view.id, 'down')} disabled={!onMoveSavedView || isLast} className={neutralButtonClasses(isLight, !onMoveSavedView || isLast)}>Down</button>
+                            <button type="button" onClick={() => onDeleteSavedView?.(view.id)} disabled={!onDeleteSavedView} className={neutralButtonClasses(isLight, !onDeleteSavedView)}>Delete</button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className={isLight ? 'text-sm leading-6 text-slate-500' : 'text-sm leading-6 text-slate-400'}>
+                    No saved views yet. Save the current map state to start building a sequence.
+                  </p>
+                )}
+              </div>
             </div>
           </SettingsSection>
 
