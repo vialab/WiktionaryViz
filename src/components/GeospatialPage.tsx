@@ -150,6 +150,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         annotationMode: sharedInitialMapState.filters?.annotationMode ?? base.filters.annotationMode,
         annotationTool: sharedInitialMapState.filters?.annotationTool ?? base.filters.annotationTool,
         annotationColor: sharedInitialMapState.filters?.annotationColor ?? base.filters.annotationColor,
+        annotationCategory: sharedInitialMapState.filters?.annotationCategory ?? base.filters.annotationCategory,
       },
       currentWord: {
         word,
@@ -290,6 +291,10 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
 
   const setAnnotationColor = useCallback((annotationColor: MapState['filters']['annotationColor']) => {
     setFilterState({ annotationColor })
+  }, [setFilterState])
+
+  const setAnnotationCategory = useCallback((annotationCategory: MapState['filters']['annotationCategory']) => {
+    setFilterState({ annotationCategory })
   }, [setFilterState])
 
   const toggleLayerVisibility = useCallback((layer: MapLayerKey) => {
@@ -468,6 +473,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         showAllPopups: false,
         annotationMode: false,
         annotationTool: 'note',
+        annotationCategory: current.filters.annotationCategory,
       },
       annotations: [],
     }))
@@ -530,6 +536,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
           etymologyRequested: false,
           annotationMode: false,
           annotationTool: 'note',
+          annotationCategory: mapState.filters.annotationCategory,
         })
         setActiveLayerState({
           translations: false,
@@ -1288,6 +1295,11 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             setAnnotationColor(annotationColor)
             announce(`Annotation colour set to ${annotationColor}`)
           }}
+          annotationCategory={mapState.filters.annotationCategory}
+          onAnnotationCategoryChange={category => {
+            setAnnotationCategory(category)
+            announce(`Annotation category set to ${category}`)
+          }}
           onClearAnnotations={() => {
             updateMapState(current => ({
               ...current,
@@ -1377,6 +1389,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
             visible={showAnnotations || mapState.filters.annotationMode}
             tool={mapState.filters.annotationTool}
             annotationColor={mapState.filters.annotationColor}
+            annotationCategory={mapState.filters.annotationCategory}
             annotations={annotations}
             onAnnotationsChange={nextAnnotations => {
               updateMapState(current => ({

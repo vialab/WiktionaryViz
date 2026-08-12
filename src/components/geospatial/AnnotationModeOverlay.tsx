@@ -2,12 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CircleMarker, Marker, Polygon, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import { calculateBearing, createArrowIcon } from '@/utils/mapUtils'
+import { getAnnotationCategoryLabel, normalizeAnnotationCategory } from '@/utils/annotationMetadata'
 import type {
   AnnotationColor,
   AnnotationKind,
   MapAnnotation,
   SegmentAnnotation,
 } from '@/types/mapState'
+import type { AnnotationCategoryKey } from '@/utils/annotationMetadata'
 
 type AnnotationTheme = 'dark' | 'light'
 
@@ -16,6 +18,7 @@ interface AnnotationModeOverlayProps {
   visible: boolean
   tool: AnnotationKind
   annotationColor: AnnotationColor
+  annotationCategory: AnnotationCategoryKey
   annotations: MapAnnotation[]
   onAnnotationsChange: (nextAnnotations: MapAnnotation[]) => void
   onToolChange: (tool: AnnotationKind) => void
@@ -96,6 +99,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   visible,
   tool,
   annotationColor,
+  annotationCategory,
   annotations,
   onAnnotationsChange,
   onToolChange,
@@ -196,8 +200,12 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
   }, [enabled, tool])
 
   const addAnnotation = useCallback((annotation: MapAnnotation) => {
-    onAnnotationsChange([...annotations, annotation])
-  }, [annotations, onAnnotationsChange])
+    const normalizedCategory = normalizeAnnotationCategory(annotation.annotationCategory ?? annotationCategory)
+    onAnnotationsChange([...annotations, {
+      ...annotation,
+      annotationCategory: normalizedCategory,
+    }])
+  }, [annotationCategory, annotations, onAnnotationsChange])
 
   const finishSegment = useCallback((kind: SegmentAnnotation['kind'], start: [number, number], end: [number, number]) => {
     addAnnotation({
@@ -208,8 +216,9 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
       text: getAnnotationLabel(kind),
       createdAt: new Date().toISOString(),
       annotationColor,
+      annotationCategory,
     })
-  }, [addAnnotation, annotationColor])
+  }, [addAnnotation, annotationColor, annotationCategory])
 
   const handleMapClick = useCallback((event: L.LeafletMouseEvent) => {
     if (!enabled) return
@@ -233,6 +242,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         text,
         createdAt: new Date().toISOString(),
         annotationColor,
+        annotationCategory,
       })
       onAnnounce?.('Annotation note added')
       return
@@ -247,6 +257,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
         text: getAnnotationLabel('highlight'),
         createdAt: new Date().toISOString(),
         annotationColor,
+        annotationCategory,
       })
       onAnnounce?.('Highlight annotation added')
       return
@@ -285,6 +296,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             text: getAnnotationLabel('region'),
             createdAt: new Date().toISOString(),
             annotationColor,
+            annotationCategory,
           },
         ])
         setDraftRegion([])
@@ -361,6 +373,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
           text: getAnnotationLabel('freehand'),
           createdAt: new Date().toISOString(),
           annotationColor,
+          annotationCategory,
         },
       ])
       setFreehandStroke([])
@@ -479,6 +492,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
                   text: getAnnotationLabel('region'),
                   createdAt: new Date().toISOString(),
                   annotationColor,
+                  annotationCategory,
                 },
               ])
               setDraftRegion([])
@@ -535,7 +549,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             >
               <Popup>
                 <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wide opacity-70">Note</div>
+                  <div className="text-xs uppercase tracking-wide opacity-70">User note · {getAnnotationCategoryLabel(annotation.annotationCategory)}</div>
                   <div>{annotation.text}</div>
                 </div>
               </Popup>
@@ -559,7 +573,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             >
               <Popup>
                 <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wide opacity-70">Highlight</div>
+                  <div className="text-xs uppercase tracking-wide opacity-70">User highlight · {getAnnotationCategoryLabel(annotation.annotationCategory)}</div>
                   <div>{annotation.text}</div>
                 </div>
               </Popup>
@@ -582,7 +596,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             >
               <Popup>
                 <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wide opacity-70">Region</div>
+                  <div className="text-xs uppercase tracking-wide opacity-70">User region · {getAnnotationCategoryLabel(annotation.annotationCategory)}</div>
                   <div>{annotation.text}</div>
                 </div>
               </Popup>
@@ -605,7 +619,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             >
               <Popup>
                 <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wide opacity-70">Freehand</div>
+                  <div className="text-xs uppercase tracking-wide opacity-70">User sketch · {getAnnotationCategoryLabel(annotation.annotationCategory)}</div>
                   <div>{annotation.text}</div>
                 </div>
               </Popup>
@@ -635,7 +649,7 @@ const AnnotationModeOverlay: React.FC<AnnotationModeOverlayProps> = ({
             >
               <Popup>
                 <div className="space-y-1">
-                  <div className="text-xs uppercase tracking-wide opacity-70">{isArrow ? 'Arrow' : 'Link'}</div>
+                  <div className="text-xs uppercase tracking-wide opacity-70">{isArrow ? 'User arrow' : 'User link'} · {getAnnotationCategoryLabel(annotation.annotationCategory)}</div>
                   <div>{annotation.text}</div>
                 </div>
               </Popup>

@@ -1,3 +1,5 @@
+import { defaultAnnotationCategory, type AnnotationCategoryKey } from '@/utils/annotationMetadata'
+
 export type GuideLayerKey = 'translations' | 'etymology' | 'descendants'
 
 export type MapLayerKey = 'translations' | 'protoZones' | 'languageFamilies' | 'etymology' | 'descendants'
@@ -13,6 +15,7 @@ export interface BaseAnnotation {
   text: string
   createdAt: string
   annotationColor?: AnnotationColor
+  annotationCategory?: AnnotationCategoryKey
 }
 
 export interface PointAnnotation extends BaseAnnotation {
@@ -82,6 +85,7 @@ export interface MapFilterState {
   annotationMode: boolean
   annotationTool: AnnotationKind
   annotationColor: AnnotationColor
+  annotationCategory: AnnotationCategoryKey
 }
 
 export interface MapCurrentWordState {
@@ -143,6 +147,7 @@ export const createInitialMapState = (word: string, language: string): MapState 
     annotationMode: false,
     annotationTool: 'note',
     annotationColor: defaultAnnotationColor,
+    annotationCategory: defaultAnnotationCategory,
   },
   currentWord: {
     word,

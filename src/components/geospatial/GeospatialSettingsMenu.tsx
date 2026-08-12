@@ -6,6 +6,7 @@ import { useMap } from 'react-leaflet'
 import type { TranslationMarker } from './TranslationMarkers'
 import type { EtymologyNode } from '@/types/etymology'
 import type { AnnotationColor, AnnotationKind, MapLayerKey } from '@/types/mapState'
+import { ANNOTATION_CATEGORIES, getAnnotationCategoryLabel, type AnnotationCategoryKey } from '@/utils/annotationMetadata'
 import { buildGeoJSON, downloadGeoJSON, type ExportOptions } from '@/utils/geojsonExport'
 import useFocusTrap from '@/hooks/useFocusTrap'
 
@@ -70,11 +71,13 @@ interface GeospatialSettingsMenuProps {
   annotationsVisible: boolean
   annotationTool: AnnotationKind
   annotationColor: AnnotationColor
+  annotationCategory: AnnotationCategoryKey
   annotationCount: number
   onAnnotationModeChange: (enabled: boolean) => void
   onAnnotationsVisibleChange: (enabled: boolean) => void
   onAnnotationToolChange: (tool: AnnotationKind) => void
   onAnnotationColorChange: (color: AnnotationColor) => void
+  onAnnotationCategoryChange: (category: AnnotationCategoryKey) => void
   onClearAnnotations: () => void
   theme?: 'dark' | 'light'
 }
@@ -103,11 +106,13 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
   annotationsVisible,
   annotationTool,
   annotationColor,
+  annotationCategory,
   annotationCount,
   onAnnotationModeChange,
   onAnnotationsVisibleChange,
   onAnnotationToolChange,
   onAnnotationColorChange,
+  onAnnotationCategoryChange,
   onClearAnnotations,
   theme = 'dark',
 }) => {
@@ -627,6 +632,9 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                 {annotationsVisible ? 'Annotations are visible as their own layer and can be exported.' : 'Annotations remain in map state but are hidden from the canvas and export.'}
               </p>
               <div className={isLight ? 'rounded-md border border-slate-200 bg-slate-50 p-2' : 'rounded-md border border-slate-800 bg-slate-900/60 p-2'}>
+                <div className={isLight ? 'mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500' : 'mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400'}>
+                  Color
+                </div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {annotationColorOptions.map(option => (
                     <button
@@ -647,6 +655,29 @@ const GeospatialSettingsMenu: React.FC<GeospatialSettingsMenuProps> = ({
                     </button>
                   ))}
                 </div>
+              </div>
+              <div className={isLight ? 'rounded-md border border-slate-200 bg-slate-50 p-2' : 'rounded-md border border-slate-800 bg-slate-900/60 p-2'}>
+                <div className={isLight ? 'mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500' : 'mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400'}>
+                  Category
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {ANNOTATION_CATEGORIES.map(option => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => onAnnotationCategoryChange(option.key)}
+                      aria-pressed={annotationCategory === option.key}
+                      className={annotationCategory === option.key
+                        ? (isLight ? 'rounded-lg border border-sky-300 bg-sky-50 px-2 py-2 text-left text-xs font-medium text-sky-700' : 'rounded-lg border border-sky-500/50 bg-sky-500/10 px-2 py-2 text-left text-xs font-medium text-sky-100')
+                        : (isLight ? 'rounded-lg border border-slate-200 bg-white px-2 py-2 text-left text-xs font-medium text-slate-700 hover:border-slate-300 hover:bg-slate-50' : 'rounded-lg border border-slate-700 bg-slate-950/20 px-2 py-2 text-left text-xs font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-900')}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <p className={isLight ? 'mt-2 text-[11px] leading-5 text-slate-500' : 'mt-2 text-[11px] leading-5 text-slate-400'}>
+                  Current category: <span className="font-semibold text-inherit">{getAnnotationCategoryLabel(annotationCategory)}</span>
+                </p>
               </div>
               <div className={isLight ? 'space-y-2 rounded-md border border-slate-200 bg-slate-50 p-2' : 'space-y-2 rounded-md border border-slate-800 bg-slate-900/60 p-2'}>
                 {annotationControls.map(item => {

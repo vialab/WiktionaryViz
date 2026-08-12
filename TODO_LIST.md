@@ -28,14 +28,6 @@ Notes: Related and overlapping tasks have been grouped into focused epics to red
 - **P1 — Add state import/export as JSON**: Download/upload saved view JSON; supports reproducibility and study materials.
 - **P2 — Add saved view sequence**: Arrange saved states into a slideshow/sequence for narratives.
 
-## Epic: Annotations & User Data
-- **P1 — Add marker‑attached annotations**: Notes attached to word/language markers.
-- **P1 — Add route‑attached annotations**: Notes attached to specific etymological routes.
-- **P1 — Add path highlighting annotations**: Manually highlight interpreted historical paths.
-- **P1 — Add custom user‑created connections**: Allow drawing and labeling hypothetical links between markers.
-- **P1 — Distinguish system data from user annotations**: Styling/labels to prevent confusion between Wiktionary data and user hypotheses.
-- **P1 — Add annotation categories**: Tag notes as Observation/Hypothesis/Question/Teaching/Presentation.
-
 ## Epic: Compare Mode
 - **P1 — Add compare mode**: Split-screen or toggle to compare two words, families, periods, or relation types.
 - **P1 — Add side‑by‑side map comparison**: Two map views with independent layer/filter settings.
