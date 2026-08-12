@@ -10,6 +10,84 @@ import httpx
 router = APIRouter()
 
 
+def _extract_gloss(entry: dict | None):
+    if not entry:
+        return ""
+
+    for sense in entry.get("senses") or []:
+        if isinstance(sense, dict):
+            for gloss in sense.get("glosses") or []:
+                if isinstance(gloss, str) and gloss.strip():
+                    return gloss.strip()
+            for gloss in sense.get("raw_glosses") or []:
+                if isinstance(gloss, str) and gloss.strip():
+                    return gloss.strip()
+
+    if isinstance(entry.get("gloss"), str) and entry["gloss"].strip():
+        return entry["gloss"].strip()
+
+    return ""
+
+
+def _resolve_lang_name(lang_code: str | None):
+    if not lang_code:
+        return "Unknown language"
+
+    code = lang_code.strip()
+    if code in lang_code_to_name:
+        return lang_code_to_name[code]
+
+    fallback_map = {
+        "en": "English",
+        "de": "German",
+        "fr": "French",
+        "es": "Spanish",
+        "it": "Italian",
+        "pt": "Portuguese",
+        "ru": "Russian",
+        "zh": "Chinese",
+        "ja": "Japanese",
+        "la": "Latin",
+        "grc": "Ancient Greek",
+        "fa": "Persian",
+        "hi": "Hindi",
+        "ar": "Arabic",
+        "sa": "Sanskrit",
+        "nl": "Dutch",
+    }
+    if code in fallback_map:
+        return fallback_map[code]
+
+    if os.path.exists(os.path.join(DATA_DIR, "language_codes.json")):
+        try:
+            with open(os.path.join(DATA_DIR, "language_codes.json"), "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict) and code in loaded and loaded[code]:
+                return loaded[code]
+        except Exception:
+            pass
+
+    return code
+
+
+def build_random_interest_entry(category: str, entry: dict | None):
+    raw_entry = entry or {}
+    word = raw_entry.get("word") or "unknown"
+    lang_code = (raw_entry.get("lang_code") or "").strip()
+    lang_name = raw_entry.get("lang") or _resolve_lang_name(lang_code)
+    gloss = _extract_gloss(raw_entry)
+    reason = raw_entry.get("reason") or f"Highlighted in {category.replace('_', ' ')} category"
+
+    return {
+        "word": word,
+        "lang_code": lang_code,
+        "lang_name": lang_name,
+        "gloss": gloss,
+        "reason": reason,
+        "category": category,
+    }
+
+
 def _normalize_for_match(text: str):
     if not text:
         return None
@@ -125,7 +203,25 @@ async def get_random_interest():
     if not data:
         return JSONResponse(content={"error": f"No entries found in {file_path}."}, status_code=404)
 
-    return {"category": cat, "entry": random.choice(data)}
+    candidate = random.choice(data)
+    word = candidate.get("word")
+    lang_code = candidate.get("lang_code")
+
+    entry = None
+    if word and lang_code:
+        key = next((candidate_key for candidate_key in _candidate_word_keys(word, lang_code) if candidate_key in index), None)
+        if key is not None:
+            try:
+                with open(JSONL_FILE_PATH, "r", encoding="utf-8") as f:
+                    mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+                    mm.seek(index[key])
+                    line = mm.readline().decode("utf-8").strip()
+                    mm.close()
+                    entry = json.loads(line)
+            except Exception:
+                entry = None
+
+    return build_random_interest_entry(cat, entry or candidate)
 
 # TODO [HIGH LEVEL]: Add POST /ai/suggest-filters to propose filters and patterns for exploration.
 # TODO [LOW LEVEL]: Accept seed word/lang and return filters with rationale and example matches.

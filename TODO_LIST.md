@@ -16,11 +16,6 @@ P2 = polish, export, or quality-of-life feature
     Use case: Makes the Inspire Me results understandable and trustworthy.
     Research context: The participant was confused by why some layers were preferred and others were not.
 
-[ ] P0 — Show language and gloss information in suggested words
-    Description: Display the language clearly and provide an English meaning when available.
-    Use case: Helps users understand a recommendation without guessing the language or sense.
-    Research context: The participant struggled to interpret suggested non-English words.
-
 [ ] P0 — Let users click an explored node to pivot into a new search
     Description: Make a selected marker or word become the new base word without returning to the landing page.
     Use case: Supports continuous exploration from one word to the next.

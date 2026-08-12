@@ -152,6 +152,8 @@ export default function LandingPage({
   ]
 
   const [inspireWord, setInspireWord] = useState<string | null>(null)
+  const [inspireLanguage, setInspireLanguage] = useState<string | null>(null)
+  const [inspireGloss, setInspireGloss] = useState<string | null>(null)
   const [inspireLabel, setInspireLabel] = useState<string | null>(null)
 
   const handleInspire = async () => {
@@ -162,11 +164,16 @@ export default function LandingPage({
         const result = await refresh()
           if (result?.word) {
             setInspireWord(result.word)
+            setInspireLanguage(result.lang_name || result.lang_code || 'Unknown language')
+            setInspireGloss(result.gloss || null)
             setInspireLabel(result.reason || 'interesting')
             setWord(result.word)
+            if (result.lang_code) {
+              setLanguage(result.lang_code)
+              setLanguage1?.(result.lang_code)
+            }
             // Propagate to parent controlled props so App receives the word selection.
             setWord1?.(result.word)
-            if (result.lang_code) setLanguage1?.(result.lang_code)
             if (result.category) setInspireCategory?.(result.category)
             inputRef.current?.focus()
           }
@@ -181,6 +188,8 @@ export default function LandingPage({
     const pick = suggestedWords[Math.floor(Math.random() * suggestedWords.length)]
     const lab = inspireLabels[Math.floor(Math.random() * inspireLabels.length)]
     setInspireWord(pick)
+    setInspireLanguage('English')
+    setInspireGloss(null)
     setInspireLabel(lab)
     setWord(pick)
     inputRef.current?.focus()
@@ -423,9 +432,24 @@ export default function LandingPage({
               Inspire me
             </button>
             {inspireLabel ? (
-              <span className={isLight ? 'text-sm text-slate-600' : 'text-sm text-slate-300'}>
-                {inspireWord} — {inspireLabel}
-              </span>
+              <div className="flex flex-col items-end text-right">
+                <span className={isLight ? 'text-sm font-medium text-slate-700' : 'text-sm font-medium text-slate-200'}>
+                  {inspireWord}
+                  {inspireLanguage ? (
+                    <span className={isLight ? 'ml-2 text-slate-500' : 'ml-2 text-slate-400'}>
+                      • {inspireLanguage}
+                    </span>
+                  ) : null}
+                </span>
+                {inspireGloss ? (
+                  <span className={isLight ? 'mt-1 max-w-md text-xs text-slate-600' : 'mt-1 max-w-md text-xs text-slate-300'}>
+                    {inspireGloss}
+                  </span>
+                ) : null}
+                <span className={isLight ? 'mt-1 text-xs text-slate-500' : 'mt-1 text-xs text-slate-400'}>
+                  {inspireLabel}
+                </span>
+              </div>
             ) : (
               <span className={isLight ? 'text-sm text-slate-500' : 'text-sm text-slate-400'}>Get a random interesting word</span>
             )}

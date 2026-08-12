@@ -5,6 +5,8 @@ export interface InterestingWord {
   word: string
   reason: string
   lang_code?: string
+  lang_name?: string
+  gloss?: string
 }
 
 /**
@@ -21,17 +23,30 @@ export function useInterestingWord() {
     try {
       const res = await fetch(apiUrl('/random-interesting-word'))
       const data = await res.json()
-      if (data?.entry?.word && data?.entry?.lang_code) {
+      const payload = data?.entry && typeof data.entry === 'object' ? data.entry : data
+      if (payload?.word && (payload?.lang_code || payload?.lang_name)) {
         const catRaw = data.category || 'unknown'
         const obj = {
-          word: data.entry.word,
-          reason:
-            data.entry.reason || `Highlighted in ${catRaw.replace(/_/g, ' ')} category`,
-          lang_code: data.entry.lang_code,
+          word: payload.word,
+          reason: payload.reason || `Highlighted in ${catRaw.replace(/_/g, ' ')} category`,
+          lang_code: payload.lang_code,
+          lang_name: payload.lang_name || payload.lang || payload.lang_code,
+          gloss: payload.gloss || undefined,
         }
         setInterestingWord(obj)
         setCategory(catRaw.replace(/_/g, ' '))
         return { ...obj, category: catRaw }
+      } else if (payload?.word) {
+        const obj = {
+          word: payload.word,
+          reason: payload.reason || 'Interesting word',
+          lang_code: payload.lang_code,
+          lang_name: payload.lang_name || payload.lang_code,
+          gloss: payload.gloss || undefined,
+        }
+        setInterestingWord(obj)
+        setCategory('unknown')
+        return { ...obj, category: 'unknown' }
       } else {
         const obj = { word: 'example', reason: 'Could not fetch real interesting words.' }
         setInterestingWord(obj)
