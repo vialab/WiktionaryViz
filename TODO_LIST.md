@@ -10,7 +10,5 @@
 - **Add difference view**: Visualize what appears/disappears or changes between two selected states.
 
 ## Small / Instrumentation Items (P3)
-- **P3 — Add loading indicator for descendants**
-- **P3 — Change opacity of other branches in descendants mode**
-- **P3 — Fix: Escape doesn't exit annotation mode**
-- **P3 — Add events logger**: Record button clicks, node clicks, etc. for research.
+- **Change opacity of other branches in descendants mode**
+- **Add events logger**: Record button clicks, node clicks, etc. for research.
