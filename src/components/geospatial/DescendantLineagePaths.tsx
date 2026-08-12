@@ -253,6 +253,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
   const [isLoading, setLoading] = useState(false)
   const [, setLoadError] = useState<string | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
+  const [focusedBranchKey, setFocusedBranchKey] = useState<string | null>(null)
   const [, setIsPlaying] = useState(false)
   const [languageNames, setLanguageNames] = useState<Record<string, string>>({})
   const [loadingBranch, setLoadingBranch] = useState<{ pathIndex: number; nodeIndex: number } | null>(null)
@@ -551,6 +552,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
   useEffect(() => {
     stopPlayback()
     setSelected(null)
+    setFocusedBranchKey(null)
   }, [rootWord, rootLang])
 
   return (
@@ -581,7 +583,12 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
           const hasAggregatedNode = points.some(point => point.aggregated)
           const hasFallbackNode = points.some(point => point.fallback)
           const baseColor = isActive ? '#fb923c' : hasAggregatedNode ? '#eab308' : '#f97316'
-          const layerOpacity = Math.max(0, Math.min(1, opacity))
+          const baseLayerOpacity = Math.max(0, Math.min(1, opacity))
+          const isFocusedBranch = focusedBranchKey
+            ? prefixKey(p, Math.min(p.length, focusedBranchKey.split('>').length) - 1) === focusedBranchKey
+            : true
+          const branchOpacity = isFocusedBranch ? 1 : 0.22
+          const layerOpacity = baseLayerOpacity * branchOpacity
           return (
             <React.Fragment key={`path-${idx}`}>
               {coords.length >= 2 ? (
@@ -645,6 +652,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
                   eventHandlers={{
                     click: () => {
                       onNodeSelect?.(p[i], idx, i)
+                      setFocusedBranchKey(prefixKey(p, i))
                       setSelected(prev => (prev === idx ? null : idx))
                       void toggleNodeExpansion(p, i, idx)
                     },
