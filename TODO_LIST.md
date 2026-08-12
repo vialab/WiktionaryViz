@@ -51,16 +51,6 @@ P2 = polish, export, or quality-of-life feature
     Use case: Helps users understand historical change over time.
     Research context: The participant kept asking for years to interpret the visualization.
 
-[ ] P1 — Allow edge selection to show historical explanation details
-    Description: Open a detail panel for a route or connection so the user can inspect what the transition represents.
-    Use case: Turns map edges into inspectable evidence.
-    Research context: The participant wanted to click connections and learn the transition history.
-
-[ ] P1 — Consider an embedded Wiktionary-style reference panel
-    Description: Show curated reference content alongside the map when a node or edge is selected.
-    Use case: Lets users inspect sources without leaving the visualization.
-    Research context: The participant wanted more concrete explanations tied to data.
-
 [ ] P1 — Add a machine-generated explanation only if it is grounded in source data
     Description: If an LLM is used for help text, anchor it to cited records and surface uncertainty explicitly.
     Use case: Reduces the risk of hallucinated historical explanations.
