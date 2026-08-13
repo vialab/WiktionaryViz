@@ -26,6 +26,11 @@ def ensure_main_index(rebuild=False):
         subprocess.run([
             sys.executable, os.path.join(backend_dir, "build_index.py")
         ], check=True, cwd=backend_dir)
+    # Ensure language stats exist (compute if missing)
+    lang_stats_path = os.path.join(DATA_DIR, "language_stats.json")
+    if not os.path.exists(lang_stats_path):
+        print("[INFO] Building language stats (language_stats.json)...")
+        subprocess.run([sys.executable, os.path.join(backend_dir, "build_language_stats.py")], check=False, cwd=backend_dir)
     else:
         print("[INFO] Main index and stats files already exist. Skipping rebuild.")
 

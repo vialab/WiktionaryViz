@@ -8,6 +8,7 @@ from openai import AsyncOpenAI
 import httpx
 
 router = APIRouter()
+from services.recommendation import score_translations, score_roots, score_descendants, decay_weighted_score
 
 
 def _extract_gloss(entry: dict | None):
@@ -165,6 +166,180 @@ async def get_word_data(word: str = Query(...), lang_code: str = Query(...)):
     except Exception as e:
         print(f"[ERROR] get_word_data failed for word='{word}', lang_code='{lang_code}': {e}")
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+
+@router.get("/inspire-me")
+async def inspire_me(word: str = Query(...), lang_code: str = Query(None)):
+    """Generate three recommendation JSON blobs: translations, etymology roots, descendants.
+
+    This endpoint uses deterministic, no-training scoring to avoid bias towards high-resource
+    languages by applying simple normalizations and a small low-resource boost.
+    """
+    # Minimal candidate collection logic: reuse existing data files when available.
+    translations_candidates = []
+    roots_candidates = []
+    descendants_candidates = []
+
+    # Extract translations from the entry's senses (defensive parsing).
+    try:
+        candidate_key = next((candidate for candidate in _candidate_word_keys(word, lang_code) if candidate in index), None)
+        if candidate_key:
+            with open(JSONL_FILE_PATH, "r", encoding="utf-8") as f:
+                mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+                off = index[candidate_key]
+                try:
+                    off_int = off[0] if isinstance(off, (list, tuple)) else int(off)
+                except Exception:
+                    off_int = int(off)
+                mm.seek(off_int)
+                try:
+                    entry = json.loads(mm.readline().decode("utf-8"))
+                except Exception:
+                    entry = None
+                mm.close()
+
+            def _collect_translations_from_obj(obj):
+                out = []
+                if isinstance(obj, dict):
+                    # common patterns: top-level 'translations' or senses -> translations
+                    if "translations" in obj and isinstance(obj["translations"], list):
+                        for t in obj["translations"]:
+                            if isinstance(t, dict):
+                                lang = t.get("lang") or t.get("lang_code") or t.get("language")
+                                text = t.get("translation") or t.get("text") or t.get("word") or t.get("label")
+                                if not text and "translations" in t and isinstance(t["translations"], list):
+                                    # nested list
+                                    for tt in t["translations"]:
+                                        if isinstance(tt, dict):
+                                            ttext = tt.get("translation") or tt.get("text") or tt.get("word")
+                                            if ttext:
+                                                out.append({"word": ttext, "lang_code": lang or tt.get("lang")})
+                                elif text:
+                                    out.append({"word": text, "lang_code": lang})
+                    # recurse into dict values
+                    for v in obj.values():
+                        out.extend(_collect_translations_from_obj(v))
+                elif isinstance(obj, list):
+                    for it in obj:
+                        out.extend(_collect_translations_from_obj(it))
+                return out
+
+            if entry:
+                raw_trans = _collect_translations_from_obj(entry)
+                seen = set()
+                for t in raw_trans:
+                    w = (t.get("word") or "").strip()
+                    lc = (t.get("lang_code") or t.get("lang") or "").strip().lower()
+                    if not w:
+                        continue
+                    key = f"{w}_{lc}"
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    translations_candidates.append({
+                        "word": w,
+                        "lang_code": lc or None,
+                        "translation_count": 0,
+                        "global_freq": 0,
+                        "path_score": 0.0,
+                    })
+    except Exception:
+        translations_candidates = []
+
+    # Etymology roots: reuse ancestor_roots endpoint logic by invoking helper functions
+    try:
+        # Best-effort lightweight root candidate inference: open JSONL and call existing resolver
+        with open(JSONL_FILE_PATH, "r", encoding="utf-8") as f:
+            mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+            # attempt to find candidate index key
+            candidate_key = None
+            if lang_code:
+                key = f"{word.lower()}_{lang_code.lower()}"
+                if key in index:
+                    candidate_key = key
+            if not candidate_key:
+                # fallback: pick first matching index key
+                for k in index:
+                    if k.startswith(f"{word.lower()}_"):
+                        candidate_key = k
+                        break
+            # simple parse: if found, read entry and look for etymology_templates
+            if candidate_key:
+                mm.seek(index[candidate_key])
+                entry = json.loads(mm.readline().decode("utf-8"))
+                templates = entry.get("etymology_templates", []) or []
+                # collect direct ancestor args
+                for tpl in templates:
+                    if not tpl or not isinstance(tpl, dict):
+                        continue
+                    args = tpl.get("args") or {}
+                    pword = args.get("3")
+                    plong = args.get("2")
+                    if pword:
+                        roots_candidates.append({
+                            "word": pword,
+                            "lang_code": plong,
+                            "supporting_paths": 1,
+                            "avg_path_score": 0.6,
+                            "proto_score": 1 if (isinstance(pword, str) and pword.startswith("*")) else 0,
+                            "global_freq": 0,
+                        })
+            mm.close()
+    except Exception:
+        roots_candidates = []
+
+    # Descendants: gather immediate descendant candidates and estimate small subtree sizes.
+    try:
+        from api_routes.descendants import _immediate_descendants_for_node
+
+        immediate = _immediate_descendants_for_node(word, lang_code, max_children=24, root_key=None)
+        for child in immediate:
+            child_word = child.get("word")
+            child_lang = child.get("lang_code")
+            # Get immediate grandchildren count as a cheap subtree size estimate
+            try:
+                grandchildren = _immediate_descendants_for_node(child_word, child_lang, max_children=60, root_key=None)
+                subtree_count = len(grandchildren)
+            except Exception:
+                subtree_count = 0
+            descendants_candidates.append({
+                "word": child_word,
+                "lang_code": child_lang,
+                "node_key": child.get("key"),
+                "subtree_descendant_count": subtree_count,
+                "path_score": 0.0,
+                "depth": 1,
+                "max_depth": 6,
+                "global_freq": 0,
+            })
+    except Exception:
+        descendants_candidates = []
+
+    # Compute path_score for descendant candidates using full descendant tree paths (may be heavier).
+    try:
+        from services.recommendation import compute_candidate_path_scores
+        # Determine best root_word for descendant tree: prefer provided word
+        root_word = word
+        root_lang = lang_code
+        path_scores = compute_candidate_path_scores(root_word, root_lang, descendants_candidates, max_depth=6, decay=0.85)
+        for c in descendants_candidates:
+            k = f"{(c.get('word') or '').strip().lower()}_{(c.get('lang_code') or '').strip().lower()}".rstrip("_")
+            c["path_score"] = path_scores.get(k, c.get("path_score", 0.0))
+    except Exception:
+        pass
+
+    scored_trans = score_translations(translations_candidates, lang_code=lang_code)
+    scored_roots = score_roots(roots_candidates, lang_code=lang_code)
+    scored_descs = score_descendants(descendants_candidates, lang_code=lang_code)
+
+    payload = {
+        "query": {"word": word, "lang_code": lang_code},
+        "translations": scored_trans,
+        "etymology_roots": scored_roots,
+        "descendants": scored_descs,
+    }
+    return JSONResponse(content=payload)
 
 @router.get("/available-languages")
 async def get_available_languages(word: str = Query(...), codes_only: bool = Query(False)):
