@@ -109,15 +109,21 @@ def _word_variants(text: str):
     bare = raw.lstrip("*")
     if bare and bare not in variants:
         variants.append(bare)
+    if bare and f"*{bare}" not in variants:
+        variants.append(f"*{bare}")
 
     deaccented = "".join(ch for ch in unicodedata.normalize("NFKD", bare) if unicodedata.category(ch) != "Mn")
     if deaccented and deaccented not in variants:
         variants.append(deaccented)
+    if deaccented and f"*{deaccented}" not in variants:
+        variants.append(f"*{deaccented}")
 
     if bare.startswith("reconstruction:"):
         reconstruction = bare[len("reconstruction:"):].strip()
         if reconstruction and reconstruction not in variants:
             variants.append(reconstruction)
+        if reconstruction and f"*{reconstruction}" not in variants:
+            variants.append(f"*{reconstruction}")
 
     return variants
 
@@ -163,12 +169,90 @@ def _load_reverse_descendant_graph():
     return _reverse_descendant_graph
 
 
+def _safe_descendant_limits(max_depth: int, max_nodes: int, *, root_click: bool = False):
+    """Bound descendant expansion to prevent runaway memory use from root-click or proto-root traversals."""
+    depth_limit = max(1, int(max_depth or 1))
+    node_limit = max(10, int(max_nodes or 10))
+
+    if root_click:
+        return min(depth_limit, 2), min(node_limit, 150)
+    return min(depth_limit, 5), min(node_limit, 600)
+
+
 def _reverse_graph_child_keys(word: str, lang_code: str | None):
     graph = _load_reverse_descendant_graph()
     child_keys = set()
     for parent_key in _graph_key_variants(word, lang_code):
         child_keys.update(graph.get(parent_key, set()))
     return sorted(child_keys)
+
+
+def _split_graph_key(key: str):
+    if not key:
+        return None, None
+    if "_" in key:
+        word, lang = key.rsplit("_", 1)
+        return word, lang
+    return key, None
+
+
+def _select_reverse_root_key(word: str, lang_code: str | None, preferred_key: str | None = None):
+    graph = _load_reverse_descendant_graph()
+    candidates = []
+
+    if preferred_key:
+        candidates.append(str(preferred_key).strip().lower())
+
+    for variant in _graph_key_variants(word, lang_code):
+        if variant not in candidates:
+            candidates.append(variant)
+
+    for index_key in _find_index_keys_for_word(word, lang_code, max_keys=64):
+        if index_key not in candidates:
+            candidates.append(index_key)
+
+    # Prefer candidates that actually have descendants in the reverse graph.
+    for key in candidates:
+        if graph.get(key):
+            return key
+
+    # If none have children, still return a known graph key when available.
+    for key in candidates:
+        if key in graph:
+            return key
+
+    return None
+
+
+def _reverse_tree_node_from_key(root_key: str, max_depth: int, node_budget: dict, depth: int = 0, seen: set | None = None):
+    graph = _load_reverse_descendant_graph()
+    if seen is None:
+        seen = set()
+
+    word, lang_code = _split_graph_key(root_key)
+    node = {"word": word, "lang_code": lang_code, "expansion": None, "children": []}
+
+    if depth >= max_depth:
+        return node
+
+    if node_budget.get("remaining", 0) <= 0:
+        node_budget["truncated"] = True
+        return node
+
+    for child_key in sorted(graph.get(root_key, set())):
+        if node_budget.get("remaining", 0) <= 0:
+            node_budget["truncated"] = True
+            break
+        if child_key in seen:
+            continue
+
+        node_budget["remaining"] = max(0, node_budget.get("remaining", 0) - 1)
+        next_seen = set(seen)
+        next_seen.add(child_key)
+        child_node = _reverse_tree_node_from_key(child_key, max_depth, node_budget, depth + 1, next_seen)
+        node["children"].append(child_node)
+
+    return node
 
 
 def _reverse_tree_node(word: str, lang_code: str | None, max_depth: int, node_budget: dict, depth: int = 0, seen: set | None = None):
@@ -202,6 +286,54 @@ def _reverse_tree_node(word: str, lang_code: str | None, max_depth: int, node_bu
         node["children"].append(child_node)
 
     return node
+
+
+def _immediate_descendants_for_node(word: str, lang_code: str | None, max_children: int = 12, root_key: str | None = None):
+    """Return only the next immediate descendants of a node, bounded and suitable for on-demand expansion."""
+    graph = _load_reverse_descendant_graph()
+    if not graph:
+        logger.info("descendant child lookup: graph empty for word=%r lang=%r root_key=%r", word, lang_code, root_key)
+        return []
+
+    candidate_keys = []
+    raw_root_key = str(root_key).strip().lower() if root_key else None
+    if raw_root_key:
+        candidate_keys.append(raw_root_key)
+        stripped_root = raw_root_key.lstrip("*")
+        if stripped_root and f"*{stripped_root}" not in candidate_keys:
+            candidate_keys.append(f"*{stripped_root}")
+    for candidate in _graph_key_variants(word, lang_code):
+        if candidate not in candidate_keys:
+            candidate_keys.append(candidate)
+
+    logger.info("descendant child lookup: word=%r lang=%r root_key=%r candidate_keys=%s", word, lang_code, root_key, candidate_keys)
+
+    seen = set()
+    children = []
+    for candidate_key in candidate_keys:
+        for child_key in sorted(graph.get(candidate_key, set())):
+            if len(children) >= max_children:
+                break
+            if child_key in seen:
+                continue
+
+            child_word, child_lang = _split_graph_key(child_key)
+            if not child_word:
+                continue
+
+            seen.add(child_key)
+            children.append({
+                "word": child_word,
+                "lang_code": child_lang,
+                "key": child_key,
+                "expansion": None,
+            })
+
+        if len(children) >= max_children:
+            break
+
+    logger.info("descendant child lookup result: word=%r lang=%r root_key=%r children=%d", word, lang_code, root_key, len(children))
+    return children
 
 
 def _index_word_variants(text: str):
@@ -240,11 +372,21 @@ def _read_entry_by_key(mm, key: str):
         return None
 
 
-def _node_from_entry(entry, fallback_word=None, fallback_lang=None):
+def _node_from_entry(entry, fallback_word=None, fallback_lang=None, fallback_key=None):
+    word = entry.get("word") if entry else fallback_word
+    lang_code = entry.get("lang_code") if entry else fallback_lang
+    node_key = None
+    if word:
+        word_key = str(word).strip().lower()
+        lang_key = str(lang_code).strip().lower() if lang_code else ""
+        node_key = f"{word_key}_{lang_key}" if lang_key else word_key
+    if fallback_key:
+        node_key = fallback_key
     return {
-        "word": entry.get("word") if entry else fallback_word,
-        "lang_code": entry.get("lang_code") if entry else fallback_lang,
+        "word": word,
+        "lang_code": lang_code,
         "expansion": entry.get("expansion") if entry else None,
+        "node_key": node_key,
     }
 
 
@@ -302,7 +444,7 @@ def _trace_ancestry_paths(mm, start_key: str, max_depth=10, max_paths=20, max_br
     stack = [
         (
             start_entry,
-            [_node_from_entry(start_entry)],
+            [_node_from_entry(start_entry, fallback_key=start_key)],
             {start_key},
             0,
         )
@@ -328,7 +470,13 @@ def _trace_ancestry_paths(mm, start_key: str, max_depth=10, max_paths=20, max_br
 
             parent_keys = _find_index_keys_for_word(p_word, p_lang, max_keys=max_branching)
             if not parent_keys:
-                parent_node = {"word": p_word, "lang_code": p_lang, "expansion": None}
+                fallback_node_key = _select_reverse_root_key(p_word, p_lang)
+                parent_node = {
+                    "word": p_word,
+                    "lang_code": p_lang,
+                    "expansion": None,
+                    "node_key": fallback_node_key,
+                }
                 paths.append(path + [parent_node])
                 continue
 
@@ -343,7 +491,7 @@ def _trace_ancestry_paths(mm, start_key: str, max_depth=10, max_paths=20, max_br
                 advanced = True
                 next_seen = set(seen_keys)
                 next_seen.add(p_key)
-                stack.append((p_entry, path + [_node_from_entry(p_entry)], next_seen, depth + 1))
+                stack.append((p_entry, path + [_node_from_entry(p_entry, fallback_key=p_key)], next_seen, depth + 1))
 
         if not advanced:
             paths.append(path)
@@ -383,9 +531,11 @@ def _resolve_ancestor_roots(mm, word: str, lang_code: str, max_depth: int, max_p
         r_key = f"{r_word.lower()}_{r_lang or ''}"
         root_info = roots_by_key.get(r_key)
         if not root_info:
+            root_key = root_node.get("node_key") or _select_reverse_root_key(r_word, r_lang)
             root_info = {
                 "word": r_word,
                 "lang_code": r_lang,
+                "root_key": root_key,
                 "supporting_paths": 0,
                 "max_path_length": 0,
                 "max_root_index": 0,
@@ -489,7 +639,7 @@ def _aggregate_descendant_tree(node, branch_limit: int = 8, max_depth: int = 4, 
     return aggregated
 
 @router.get("/descendant-tree")
-async def get_descendant_tree(
+def get_descendant_tree(
     word: str,
     lang_code: str,
     max_depth: int = Query(8, ge=1, le=30),
@@ -550,9 +700,10 @@ async def get_descendant_tree(
             mm.close()
 
 @router.get("/descendant-tree-from-root")
-async def descendant_tree_from_root(
+def descendant_tree_from_root(
     word: str,
     lang_code: str,
+    root_key: str = None,
     max_depth: int = Query(8, ge=1, le=30),
     max_nodes: int = Query(1200, ge=10, le=20000),
 ):
@@ -562,26 +713,39 @@ async def descendant_tree_from_root(
     try:
         with open(JSONL_FILE_PATH, "r", encoding="utf-8") as f:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-            logger.info("/descendant-tree-from-root request root=%s lang=%s", word, lang_code)
-            budget = {"remaining": max_nodes, "truncated": False}
-            tree = build_descendant_hierarchy(
-                word,
-                mm,
-                lang_code=lang_code,
-                max_depth=max_depth,
-                node_budget=budget,
-            )
-            if not tree.get("children"):
-                tree = _reverse_tree_node(word, lang_code, max_depth=max_depth, node_budget=budget)
+            effective_depth, effective_nodes = _safe_descendant_limits(max_depth, max_nodes, root_click=bool(root_key) or _is_proto_like(word, lang_code))
+            logger.info("/descendant-tree-from-root request root=%s lang=%s depth=%s nodes=%s", word, lang_code, effective_depth, effective_nodes)
+            budget = {"remaining": effective_nodes, "truncated": False}
+            selected_root_key = _select_reverse_root_key(word, lang_code, preferred_key=root_key)
+
+            # Proto-like or non-attested roots should expand from the reverse graph first.
+            use_graph_first = bool(root_key) or _is_proto_like(word, lang_code)
+
+            tree = {"name": word, "children": []}
+            if not use_graph_first:
+                tree = build_descendant_hierarchy(
+                    word,
+                    mm,
+                    lang_code=lang_code,
+                    max_depth=effective_depth,
+                    node_budget=budget,
+                )
+
+            if use_graph_first or not tree.get("children"):
+                if selected_root_key:
+                    tree = _reverse_tree_node_from_key(selected_root_key, max_depth=effective_depth, node_budget=budget)
+                else:
+                    tree = _reverse_tree_node(word, lang_code, max_depth=effective_depth, node_budget=budget)
             logger.info("/descendant-tree-from-root built tree for root=%s children=%d", word, len(tree.get("children", [])))
             payload = {
                 "root": word,
                 "root_lang": lang_code,
+                "root_key": selected_root_key,
                 "tree": tree,
                 "meta": {
-                    "max_depth": max_depth,
-                    "max_nodes": max_nodes,
-                    "truncated": bool(budget.get("truncated")),
+                    "max_depth": effective_depth,
+                    "max_nodes": effective_nodes,
+                    "truncated": bool(budget.get("truncated")) or effective_depth < max_depth or effective_nodes < max_nodes,
                 },
             }
             return _add_elapsed_ms(payload, started_at)
@@ -592,8 +756,27 @@ async def descendant_tree_from_root(
             mm.close()
 
 
+@router.get("/descendant-children")
+def descendant_children(
+    word: str,
+    lang_code: str = None,
+    root_key: str = None,
+    max_children: int = Query(12, ge=1, le=50),
+):
+    """Return only the immediate descendants for the supplied node, which is the safe on-demand expansion primitive."""
+    logger.info("GET /descendant-children: word=%r lang=%r root_key=%r max_children=%s", word, lang_code, root_key, max_children)
+    children = _immediate_descendants_for_node(word, lang_code, max_children=max_children, root_key=root_key)
+    payload = {
+        "root": {"word": word, "lang_code": lang_code, "root_key": root_key},
+        "children": children,
+        "meta": {"max_children": max_children, "count": len(children)},
+    }
+    logger.info("GET /descendant-children response JSON: %s", json.dumps(payload, ensure_ascii=False, sort_keys=True))
+    return payload
+
+
 @router.get("/descendant-paths-from-root")
-async def descendant_paths_from_root(
+def descendant_paths_from_root(
     word: str,
     lang_code: str = None,
     max_depth: int = Query(8, ge=1, le=30),
@@ -720,7 +903,7 @@ async def descendant_paths_from_root(
 
 
 @router.get("/descendant-preview")
-async def descendant_preview(
+def descendant_preview(
     word: str,
     lang_code: str = None,
     depth: int = Query(2, ge=1, le=5),
@@ -769,7 +952,7 @@ async def descendant_preview(
 
 
 @router.get("/descendant-count")
-async def descendant_count(
+def descendant_count(
     word: str,
     lang_code: str = None,
     max_nodes: int = Query(30000, ge=100, le=200000),
@@ -822,7 +1005,7 @@ async def descendant_count(
 
 
 @router.get("/descendant-tree-aggregated")
-async def descendant_tree_aggregated(
+def descendant_tree_aggregated(
     word: str,
     lang_code: str = None,
     max_depth: int = Query(8, ge=1, le=30),
@@ -904,7 +1087,7 @@ async def descendant_tree_aggregated(
 
 
 @router.get("/ancestor-roots")
-async def ancestor_roots(
+def ancestor_roots(
     word: str,
     lang_code: str = None,
     max_depth: int = Query(8, ge=1, le=20),
@@ -966,7 +1149,7 @@ async def ancestor_roots(
 
 
 @router.get("/descendant-root")
-async def descendant_root(
+def descendant_root(
     word: str,
     lang_code: str = None,
     max_depth: int = Query(8, ge=1, le=20),
@@ -1019,6 +1202,7 @@ async def descendant_root(
                     "path_count": len(ancestry_paths),
                 },
             }
+            logger.info("GET /descendant-root response JSON: %s", json.dumps(payload, ensure_ascii=False, sort_keys=True))
             _cache_set(cache_key, payload)
             return payload
     except Exception as e:
@@ -1029,7 +1213,7 @@ async def descendant_root(
 
 
 @router.get("/descendant-paths-resolved")
-async def descendant_paths_resolved(
+def descendant_paths_resolved(
     word: str,
     lang_code: str = None,
     preferred_root_word: str = None,
@@ -1069,6 +1253,7 @@ async def descendant_paths_resolved(
 
         with open(JSONL_FILE_PATH, "r", encoding="utf-8") as f:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+            effective_depth, effective_nodes = _safe_descendant_limits(desc_max_depth, desc_max_nodes, root_click=False)
 
             roots, ancestry_paths = _resolve_ancestor_roots(
                 mm,
@@ -1096,15 +1281,15 @@ async def descendant_paths_resolved(
             root_word = selected_root.get("word") or word
             root_lang = selected_root.get("lang_code") or lang_code
 
-            budget = {"remaining": desc_max_nodes, "truncated": False}
+            budget = {"remaining": effective_nodes, "truncated": False}
             tree = build_descendant_hierarchy(
                 root_word,
                 mm,
                 lang_code=root_lang,
-                max_depth=desc_max_depth,
+                max_depth=effective_depth,
                 node_budget=budget,
             )
-            desc_paths = _flatten_paths_from_tree(tree, root_word=root_word, root_lang=root_lang, max_paths=desc_max_paths)
+            desc_paths = _flatten_paths_from_tree(tree, root_word=root_word, root_lang=root_lang, max_paths=min(desc_max_paths, 400))
 
             payload = {
                 "query": {"word": word, "lang_code": lang_code},
@@ -1120,10 +1305,10 @@ async def descendant_paths_resolved(
                         "path_count": len(ancestry_paths),
                     },
                     "descendant": {
-                        "max_depth": desc_max_depth,
-                        "max_nodes": desc_max_nodes,
-                        "max_paths": desc_max_paths,
-                        "truncated": bool(budget.get("truncated")) or len(desc_paths) >= desc_max_paths,
+                        "max_depth": effective_depth,
+                        "max_nodes": effective_nodes,
+                        "max_paths": min(desc_max_paths, 400),
+                        "truncated": bool(budget.get("truncated")) or len(desc_paths) >= min(desc_max_paths, 400),
                     },
                 },
             }

@@ -24,6 +24,7 @@ type DescPath = DescNode[]
 type RootCandidate = {
   word?: string
   lang_code?: string | null
+  root_key?: string | null
   supporting_paths?: number
 }
 
@@ -41,12 +42,6 @@ type DescendantRootResponse = {
   root?: string
   root_lang?: string
   selected_root?: RootCandidate
-}
-
-type DescendantTreeResponse = {
-  root?: string
-  root_lang?: string | null
-  tree?: DescendantTreeNode
 }
 
 type RenderPoint = {
@@ -331,11 +326,26 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
     setLoadError(null)
 
     try {
-      const url = apiUrl(`/descendant-tree-from-root?${new URLSearchParams({
+      const selectedNode = basePath[clickedIndex]
+      const nodeRootKey = selectedNode?.word && selectedNode?.lang_code
+        ? `${selectedNode.word}_${selectedNode.lang_code}`
+        : null
+
+      console.debug('[DescendantLineagePaths] fetching immediate children', {
+        clickedIndex,
+        pathIndex,
+        lookupWord,
+        langCode,
+        nodeRootKey,
+        selectedNode: { word: selectedNode?.word, lang_code: selectedNode?.lang_code },
+        basePath: basePath.map(node => ({ word: node.word, lang_code: node.lang_code })),
+      })
+
+      const url = apiUrl(`/descendant-children?${new URLSearchParams({
         word: lookupWord,
         lang_code: langCode,
-        max_depth: '8',
-        max_nodes: '2000',
+        max_children: '12',
+        ...(nodeRootKey ? { root_key: nodeRootKey } : {}),
       }).toString()}`)
       const res = await fetch(url)
       if (!res.ok) {
@@ -343,13 +353,36 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
         return
       }
 
-      const json = (await res.json()) as DescendantTreeResponse
-      const subtree = flattenDescendantTree(json.tree)
-      if (!subtree.length) {
+      const json = (await res.json()) as { children?: Array<{ word?: string; lang_code?: string | null; key?: string }> }
+      const children = json.children ?? []
+      console.debug('[DescendantLineagePaths] immediate children response', {
+        lookupWord,
+        langCode,
+        count: children.length,
+        children,
+      })
+      if (!children.length) {
         return
       }
 
       const prefix = basePath.slice(0, clickedIndex + 1)
+      const subtree: DescPath[] = children.map(child => [
+        {
+          word: node.word,
+          lang_code: node.lang_code,
+          lookupWord: normalizeLookupWord(node.word),
+          expansion: node.expansion,
+          aggregated: false,
+        },
+        {
+          word: child.word,
+          lang_code: child.lang_code,
+          lookupWord: normalizeLookupWord(child.word),
+          expansion: undefined,
+          aggregated: false,
+        },
+      ])
+
       setAllPaths(prev => mergeSubtreePaths(prev, prefix, subtree))
       setExpandedPrefixes(prev => {
         const next = new Set(prev)
