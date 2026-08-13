@@ -2,6 +2,33 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.40](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.39...wiktionaryviz-v0.1.40) (2026-08-13)
+
+
+### Features
+
+* **App.tsx:** implement compare mode functionality with state management for left and right map states ([2fb360b](https://github.com/vialab/WiktionaryViz/commit/2fb360b8af61a59f283ad549fcef67f6a82681d5))
+* **build_language_stats.py:** create a script to compute and save language statistics for translations and descendants to improve recommendation fairness ([f9e43ce](https://github.com/vialab/WiktionaryViz/commit/f9e43ce2394543b8180ac889ad9ff645a8810ca1))
+* **debug_reverse_path_scores.py:** add script to analyze and debug path scores for descendants to enhance recommendation accuracy ([f9e43ce](https://github.com/vialab/WiktionaryViz/commit/f9e43ce2394543b8180ac889ad9ff645a8810ca1))
+* **DescendantLineagePaths:** add focusedBranchKey state to manage branch focus in the component ([2b41867](https://github.com/vialab/WiktionaryViz/commit/2b41867a68247f8da130ef7863d6013da53fad91))
+* **descendants:** implement immediate descendants fetching for selected nodes to enhance user interaction and reduce memory usage ([050a898](https://github.com/vialab/WiktionaryViz/commit/050a8981169f4760a35699a81ea947d5527bd439))
+* **GeospatialPage.tsx:** add support for compare mode with controls for syncing and differences ([2fb360b](https://github.com/vialab/WiktionaryViz/commit/2fb360b8af61a59f283ad549fcef67f6a82681d5))
+* **GeospatialSettingsMenu.tsx:** enhance settings menu to support docking and collapsing behavior for compare mode ([2fb360b](https://github.com/vialab/WiktionaryViz/commit/2fb360b8af61a59f283ad549fcef67f6a82681d5))
+* **main.py:** ensure language stats are built if missing during application startup to maintain data integrity ([f9e43ce](https://github.com/vialab/WiktionaryViz/commit/f9e43ce2394543b8180ac889ad9ff645a8810ca1))
+* **MarkerEvidenceDrawer.tsx:** adjust drawer positioning based on dock side for improved UI in compare mode ([2fb360b](https://github.com/vialab/WiktionaryViz/commit/2fb360b8af61a59f283ad549fcef67f6a82681d5))
+* **minimap:** implement minimap feature with annotations and overview map support to enhance user navigation and data visualization ([7ea371d](https://github.com/vialab/WiktionaryViz/commit/7ea371d0ded09d4c53bb9f88fa482e66165a3401))
+* **recommendation.py:** introduce scoring functions for translations, roots, and descendants to provide a structured recommendation system ([f9e43ce](https://github.com/vialab/WiktionaryViz/commit/f9e43ce2394543b8180ac889ad9ff645a8810ca1))
+* **run_inspire_me_sample.py:** implement a sample runner for the /inspire-me endpoint to facilitate testing and demonstration of the recommendation system ([f9e43ce](https://github.com/vialab/WiktionaryViz/commit/f9e43ce2394543b8180ac889ad9ff645a8810ca1))
+* **TODO_LIST.md:** remove compare mode tasks from the TODO list to reflect project priorities ([2fb360b](https://github.com/vialab/WiktionaryViz/commit/2fb360b8af61a59f283ad549fcef67f6a82681d5))
+* **TODO_LIST.md:** remove outdated epic section on recommendation logic improvements to keep the TODO list focused and relevant ([f9e43ce](https://github.com/vialab/WiktionaryViz/commit/f9e43ce2394543b8180ac889ad9ff645a8810ca1))
+* **word_data.py:** add new /inspire-me endpoint to generate recommendations for translations, etymology roots, and descendants based on deterministic scoring ([f9e43ce](https://github.com/vialab/WiktionaryViz/commit/f9e43ce2394543b8180ac889ad9ff645a8810ca1))
+
+
+### Bug Fixes
+
+* **DescendantLineagePaths:** update layer opacity calculation to consider focused branch for better visual representation ([2b41867](https://github.com/vialab/WiktionaryViz/commit/2b41867a68247f8da130ef7863d6013da53fad91))
+* **descendants:** update descendant tree response structure to include root key for better data handling ([050a898](https://github.com/vialab/WiktionaryViz/commit/050a8981169f4760a35699a81ea947d5527bd439))
+
 ## [0.1.39](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.38...wiktionaryviz-v0.1.39) (2026-08-12)
 
 
