@@ -30,6 +30,12 @@ interface LanguageMetadata {
   name?: string | string[]
 }
 
+interface LanguoidResolutionCache {
+  childrenByParent: Map<string, LanguoidData[]>
+}
+
+const resolutionCache = new WeakMap<LanguoidData[], LanguoidResolutionCache>()
+
 export const buildWiktionaryUrl = (word: string) => {
   const slug = word.trim().replace(/\s+/g, '_')
   return `https://en.wiktionary.org/wiki/${encodeURIComponent(slug)}`
@@ -41,6 +47,254 @@ const PROTO_CENTERS: Record<string, [number, number]> = {
   'gem-pro': [56.5, 11.5], // Proto-Germanic (Scandinavia / Jutland area)
   'gmw-pro': [53.2, 7.0], // Proto-West Germanic (NW Germany / Netherlands)
   'sla-pro': [52.5, 24.0], // Proto-Slavic (Central/Eastern Europe)
+}
+
+const PROTO_NAME_CENTERS: Record<string, [number, number]> = {
+  'proto indo european': [49.0, 45.0],
+  'proto germanic': [56.5, 11.5],
+  'proto west germanic': [53.2, 7.0],
+  'proto slavic': [52.5, 24.0],
+}
+
+const languageLabelToCanonical = (value: string): string =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const tokenizeLanguageLabel = (value: string): string[] => {
+  const canonical = languageLabelToCanonical(value)
+  return canonical ? canonical.split(' ') : []
+}
+
+const tokenOverlapScore = (a: string, b: string): number => {
+  const aTokens = new Set(tokenizeLanguageLabel(a))
+  const bTokens = new Set(tokenizeLanguageLabel(b))
+  if (aTokens.size === 0 || bTokens.size === 0) return 0
+
+  let overlap = 0
+  aTokens.forEach(token => {
+    if (bTokens.has(token)) overlap += 1
+  })
+
+  return overlap / Math.max(aTokens.size, bTokens.size)
+}
+
+const isLikelyLanguageCode = (value: string): boolean => {
+  const trimmed = value.trim()
+  return /^[a-z]{2,3}(?:-[a-z0-9]+)?$/i.test(trimmed)
+}
+
+const splitCountryIds = (countryIds?: string): string[] =>
+  countryIds
+    ? countryIds
+        .split(/\s+/)
+        .map(code => code.trim().toUpperCase())
+        .filter(code => code.length === 2)
+    : []
+
+const getResolutionCache = (languoidData: LanguoidData[]): LanguoidResolutionCache => {
+  const cached = resolutionCache.get(languoidData)
+  if (cached) return cached
+
+  const childrenByParent = new Map<string, LanguoidData[]>()
+  for (const row of languoidData) {
+    const parentId = row.parent_id?.trim()
+    if (!parentId) continue
+    const existing = childrenByParent.get(parentId) ?? []
+    existing.push(row)
+    childrenByParent.set(parentId, existing)
+  }
+
+  const next = { childrenByParent }
+  resolutionCache.set(languoidData, next)
+  return next
+}
+
+const collectDescendants = (seed: LanguoidData, languoidData: LanguoidData[]): LanguoidData[] => {
+  const seedId = seed.id?.trim()
+  if (!seedId) return []
+  const { childrenByParent } = getResolutionCache(languoidData)
+
+  const descendants: LanguoidData[] = []
+  const queue: LanguoidData[] = [...(childrenByParent.get(seedId) ?? [])]
+  const seen = new Set<string>()
+
+  while (queue.length) {
+    const row = queue.shift()!
+    const rowId = row.id?.trim()
+    if (rowId && seen.has(rowId)) continue
+    if (rowId) seen.add(rowId)
+    descendants.push(row)
+
+    if (rowId) {
+      const children = childrenByParent.get(rowId)
+      if (children?.length) queue.push(...children)
+    }
+  }
+
+  return descendants
+}
+
+const deriveCoordinateFromRows = (rows: LanguoidData[]): Coordinate | null => {
+  const coordinates = rows
+    .map(row => parseCoordinate(row.latitude, row.longitude))
+    .filter((coord): coord is Coordinate => coord !== null)
+
+  if (!coordinates.length) return null
+
+  const sum = coordinates.reduce(
+    (acc, coord) => ({ lat: acc.lat + coord.lat, lng: acc.lng + coord.lng }),
+    { lat: 0, lng: 0 },
+  )
+
+  return {
+    lat: sum.lat / coordinates.length,
+    lng: sum.lng / coordinates.length,
+  }
+}
+
+const deriveCountryCodesFromRows = (rows: LanguoidData[]): string[] => {
+  const counts = new Map<string, number>()
+
+  rows.forEach(row => {
+    splitCountryIds(row.country_ids).forEach(a2 => {
+      counts.set(a2, (counts.get(a2) ?? 0) + 1)
+    })
+  })
+
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([code]) => code)
+}
+
+const getProtoCenterForLanguage = (languageCode: string): Coordinate | null => {
+  const raw = languageCode.trim().toLowerCase()
+  if (PROTO_CENTERS[raw]) {
+    const [lat, lng] = PROTO_CENTERS[raw]
+    return { lat, lng }
+  }
+
+  const canonical = languageLabelToCanonical(languageCode)
+  if (PROTO_NAME_CENTERS[canonical]) {
+    const [lat, lng] = PROTO_NAME_CENTERS[canonical]
+    return { lat, lng }
+  }
+
+  if (canonical.startsWith('proto ')) {
+    const stripped = canonical.replace(/^proto\s+/, '')
+    if (PROTO_NAME_CENTERS[`proto ${stripped}`]) {
+      const [lat, lng] = PROTO_NAME_CENTERS[`proto ${stripped}`]
+      return { lat, lng }
+    }
+  }
+
+  return null
+}
+
+const rankLanguoidRow = ({
+  row,
+  lookupCodes,
+  lookupNames,
+  candidateCountryCodes,
+}: {
+  row: LanguoidData
+  lookupCodes: Set<string>
+  lookupNames: Set<string>
+  candidateCountryCodes: Set<string>
+}): number => {
+  const rowCode = row.iso639P3code?.trim().toLowerCase() ?? ''
+  const rowName = row.name?.trim() ?? ''
+  const rowNameCanonical = languageLabelToCanonical(rowName)
+  let score = 0
+
+  if (rowCode && lookupCodes.has(rowCode)) score += 250
+  if (rowNameCanonical && lookupNames.has(rowNameCanonical)) score += 190
+
+  lookupNames.forEach(candidateName => {
+    if (!candidateName || !rowNameCanonical) return
+    if (rowNameCanonical === candidateName) {
+      score += 190
+      return
+    }
+    if (rowNameCanonical.includes(candidateName) || candidateName.includes(rowNameCanonical)) {
+      score += 90
+      return
+    }
+    const overlap = tokenOverlapScore(rowNameCanonical, candidateName)
+    if (overlap >= 0.8) {
+      score += 70
+    } else if (overlap >= 0.6) {
+      score += 45
+    }
+  })
+
+  if (row.country_ids) {
+    const rowCountries = splitCountryIds(row.country_ids)
+    if (rowCountries.some(country => candidateCountryCodes.has(country))) {
+      score += 20
+    }
+  }
+
+  if (row.latitude && row.longitude) score += 3
+  return score
+}
+
+const resolveBestLanguoidRow = ({
+  languageCode,
+  languoidData,
+  lookupCandidates,
+  candidateNamesByCode,
+  candidateCountryCodes,
+}: {
+  languageCode: string
+  languoidData: LanguoidData[]
+  lookupCandidates: string[]
+  candidateNamesByCode: Map<string, string[]>
+  candidateCountryCodes: Set<string>
+}): { row: LanguoidData; score: number } | null => {
+  const lookupCodes = new Set<string>()
+  const lookupNames = new Set<string>()
+
+  lookupCandidates.forEach(candidate => {
+    const codeCandidate = candidate.trim().toLowerCase()
+    if (codeCandidate) lookupCodes.add(codeCandidate)
+    const canonical = languageLabelToCanonical(candidate)
+    if (canonical) lookupNames.add(canonical)
+  })
+
+  const inputCanonical = languageLabelToCanonical(languageCode)
+  if (inputCanonical) {
+    lookupNames.add(inputCanonical)
+    if (inputCanonical.startsWith('proto ')) {
+      lookupNames.add(inputCanonical.replace(/^proto\s+/, ''))
+    }
+  }
+
+  candidateNamesByCode.forEach(names => {
+    names.forEach(name => {
+      const canonical = languageLabelToCanonical(name)
+      if (canonical) lookupNames.add(canonical)
+      if (canonical.startsWith('proto ')) {
+        lookupNames.add(canonical.replace(/^proto\s+/, ''))
+      }
+    })
+  })
+
+  let best: { row: LanguoidData; score: number } | null = null
+  for (const row of languoidData) {
+    const score = rankLanguoidRow({ row, lookupCodes, lookupNames, candidateCountryCodes })
+    if (!best || score > best.score) {
+      best = { row, score }
+    }
+  }
+
+  // Guard against random low-confidence matches.
+  if (!best || best.score < 70) return null
+  return best
 }
 
 // TODO (Country Derivation): Provide helper mapLanguageToCountries(lang_code) returning ISO_A3 codes
@@ -56,9 +310,13 @@ export const mapLanguageToCountries = async (
   const codes: Set<string> = new Set()
   if (!langCode) return []
   // Proto languages intentionally have no modern country polygons; force empty so proto regions render
-  if (/-pro$/.test(langCode)) return []
+  if (/-pro$/i.test(langCode) || /^proto[-\s]/i.test(langCode)) return []
   // Normalize potential proto suffix
-  const normalized = langCode.replace(/-pro$/, '')
+  let normalized = langCode.replace(/-pro$/i, '')
+  if (normalized.length === 2) {
+    const convertedCode = await getIso639P3(normalized)
+    if (convertedCode) normalized = convertedCode
+  }
   // Direct lookup by iso639P3code (convert if needed not handled here; upstream ensures ISO639-3 when possible)
   const rows = languoidData.filter(r => r.iso639P3code?.toLowerCase() === normalized.toLowerCase())
   for (const r of rows) {
@@ -73,7 +331,49 @@ export const mapLanguageToCountries = async (
     }
   }
   if (codes.size === 0) {
-    // Fallback: try country-language package mapping
+    const lookupCandidates = await getLanguageLookupCandidates(langCode)
+    const candidateNamesByCode = new Map<string, string[]>()
+    const candidateCountryCodes = new Set<string>()
+
+    for (const candidate of lookupCandidates) {
+      const languageMetadata = await getLanguageMetadata(candidate)
+      const languageNames = Array.isArray(languageMetadata?.name)
+        ? languageMetadata.name
+        : languageMetadata?.name
+          ? [languageMetadata.name]
+          : []
+      candidateNamesByCode.set(candidate.toLowerCase(), languageNames.map(name => String(name).trim()))
+
+      try {
+        const fallbackCountry = (await getCountryFromLanguageCode(candidate)) as {
+          code_2?: string
+        } | null
+        if (fallbackCountry?.code_2) {
+          candidateCountryCodes.add(fallbackCountry.code_2.trim().toUpperCase())
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const best = resolveBestLanguoidRow({
+      languageCode: langCode,
+      languoidData,
+      lookupCandidates,
+      candidateNamesByCode,
+      candidateCountryCodes,
+    })
+
+    if (best) {
+      const rowsToDerive = [best.row, ...collectDescendants(best.row, languoidData)]
+      deriveCountryCodesFromRows(rowsToDerive).forEach(a2 => {
+        const a3 = countriesIso.alpha2ToAlpha3(a2)
+        if (a3) codes.add(a3)
+      })
+    }
+  }
+  if (codes.size === 0 && isLikelyLanguageCode(normalized)) {
+    // Fallback: try country-language package mapping for code-like values only.
     try {
       const fallbackCountry = (await getCountryFromLanguageCode(normalized)) as {
         code_2?: string
@@ -175,6 +475,9 @@ export const getCoordinatesForLanguage = async (
     return null
   }
 
+  const protoCenter = getProtoCenterForLanguage(languageCode)
+  if (protoCenter) return protoCenter
+
   let iso639P3 = languageCode.trim()
   const lookupCandidates = await getLanguageLookupCandidates(languageCode)
 
@@ -198,6 +501,24 @@ export const getCoordinatesForLanguage = async (
   if (!iso639P3) {
     console.warn(`No valid ISO 639-3 code found for: ${languageCode}`)
     return null
+  }
+
+  const exactMatchRow = languoidData.find(
+    row => row.iso639P3code?.trim().toLowerCase() === iso639P3.toLowerCase(),
+  )
+  if (exactMatchRow) {
+    const exactCoordinate = parseCoordinate(exactMatchRow.latitude, exactMatchRow.longitude)
+    if (exactCoordinate) {
+      return exactCoordinate
+    }
+
+    const approximateFromDescendants = deriveCoordinateFromRows([
+      exactMatchRow,
+      ...collectDescendants(exactMatchRow, languoidData),
+    ])
+    if (approximateFromDescendants) {
+      return approximateFromDescendants
+    }
   }
 
   const candidateNamesByCode = new Map<string, string[]>()
@@ -225,76 +546,49 @@ export const getCoordinatesForLanguage = async (
     }
   }
 
-  const lookupCodes = Array.from(new Set([
-    iso639P3.toLowerCase(),
-    ...lookupCandidates.map(candidate => candidate.toLowerCase()),
-  ]))
-
-  let bestMatch: { row: LanguoidData; coordinate: Coordinate; score: number } | null = null
-
-  for (const row of languoidData) {
-    const coordinate = parseCoordinate(row.latitude, row.longitude)
-    if (!coordinate) continue
-
-    const rowCode = row.iso639P3code?.trim().toLowerCase() ?? ''
-    const rowName = row.name?.trim().toLowerCase() ?? ''
-    let score = 0
-
-    if (lookupCodes.includes(rowCode)) {
-      score += 100
-    }
-
-    for (const [candidateCode, candidateNames] of candidateNamesByCode.entries()) {
-      if (candidateCode === rowCode) {
-        score += 100
-      }
-
-      candidateNames.forEach((candidateName, index) => {
-        if (!candidateName) return
-        if (rowName === candidateName) {
-          score += 40 + (index * 10)
-        } else if (rowName.includes(candidateName)) {
-          score += 20 + (index * 10)
-        }
-      })
-    }
-
-    if (row.country_ids) {
-      const rowCountries = row.country_ids.trim().split(/\s+/).map(country => country.trim().toUpperCase())
-      if (rowCountries.some(country => candidateCountryCodes.has(country))) {
-        score += 15
-      }
-    }
-
-    if (row.latitude && row.longitude) {
-      score += 1
-    }
-
-    if (!bestMatch || score > bestMatch.score) {
-      bestMatch = { row, coordinate, score }
-    }
-  }
+  const bestMatch = resolveBestLanguoidRow({
+    languageCode,
+    languoidData,
+    lookupCandidates: Array.from(new Set([iso639P3, ...lookupCandidates])),
+    candidateNamesByCode,
+    candidateCountryCodes,
+  })
 
   if (bestMatch) {
-    console.log(`Matched language by scored lookup: ${bestMatch.row.iso639P3code} (${bestMatch.row.name})`)
-    console.log(`Coordinates: ${bestMatch.row.latitude}, ${bestMatch.row.longitude}`)
-    return bestMatch.coordinate
+    const directCoordinate = parseCoordinate(bestMatch.row.latitude, bestMatch.row.longitude)
+    if (directCoordinate) {
+      console.log(`Matched language by scored lookup: ${bestMatch.row.iso639P3code} (${bestMatch.row.name})`)
+      console.log(`Coordinates: ${bestMatch.row.latitude}, ${bestMatch.row.longitude}`)
+      return directCoordinate
+    }
+
+    const rowsForApproximation = [bestMatch.row, ...collectDescendants(bestMatch.row, languoidData)]
+    const approximateCoordinate = deriveCoordinateFromRows(rowsForApproximation)
+    if (approximateCoordinate) {
+      console.log(
+        `Matched language by hierarchical approximation: ${bestMatch.row.iso639P3code} (${bestMatch.row.name})`,
+      )
+      console.log(`Coordinates: ${approximateCoordinate.lat}, ${approximateCoordinate.lng}`)
+      return approximateCoordinate
+    }
   }
 
-  try {
-    for (const candidate of lookupCandidates) {
-      const fallbackCountry = (await getCountryFromLanguageCode(candidate)) as {
-        code_2?: string
-      } | null
-      if (fallbackCountry?.code_2) {
-        const fallbackCoordinate = await getCountryCoordinates(fallbackCountry.code_2, languoidData)
-        if (fallbackCoordinate.lat !== 0 && fallbackCoordinate.lng !== 0) {
-          return fallbackCoordinate
+  if (isLikelyLanguageCode(languageCode)) {
+    try {
+      for (const candidate of lookupCandidates) {
+        const fallbackCountry = (await getCountryFromLanguageCode(candidate)) as {
+          code_2?: string
+        } | null
+        if (fallbackCountry?.code_2) {
+          const fallbackCoordinate = await getCountryCoordinates(fallbackCountry.code_2, languoidData)
+          if (fallbackCoordinate.lat !== 0 && fallbackCoordinate.lng !== 0) {
+            return fallbackCoordinate
+          }
         }
       }
+    } catch (err) {
+      console.error(`Error while resolving fallback country for language code: ${languageCode}`, err)
     }
-  } catch (err) {
-    console.error(`Error while resolving fallback country for language code: ${languageCode}`, err)
   }
 
   console.warn(`No coordinates found for language code: ${iso639P3}. Skipping.`)
