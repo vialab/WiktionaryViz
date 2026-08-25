@@ -402,7 +402,8 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
     : decodeShareableStateFromSearch(window.location.search).mapState
   const sharedInitialMapState = initialMapState ?? urlInitialMapState
   const currentWordKey = `${word}::${language}`
-  const shouldOpenGuideOnLoad = openGuideOnLoad && !sharedInitialMapState
+  const shouldOpenGuideOnLoadRef = useRef(openGuideOnLoad && !sharedInitialMapState)
+  const shouldOpenGuideOnLoad = shouldOpenGuideOnLoadRef.current
   const initialCameraCenterRef = useRef<[number, number]>(sharedInitialMapState?.camera?.center ?? [0, 0])
   const initialCameraZoomRef = useRef<number>(sharedInitialMapState?.camera?.zoom ?? 2)
   const hydratedFromSharedStateRef = useRef(Boolean(sharedInitialMapState) || !shouldOpenGuideOnLoad)
