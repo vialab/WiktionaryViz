@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.41](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.40...wiktionaryviz-v0.1.41) (2026-08-26)
+
+
+### Features
+
+* **languoid, mapUtils:** add new properties to LanguoidData and implement language resolution and coordinate derivation functions for improved language handling ([f7097b9](https://github.com/vialab/WiktionaryViz/commit/f7097b92cac74bb5372f8bf13532e58321e18bec))
+
 ## [0.1.40](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.39...wiktionaryviz-v0.1.40) (2026-08-13)
 
 
