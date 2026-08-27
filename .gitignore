@@ -116,11 +116,11 @@ backend/data/
 __pycache__/
 *.py[cod]
 backend/.venv/
-public/geospatial-guide-previews/descendants.mp4
-public/geospatial-guide-previews/etymology.mp4
-public/geospatial-guide-previews/families.mp4
-public/geospatial-guide-previews/proto-zones.mp4
-public/geospatial-guide-previews/translations.mp4
+# public/geospatial-guide-previews/descendants.mp4
+# public/geospatial-guide-previews/etymology.mp4
+# public/geospatial-guide-previews/families.mp4
+# public/geospatial-guide-previews/proto-zones.mp4
+# public/geospatial-guide-previews/translations.mp4
 thesis_backend_report.md
 thesis_backend_report.pdf
 scripts/google_apps_script.gs
