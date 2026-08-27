@@ -2,6 +2,14 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.45](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.44...wiktionaryviz-v0.1.45) (2026-08-27)
+
+
+### Features
+
+* **descendants.py, DescendantLineagePaths.tsx:** enhance word index search with language scan option and optimize path rendering logic ([d55bdf4](https://github.com/vialab/WiktionaryViz/commit/d55bdf42009cbeee06945592df69129e3b240c52))
+* **descendants:** add loading HUD and performance logging for descendant root fetching and coordinate resolution ([a6cae36](https://github.com/vialab/WiktionaryViz/commit/a6cae3640df1ccad72df225d69b99c0fc276982e))
+
 ## [0.1.44](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.43...wiktionaryviz-v0.1.44) (2026-08-27)
 
 
