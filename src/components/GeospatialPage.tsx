@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { Circle, MapContainer, Marker, Polygon, Polyline, Rectangle, TileLayer, useMap } from 'react-leaflet'
+
+const cartoApiKey = import.meta.env.VITE_CARTO_API_KEY?.trim()
+const cartoDarkTileUrl = `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png${cartoApiKey ? `?key=${encodeURIComponent(cartoApiKey)}` : ''}`
+
 import useWordData from '@/hooks/useWordData'
 import useLanguoidData from '@/hooks/useLanguoidData'
 import { processTranslations, processEtymologyLineage, flattenLineage } from '@/utils/mapUtils'
@@ -255,7 +259,7 @@ const MinimapOverview = ({
         <MinimapSizeInvalidator />
         {theme === 'dark' ? (
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            url={cartoDarkTileUrl}
             subdomains={['a', 'b', 'c', 'd']}
             attribution=""
           />
@@ -1839,7 +1843,7 @@ const GeospatialPage: React.FC<GeospatialPageProps> = ({
         {theme === 'dark' ? (
           <TileLayer
             key="dark"
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            url={cartoDarkTileUrl}
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             subdomains={['a', 'b', 'c', 'd']}
             maxZoom={20}
