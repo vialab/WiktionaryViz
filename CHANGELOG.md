@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.46](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.45...wiktionaryviz-v0.1.46) (2026-08-27)
+
+
+### Features
+
+* **geospatial-guide-previews:** add new video files for geospatial guide previews ([a3eec16](https://github.com/vialab/WiktionaryViz/commit/a3eec160edb0efd754f27994fecb19dc6fd4358f))
+
 ## [0.1.45](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.44...wiktionaryviz-v0.1.45) (2026-08-27)
 
 
