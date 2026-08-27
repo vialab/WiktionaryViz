@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.42](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.41...wiktionaryviz-v0.1.42) (2026-08-27)
+
+
+### Features
+
+* **logging:** implement interaction logging feature to track user events and enhance data collection for analysis ([3ebb13e](https://github.com/vialab/WiktionaryViz/commit/3ebb13e1bb4f8ff23a75e5251f19a367365362ee))
+
 ## [0.1.41](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.40...wiktionaryviz-v0.1.41) (2026-08-26)
 
 
