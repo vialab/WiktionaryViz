@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.44](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.43...wiktionaryviz-v0.1.44) (2026-08-27)
+
+
+### Features
+
+* **workflow:** add environment variables for Carto API key and event log endpoint in frontend deployment workflow ([c16514f](https://github.com/vialab/WiktionaryViz/commit/c16514f784ac10c8518e8a77261a8937c005b382))
+
 ## [0.1.43](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.42...wiktionaryviz-v0.1.43) (2026-08-27)
 
 
