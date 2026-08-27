@@ -148,9 +148,8 @@ const hashString = (value: string) => {
   return hash
 }
 
-const stablePathBase = (path: DescPath): [number, number] => {
-  const signature = path.map(node => nodeKey(node.word, node.lang_code)).join('>')
-  const hash = hashString(signature)
+const stableNodeBase = (node: DescNode): [number, number] => {
+  const hash = hashString(nodeKey(node.word, node.lang_code))
   const lat = (hash % 12000) / 100 - 60
   const lng = ((Math.floor(hash / 12000) % 30000) / 100) - 150
   return [lat, lng]
@@ -513,7 +512,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
     }
   }, [paths, languoidData])
 
-  const pointsForPath = (p: DescPath, pathIndex: number): RenderPoint[] => {
+  const pointsForPath = (p: DescPath): RenderPoint[] => {
     const resolved: Array<[number, number] | null> = p.map(n => {
       const lc = n.lang_code || ''
       const cached = coordsMap[lc]
@@ -530,33 +529,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
         }
       }
 
-      let synth: [number, number] | null = null
-      const prevRealIndex = (() => {
-        for (let i = pointIndex - 1; i >= 0; i--) {
-          if (resolved[i]) return i
-        }
-        return -1
-      })()
-      const nextRealIndex = (() => {
-        for (let i = pointIndex + 1; i < resolved.length; i++) {
-          if (resolved[i]) return i
-        }
-        return -1
-      })()
-
-      if (prevRealIndex >= 0 && nextRealIndex >= 0 && resolved[prevRealIndex] && resolved[nextRealIndex]) {
-        const prev = resolved[prevRealIndex]!
-        const next = resolved[nextRealIndex]!
-        const span = nextRealIndex - prevRealIndex
-        const t = (pointIndex - prevRealIndex) / span
-        synth = [prev[0] + (next[0] - prev[0]) * t, prev[1] + (next[1] - prev[1]) * t]
-      } else if (prevRealIndex >= 0 && resolved[prevRealIndex]) {
-        synth = fallbackPoint(resolved[prevRealIndex]!, pathIndex, pointIndex, 1)
-      } else if (nextRealIndex >= 0 && resolved[nextRealIndex]) {
-        synth = fallbackPoint(resolved[nextRealIndex]!, pathIndex, pointIndex, -1)
-      } else {
-        synth = fallbackPoint(stablePathBase(p), pathIndex, pointIndex, 1)
-      }
+      const synth = fallbackPoint(stableNodeBase(p[pointIndex]), 0, 0, 1)
 
       return {
         position: normalizePosition(synth),
@@ -594,8 +567,8 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
   useEffect(() => {
     if (!onVisibleCoordinatesChange) return
 
-    const visiblePositions = paths.flatMap((path, pathIndex) =>
-      pointsForPath(path, pathIndex).map(point => point.position as [number, number]),
+    const visiblePositions = paths.flatMap(path =>
+      pointsForPath(path).map(point => point.position as [number, number]),
     )
 
     onVisibleCoordinatesChange(visiblePositions)
@@ -626,12 +599,13 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
       ) : null}
     <Pane name="descendant-paths-lines" style={{ zIndex }}>
       <Pane name="descendant-paths-markers" style={{ zIndex: zIndex + 60 }}>
+        <Pane name="descendant-paths-nodes" style={{ zIndex: zIndex + 100 }} />
         <Pane name="descendant-paths-labels" style={{ zIndex: zIndex + 140 }}>
       <LayerGroup>
         {isLoading && paths.length === 1 && allPaths.length === 1 ? (
           <Marker
             pane="descendant-paths-markers"
-            position={pointsForPath(paths[0], 0)[0]?.position ?? [0, 0]}
+            position={pointsForPath(paths[0])[0]?.position ?? [0, 0]}
             icon={rootLoadingIcon}
             interactive={false}
           >
@@ -644,7 +618,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
           </Marker>
         ) : null}
         {paths.map((p, idx) => {
-          const points = pointsForPath(p, idx)
+          const points = pointsForPath(p)
           const coords = points.map(point => point.position)
           if (!coords || coords.length === 0) return null
           const isActive = selected === idx
@@ -707,7 +681,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
                 <CircleMarker
                   key={`c-${idx}-${i}`}
                   center={point.position}
-                  pane="descendant-paths-markers"
+                  pane="descendant-paths-nodes"
                   bubblingMouseEvents={false}
                   ref={instance => {
                     const element = instance?.getElement()
@@ -759,7 +733,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
         {isLoading && loadingBranch && paths[loadingBranch.pathIndex] ? (
           <Marker
             pane="descendant-paths-markers"
-            position={pointsForPath(paths[loadingBranch.pathIndex], loadingBranch.pathIndex)[loadingBranch.nodeIndex]?.position ?? [0, 0]}
+            position={pointsForPath(paths[loadingBranch.pathIndex])[loadingBranch.nodeIndex]?.position ?? [0, 0]}
             icon={loadingIcon}
             interactive={false}
           >

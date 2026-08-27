@@ -68,7 +68,7 @@ def _find_index_key_for(w: str):
     return None
 
 
-def _find_index_keys_for_word(w: str, lang_code: str = None, max_keys: int = 200):
+def _find_index_keys_for_word(w: str, lang_code: str = None, max_keys: int = 200, allow_language_scan: bool = True):
     out = []
     lang_key = _normalize_index_word(lang_code) if lang_code else None
     for variant in _index_word_variants(w):
@@ -81,6 +81,8 @@ def _find_index_keys_for_word(w: str, lang_code: str = None, max_keys: int = 200
                 exact_bare = f"{bare_variant}_{lang_key}"
                 if exact_bare in index and exact_bare not in out:
                     return [exact_bare]
+        if not allow_language_scan:
+            continue
         wk = f"{variant}_"
         for k in index:
             if not k.startswith(wk):
@@ -468,14 +470,18 @@ def _trace_ancestry_paths(mm, start_key: str, max_depth=10, max_paths=20, max_br
             if not p_word:
                 continue
 
-            parent_keys = _find_index_keys_for_word(p_word, p_lang, max_keys=max_branching)
+            parent_keys = _find_index_keys_for_word(
+                p_word,
+                p_lang,
+                max_keys=max_branching,
+                allow_language_scan=False,
+            )
             if not parent_keys:
-                fallback_node_key = _select_reverse_root_key(p_word, p_lang)
                 parent_node = {
                     "word": p_word,
                     "lang_code": p_lang,
                     "expansion": None,
-                    "node_key": fallback_node_key,
+                    "node_key": None,
                 }
                 paths.append(path + [parent_node])
                 continue
@@ -531,11 +537,10 @@ def _resolve_ancestor_roots(mm, word: str, lang_code: str, max_depth: int, max_p
         r_key = f"{r_word.lower()}_{r_lang or ''}"
         root_info = roots_by_key.get(r_key)
         if not root_info:
-            root_key = root_node.get("node_key") or _select_reverse_root_key(r_word, r_lang)
             root_info = {
                 "word": r_word,
                 "lang_code": r_lang,
-                "root_key": root_key,
+                "root_key": root_node.get("node_key"),
                 "supporting_paths": 0,
                 "max_path_length": 0,
                 "max_root_index": 0,
@@ -1090,9 +1095,9 @@ def descendant_tree_aggregated(
 def ancestor_roots(
     word: str,
     lang_code: str = None,
-    max_depth: int = Query(8, ge=1, le=20),
-    max_paths: int = Query(24, ge=1, le=200),
-    max_branching: int = Query(5, ge=1, le=20),
+    max_depth: int = Query(6, ge=1, le=20),
+    max_paths: int = Query(12, ge=1, le=200),
+    max_branching: int = Query(3, ge=1, le=20),
 ):
     """Resolve likely proto/root candidates by traversing ancestry upward from a word.
 
@@ -1152,9 +1157,9 @@ def ancestor_roots(
 def descendant_root(
     word: str,
     lang_code: str = None,
-    max_depth: int = Query(8, ge=1, le=20),
-    max_paths: int = Query(24, ge=1, le=200),
-    max_branching: int = Query(5, ge=1, le=20),
+    max_depth: int = Query(6, ge=1, le=20),
+    max_paths: int = Query(12, ge=1, le=200),
+    max_branching: int = Query(3, ge=1, le=20),
 ):
     """Resolve the most likely descendant-root candidate without building descendant paths."""
     mm = None
@@ -1213,7 +1218,7 @@ def descendant_root(
                 },
             }
             logger.info(
-                "GET /descendant-root complete word=%r selected_root=%r elapsed_ms=%.1f",
+                "GET /descendant-root complete word=%r selected_root=%r elapsed_ms=%.1f graph_load=deferred",
                 word,
                 payload["root"],
                 (time.perf_counter() - started_at) * 1000,
