@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.43](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.42...wiktionaryviz-v0.1.43) (2026-08-27)
+
+
+### Features
+
+* **GeospatialPage:** add VITE_CARTO_API_KEY to .env.example and use it for dynamic tile URL generation ([f74e903](https://github.com/vialab/WiktionaryViz/commit/f74e903ed6b674b36e39a945e2a33ef72431f845))
+
 ## [0.1.42](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.41...wiktionaryviz-v0.1.42) (2026-08-27)
 
 
