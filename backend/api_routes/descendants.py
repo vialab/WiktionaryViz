@@ -1158,6 +1158,8 @@ def descendant_root(
 ):
     """Resolve the most likely descendant-root candidate without building descendant paths."""
     mm = None
+    started_at = time.perf_counter()
+    logger.info("GET /descendant-root start word=%r lang=%r depth=%s paths=%s branching=%s", word, lang_code, max_depth, max_paths, max_branching)
     try:
         cache_key = _cache_key(
             "descendant-root",
@@ -1171,6 +1173,7 @@ def descendant_root(
         )
         cached = _cache_get(cache_key)
         if cached is not None:
+            logger.info("GET /descendant-root cache hit word=%r lang=%r elapsed_ms=%.1f", word, lang_code, (time.perf_counter() - started_at) * 1000)
             return cached
 
         with open(JSONL_FILE_PATH, "r", encoding="utf-8") as f:
@@ -1183,6 +1186,13 @@ def descendant_root(
                 max_depth=max_depth,
                 max_paths=max_paths,
                 max_branching=max_branching,
+            )
+            logger.info(
+                "GET /descendant-root ancestry complete word=%r roots=%s paths=%s elapsed_ms=%.1f",
+                word,
+                len(roots),
+                len(ancestry_paths),
+                (time.perf_counter() - started_at) * 1000,
             )
             if not roots:
                 return JSONResponse(content={"error": "Word not found."}, status_code=404)
@@ -1202,7 +1212,12 @@ def descendant_root(
                     "path_count": len(ancestry_paths),
                 },
             }
-            logger.info("GET /descendant-root response JSON: %s", json.dumps(payload, ensure_ascii=False, sort_keys=True))
+            logger.info(
+                "GET /descendant-root complete word=%r selected_root=%r elapsed_ms=%.1f",
+                word,
+                payload["root"],
+                (time.perf_counter() - started_at) * 1000,
+            )
             _cache_set(cache_key, payload)
             return payload
     except Exception as e:

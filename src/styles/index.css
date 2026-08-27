@@ -363,6 +363,52 @@ body[data-theme='light'] #geospatial[data-presentation-labels='true'] .leaflet-o
   opacity: 0.85;
 }
 
+.descendant-loading-hud {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 214px;
+  padding: 10px 14px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(251, 146, 60, 0.7);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.94);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.3);
+  color: #f8fafc;
+  pointer-events: none;
+  font-size: 12px;
+}
+
+.descendant-loading-hud strong,
+.descendant-loading-hud small {
+  display: block;
+}
+
+.descendant-loading-hud small {
+  margin-top: 2px;
+  color: #cbd5e1;
+}
+
+.descendant-loading-spinner {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 3px solid rgba(251, 146, 60, 0.3);
+  border-top-color: #fb923c;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Proto dotted variant overrides (applied via additional class) */
 .etymology-segment-static.proto-dotted {
   stroke: #e11d48;

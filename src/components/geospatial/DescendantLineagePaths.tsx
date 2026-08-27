@@ -265,13 +265,14 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
     setExpandedPrefixes(new Set())
     ;(async () => {
       try {
+        const startedAt = performance.now()
         const url = apiUrl(
           `/descendant-root?${new URLSearchParams({
             word: rootWord,
             lang_code: rootLang || '',
           }).toString()}`,
         )
-        console.debug('DescendantLineagePaths: fetching', url)
+        console.info('[Descendants] Searching for root node', { word: rootWord, lang: rootLang || '(unknown)' })
         const res = await fetch(url, { signal: controller.signal })
         if (!res.ok) {
           if (!cancelled) {
@@ -293,6 +294,11 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
           setRootCandidates([])
           setResolvedRoot(rootNode.word || rootWord)
           setResolvedRootLang(rootNode.lang_code || rootLang || null)
+          console.info('[Descendants] Root node found', {
+            word: rootNode.word,
+            lang: rootNode.lang_code,
+            elapsedMs: Math.round(performance.now() - startedAt),
+          })
         }
       } catch (e) {
         if ((e as Error)?.name === 'AbortError') return
@@ -432,6 +438,16 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
 
   // Resolve coordinates for each node by language code (cache by lang)
   const [coordsMap, setCoordsMap] = useState<Record<string, [number, number] | null>>({})
+  const uniquePathLanguageCodes = new Set(
+    paths.flatMap(path => path.map(node => node.lang_code).filter((code): code is string => Boolean(code))),
+  )
+  const resolvedCoordinateCount = Array.from(uniquePathLanguageCodes).filter(code => coordsMap[code] !== undefined).length
+  const isInitialSetup = !loadingBranch && (
+    isLoading || (paths.length > 0 && resolvedCoordinateCount < uniquePathLanguageCodes.size)
+  )
+  const initialSetupMessage = paths.length === 0
+    ? 'Finding root node'
+    : `Resolving map positions (${resolvedCoordinateCount}/${uniquePathLanguageCodes.size})`
 
   useEffect(() => {
     if (!paths || paths.length === 0) {
@@ -454,7 +470,13 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
         }
         if (cancelled) return
       }
-      if (!cancelled) setCoordsMap(next)
+      if (!cancelled) {
+        setCoordsMap(next)
+        console.info('[Descendants] Coordinates resolved', {
+          languages: uniqueLangs.size,
+          resolved: Array.from(uniqueLangs).filter(code => next[code] !== null).length,
+        })
+      }
     })()
     return () => {
       cancelled = true
@@ -480,7 +502,10 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
         if (cancelled) return
       }
 
-      if (!cancelled) setLanguageNames(next)
+      if (!cancelled) {
+        setLanguageNames(next)
+        console.info('[Descendants] Language labels resolved', { languages: uniqueCodes.size })
+      }
     })()
 
     return () => {
@@ -589,6 +614,16 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
   }, [rootWord, rootLang])
 
   return (
+    <>
+      {isInitialSetup ? (
+        <div className="descendant-loading-hud" role="status" aria-live="polite" aria-atomic="true">
+          <span className="descendant-loading-spinner" aria-hidden="true" />
+          <span>
+            <strong>Descendants</strong>
+            <small>{initialSetupMessage}</small>
+          </span>
+        </div>
+      ) : null}
     <Pane name="descendant-paths-lines" style={{ zIndex }}>
       <Pane name="descendant-paths-markers" style={{ zIndex: zIndex + 60 }}>
         <Pane name="descendant-paths-labels" style={{ zIndex: zIndex + 140 }}>
@@ -740,6 +775,7 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
         </Pane>
       </Pane>
     </Pane>
+    </>
   )
 }
 
