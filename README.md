@@ -165,7 +165,6 @@ Backend at <http://localhost:8000>
 docker run -p 8000:8000 \
   -e WIKTIONARY_DATA_URL=https://kaikki.org/dictionary/raw-wiktextract-data.jsonl.gz \
   -e ALLOWED_ORIGINS=* \
-  -e OPENAI_API_KEY=<your-openai-key> \
   ghcr.io/vialab/wiktionaryviz-backend:latest
 ```
 
@@ -199,7 +198,6 @@ Recommended: Node 20.x, Python 3.11.
 | `VITE_EVENT_LOG_ENDPOINT` | Frontend build | Yes (study build) | (none) | Google Apps Script web-app URL |
 | `ALLOWED_ORIGINS`     | Backend        | No              | `*`        | Comma list for CORS                         |
 | `PORT`                | Backend        | No              | `8000`     | Uvicorn port                                |
-| `OPENAI_API_KEY`      | Backend        | If AI features  | (none)     | For IPA estimation (fallback)               |
 | `WIKTIONARY_DATA_URL` | Backend        | No              | Kaikki URL | Dataset source                              |
 | `SKIP_DOWNLOAD`       | Backend        | No              | `0`        | Set `1` to skip auto download               |
 
