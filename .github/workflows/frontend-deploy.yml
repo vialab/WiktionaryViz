@@ -49,6 +49,8 @@ jobs:
       - name: Build with API base
         env:
           VITE_API_BACKEND: ${{ secrets.VITE_API_BACKEND }}
+          VITE_CARTO_API_KEY: ${{ secrets.VITE_CARTO_API_KEY }}
+          VITE_EVENT_LOG_ENDPOINT: ${{ secrets.VITE_EVENT_LOG_ENDPOINT }}
         run: npm run build
 
       - name: Deploy to gh-pages branch
