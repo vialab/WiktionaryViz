@@ -674,6 +674,14 @@ const DescendantLineagePaths: React.FC<{ rootWord: string; rootLang: string; opa
                   center={point.position}
                   pane="descendant-paths-markers"
                   bubblingMouseEvents={false}
+                  ref={instance => {
+                    const element = instance?.getElement()
+                    if (element) {
+                      const metadataElement = element as HTMLElement
+                      metadataElement.dataset.eventTarget = 'descendant-node'
+                      metadataElement.dataset.mapEntity = `${p[i]?.lang_code ?? 'unknown'}:${p[i]?.word ?? 'unknown'}:${idx}:${i}`
+                    }
+                  }}
                   radius={selected === idx ? 11 : point.aggregated ? 9 : point.fallback ? 7.5 : 7.5}
                   pathOptions={{
                     fillColor: point.aggregated ? '#fbbf24' : point.fallback ? '#60a5fa' : '#f97316',

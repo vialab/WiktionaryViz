@@ -31,6 +31,13 @@ const TranslationMarkers: FC<TranslationMarkersProps> = memo(({ markers, onMarke
         position={marker.position}
         interactive={true}
         riseOnHover={true}
+        ref={instance => {
+          const element = instance?.getElement()
+          if (element) {
+            element.dataset.eventTarget = 'translation-marker'
+            element.dataset.mapEntity = `${marker.code}:${marker.word}:${index}`
+          }
+        }}
         eventHandlers={{
           mouseover: e => {
             e.target.openTooltip()

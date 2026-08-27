@@ -21,6 +21,7 @@ This is an academic research / exploratory tool. Visualization accuracy depends 
   - [Table of Contents](#table-of-contents)
   - [1. Overview](#1-overview)
   - [2. Architecture \& Data Flow](#2-architecture--data-flow)
+    - [Study event logging](#study-event-logging)
   - [3. Prerequisites](#3-prerequisites)
   - [4. Tech Stack](#4-tech-stack)
   - [5. Data Source \& Indexing](#5-data-source--indexing)
@@ -59,6 +60,32 @@ Design principles:
 3. FastAPI loads index at startup; endpoints mmap the JSONL and seek directly.
 4. Services layer supplies ancestry + descendant traversal + phonetic alignment.
 5. Frontend fetches REST endpoints; data transformed via D3/Leaflet into visuals.
+
+### Study event logging
+
+Logging starts automatically in the background on every page load. The frontend records an anonymous
+session start plus clicks, hover entry/exit, focus,
+control changes, form submits, and non-text keyboard actions across the whole document.
+Events include target metadata, pointer coordinates, route, and current word/language
+context. Typed input values are intentionally excluded. Events are written first to the
+browser's `localStorage` queue, so an offline GitHub Pages session is not lost.
+
+For automatic Google Sheets collection, copy `scripts/google_apps_script.gs` into a
+Google Apps Script project, replace `SHEET_ID`, and deploy it as a web app executing
+as you with access allowed to anyone. Build the frontend with the deployed URL:
+
+```bash
+VITE_EVENT_LOG_ENDPOINT=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec npm run build
+```
+
+The browser posts batches directly to Google Apps Script without a participant token;
+failed posts remain queued. Keep the Sheet private and treat the deployment URL as a
+write credential. The `events` sheet can be downloaded as CSV or Excel for analysis.
+
+Keep the Sheet private and treat the deployment URL as a write credential. The
+`events` sheet can be downloaded as CSV or Excel for analysis. The backend and Docker
+container do not collect, store, or export interaction events. Obtain the consent and
+ethics approval required by the thesis study before collecting participant data.
 
 Key directories:
 
@@ -169,6 +196,7 @@ Recommended: Node 20.x, Python 3.11.
 | Variable              | Scope          | Required (Prod) | Default    | Description                                 |
 | --------------------- | -------------- | --------------- | ---------- | ------------------------------------------- |
 | `VITE_API_BACKEND`    | Frontend build | Yes             | (none)     | Absolute backend API base baked into bundle |
+| `VITE_EVENT_LOG_ENDPOINT` | Frontend build | Yes (study build) | (none) | Google Apps Script web-app URL |
 | `ALLOWED_ORIGINS`     | Backend        | No              | `*`        | Comma list for CORS                         |
 | `PORT`                | Backend        | No              | `8000`     | Uvicorn port                                |
 | `OPENAI_API_KEY`      | Backend        | If AI features  | (none)     | For IPA estimation (fallback)               |
@@ -278,7 +306,6 @@ Suggested commit scopes: `frontend`, `backend`, `descendants`, `phonology`, `tim
 Please cite Wiktionary, Wiktextract, and PanPhon in academic outputs.
 
 ## 16. Security / Responsible Use
-
 - Do not rely on AI-estimated IPA for authoritative linguistic claims.
 - Validate external input before exposing new endpoints publicly.
 - Respect Wiktionary licensing when redistributing derived datasets.

@@ -14,6 +14,7 @@ import {
   restoreMapStateFromSavedView,
 } from '@/utils/savedViews'
 import { decodeShareableStateFromSearch, encodeShareableStateToSearch } from '@/utils/shareableState'
+import useInteractionLogger from '@/hooks/useInteractionLogger'
 
 type ThemeMode = 'dark' | 'light'
 
@@ -69,7 +70,13 @@ function App() {
     const storedTheme = window.localStorage.getItem('wiktionaryviz-theme')
     return storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'dark'
   })
-
+  useInteractionLogger({
+    section: visibleSection,
+    word: word1,
+    language: language1,
+    compareWord: word2 || undefined,
+    compareLanguage: language2 || undefined,
+  })
   const handleMapStateChange = useCallback((state: MapState) => {
     setShareableMapState(state)
     setMapStateReady(true)
