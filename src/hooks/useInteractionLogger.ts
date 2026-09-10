@@ -78,7 +78,10 @@ export default function useInteractionLogger(context: InteractionContext) {
     const onClick = (event: MouseEvent) => record('click', event)
     const onFocus = (event: FocusEvent) => record('focus', event)
     const onChange = (event: Event) => record('change', event)
-    const onSubmit = (event: SubmitEvent) => record('submit', event)
+    const onSubmit = (event: SubmitEvent) => {
+      record('submit', event)
+      void flushInteractionEvents()
+    }
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTextInput(event.target)) return
       record('keydown', event, event.key)
