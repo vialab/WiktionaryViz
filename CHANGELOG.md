@@ -2,6 +2,13 @@
 
 > Note: This project is in alpha; versions follow 0.x.y semantics.
 
+## [0.1.47](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.46...wiktionaryviz-v0.1.47) (2026-09-10)
+
+
+### Bug Fixes
+
+* **useInteractionLogger:** enhance onSubmit handler to flush interaction events after recording submission ([de76494](https://github.com/vialab/WiktionaryViz/commit/de76494a90a1817911db410268ff17b45490ca4e))
+
 ## [0.1.46](https://github.com/vialab/WiktionaryViz/compare/wiktionaryviz-v0.1.45...wiktionaryviz-v0.1.46) (2026-08-27)
 
 
